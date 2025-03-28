@@ -5,6 +5,9 @@ import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Wrapper from "./pages/Wrapper";
+import Dashboard from "./pages/Dashboard";
+import Calendar from "./pages/Calendar";
+import DashboardLayout from "./pages/DashboardLayout"; // <-- à créer
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -27,29 +30,38 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* home */}
+        {/* Pages publiques */}
         <Route
           path="/"
           element={<Home darkMode={darkMode} toggleMode={toggleMode} />}
         />
-
-        {/* register */}
         <Route
           path="/register"
           element={<Register darkMode={darkMode} toggleMode={toggleMode} />}
         />
-
-        {/* login */}
         <Route
           path="/login"
           element={<Login darkMode={darkMode} toggleMode={toggleMode} />}
         />
 
-        {/* dashboard via wrapper */}
+        {/* Pages protégées avec layout navbar */}
         <Route
-          path="/dashboard"
+          path="/"
           element={<Wrapper darkMode={darkMode} toggleMode={toggleMode} />}
-        />
+        >
+          <Route
+            element={<DashboardLayout darkMode={darkMode} toggleMode={toggleMode} />}
+          >
+            <Route
+              path="dashboard"
+              element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route
+              path="calendar"
+              element={<Calendar darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+          </Route>
+        </Route>
       </Routes>
     </BrowserRouter>
   );

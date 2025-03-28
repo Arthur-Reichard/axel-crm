@@ -24,6 +24,7 @@ function DashboardNavbar({ darkMode, toggleMode }) {
           <li><Link to="/leads">Leads</Link></li>
           <li><Link to="/clients">Clients</Link></li>
           <li><Link to="/stats">Statistiques</Link></li>
+          <li><Link to="/calendar">Calendrier</Link></li>
         </ul>
       </div>
 
