@@ -1,8 +1,10 @@
-import React from "react";
-import supabase from "../helper/supabaseClient";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import supabase from "../helper/supabaseClient";
+import "../pages/css/dashboard.css";
+import DashboardNavbar from "./DashboardNavbar"; 
 
-function Dashboard() {
+function Dashboard({ darkMode, toggleMode }) {
   const navigate = useNavigate();
 
   const signOut = async () => {
@@ -11,10 +13,38 @@ function Dashboard() {
     navigate("/login");
   };
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        navigate("/login");
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
   return (
-    <div>
-      <h1>Hello, you are logged.</h1>
-      <button onClick={signOut}>Sign out</button>
+    <div className={`dashboard ${darkMode ? "dark" : ""}`}>
+      <DashboardNavbar darkMode={darkMode} toggleMode={toggleMode} />
+      <main className="dashboard-main">
+        <h1>Bienvenue sur Axel</h1>
+        <p>Voici ton tableau de bord personnel. Suis tes leads, tes stats, et reste focus.</p>
+
+        <div className="card-grid">
+          <div className="card">
+            <h2>Leads générés</h2>
+            <p>124</p>
+          </div>
+          <div className="card">
+            <h2>Conversions</h2>
+            <p>27</p>
+          </div>
+          <div className="card">
+            <h2>Taux de réponse</h2>
+            <p>22%</p>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
