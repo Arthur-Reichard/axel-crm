@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import supabase from "../helper/supabaseClient";
 import "./css/Login.css";
 import logo from "./Images/logoaxel.png";
+import googleLogo from "./Images/Googleicon.svg";
+import appleLogo from "./Images/appleicon.svg";
+
 
 function Login() {
   const [darkMode, setDarkMode] = useState(false);
@@ -42,10 +45,13 @@ function Login() {
 
   return (
     <div className={darkMode ? "login-app dark" : "login-app"}>
-      <div className="login-container">
-        <div className="logo-wrapper">
+      <div className="logo-wrapper">
+        <Link to="/">
           <img src={logo} alt="Logo Axel" className="login-logo" />
-        </div>
+        </Link>
+      </div>
+
+      <div className="login-container">
         <h2>Connexion</h2>
         <form onSubmit={handleSubmit} className="login-box">
           <label>Adresse email <span className="required">*</span></label>
@@ -71,11 +77,13 @@ function Login() {
           <div className="separator"><span>OU</span></div>
 
           <button type="button" className="social-button google">
-            <span>🔵</span> Se connecter avec Google
+            <img src={googleLogo} alt="Google" className="social-icon" />
+            Se connecter avec Google
           </button>
 
           <button type="button" className="social-button apple">
-            <span></span> Se connecter avec Apple
+            <img src={appleLogo} alt="Apple" className="social-icon" />
+            Se connecter avec Apple
           </button>
         </form>
 
