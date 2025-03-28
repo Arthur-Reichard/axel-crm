@@ -13,7 +13,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Hello, you are logged in.</h1>
+      <h1>Hello, you are logged.</h1>
       <button onClick={signOut}>Sign out</button>
     </div>
   );
