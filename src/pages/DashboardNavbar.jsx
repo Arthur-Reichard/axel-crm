@@ -28,15 +28,6 @@ function DashboardNavbar({ darkMode, toggleMode }) {
       </div>
 
       <div className="right-nav">
-        <button onClick={toggleMode} className="mode-button">
-          {darkMode ? "Mode clair" : "Mode sombre"}
-        </button>
-        <button onClick={handleLogout} className="btn outline">
-          Déconnexion
-        </button>
-      </div>
-
-      <div className="right-nav">
         <UserMenu darkMode={darkMode} toggleMode={toggleMode} />
       </div>
     </nav>

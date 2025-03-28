@@ -29,7 +29,7 @@ function UserMenu({ darkMode, toggleMode }) {
           </ul>
 
           <div className="theme-toggle">
-            <span>Thème {darkMode ? "clair" : "foncé"}</span>
+            <span>Thème foncé</span>
             <label className="switch">
               <input type="checkbox" checked={darkMode} onChange={toggleMode} />
               <span className="slider round"></span>
