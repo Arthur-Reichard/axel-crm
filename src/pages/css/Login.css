@@ -1,0 +1,106 @@
+/* Login.css */
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  .dark {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+  }
+  
+  .login-page {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  
+  h2 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .login-form input {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.3s;
+  }
+  
+  .login-form input:focus {
+    border-color: #0077ff;
+    outline: none;
+  }
+  
+  .login-form button {
+    padding: 0.75rem;
+    font-size: 1rem;
+    background-color: #0077ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .login-form button:hover {
+    background-color: #005fd1;
+  }
+  
+  .error-message {
+    color: #d8000c;
+    background-color: #ffd2d2;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+  }
+  
+  .register-redirect {
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+  }
+  
+  .register-redirect a {
+    color: #0077ff;
+    text-decoration: none;
+    margin-left: 0.25rem;
+  }
+  
+  .register-redirect a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive */
+  @media (max-width: 500px) {
+    .login-form {
+      width: 100%;
+    }
+  }  
