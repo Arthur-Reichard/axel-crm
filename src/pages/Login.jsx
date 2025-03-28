@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import supabase from "../helper/supabaseClient";
 import "./css/Login.css";
-import Navbar from "./Navbar";
+import logo from "./Images/logoaxel.png";
 
 function Login() {
   const [darkMode, setDarkMode] = useState(false);
@@ -11,7 +11,6 @@ function Login() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Lire le thème au premier rendu
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme === "dark") {
@@ -19,23 +18,15 @@ function Login() {
     }
   }, []);
 
-  // Mettre à jour localStorage à chaque changement
   useEffect(() => {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
-
-  const toggleMode = () => {
-    setDarkMode(!darkMode);
-  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setMessage("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setMessage(error.message);
@@ -50,35 +41,48 @@ function Login() {
   };
 
   return (
-    <div className={darkMode ? "app dark" : "app"}>
-      <Navbar darkMode={darkMode} toggleMode={toggleMode} />
-      <div className="login-page">
-        <main className="main-content">
-          <h2>Connexion</h2>
-          {message && <span className="error-message">{message}</span>}
-          <form onSubmit={handleSubmit} className="login-form">
-            <input
-              onChange={(e) => setEmail(e.target.value)}
-              value={email}
-              type="email"
-              placeholder="Email"
-              required
-            />
-            <input
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-              type="password"
-              placeholder="Mot de passe"
-              required
-            />
-            <button type="submit">Se connecter</button>
-          </form>
+    <div className={darkMode ? "login-app dark" : "login-app"}>
+      <div className="login-container">
+        <div className="logo-wrapper">
+          <img src={logo} alt="Logo Axel" className="login-logo" />
+        </div>
+        <h2>Connexion</h2>
+        <form onSubmit={handleSubmit} className="login-box">
+          <label>Adresse email <span className="required">*</span></label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          <div className="register-redirect">
-            <span>Pas encore de compte ?</span>
-            <Link to="/register">Créer un compte</Link>
-          </div>
-        </main>
+          <label>Mot de passe <span className="required">*</span></label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          {message && <div className="error-message">{message}</div>}
+
+          <button type="submit" className="login-button">Connexion</button>
+
+          <div className="separator"><span>OU</span></div>
+
+          <button type="button" className="social-button google">
+            <span>🔵</span> Se connecter avec Google
+          </button>
+
+          <button type="button" className="social-button apple">
+            <span></span> Se connecter avec Apple
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <Link to="/register">Créer un compte</Link>
+          <Link to="/forgot-password">Mot de passe oublié</Link>
+        </div>
       </div>
     </div>
   );
