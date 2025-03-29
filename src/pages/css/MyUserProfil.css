@@ -3,8 +3,6 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 1rem;
   box-sizing: border-box;
 }
 
@@ -13,15 +11,28 @@
   color: #f0f0f0;
 }
 
+
 .mon-profil-container {
-  margin: 2rem 0 3rem 0;
+  margin: 2rem auto 3rem auto;
   background-color: #fff;
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 500px;
+  max-width: 700px; /* responsive */
   box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .mon-profil-container {
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mon-profil-container {
+    max-width: 700px;
+  }
 }
 
 .dark .mon-profil-container {
@@ -122,16 +133,7 @@ form button[type="submit"]:hover {
   background-color: #005fd1;
 }
 
-/* Responsive */
-
-/* Tablette */
-@media (max-width: 1024px) {
-  .mon-profil-container {
-    padding: 2rem 1.5rem;
-  }
-}
-
-/* Mobile */
+/* Responsive mobile */
 @media (max-width: 768px) {
   .mon-profil-container {
     padding: 1.5rem;
@@ -158,7 +160,6 @@ form button[type="submit"]:hover {
   }
 }
 
-/* Très petit mobile */
 @media (max-width: 480px) {
   .mon-profil-container {
     padding: 1rem;
