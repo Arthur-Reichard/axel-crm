@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import supabase from "../helper/supabaseClient";
 import { Navigate } from "react-router-dom";
+import Dashboard from "./Dashboard"; // Import direct ici
 
-function Wrapper({ children }) {
+function Wrapper({ darkMode, toggleMode }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +23,8 @@ function Wrapper({ children }) {
     return <div>Loading...</div>;
   } else {
     if (authenticated) {
-      return <>{children}</>;
+      // Appel direct de Dashboard avec les props
+      return <Dashboard darkMode={darkMode} toggleMode={toggleMode} />;
     }
     return <Navigate to="/login" />;
   }
