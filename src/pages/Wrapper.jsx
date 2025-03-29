@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import supabase from "../helper/supabaseClient";
-import { Navigate } from "react-router-dom";
-import Dashboard from "./Dashboard"; // Import direct ici
+import { Navigate, Outlet } from "react-router-dom";
 
 function Wrapper({ darkMode, toggleMode }) {
   const [authenticated, setAuthenticated] = useState(false);
@@ -20,14 +19,15 @@ function Wrapper({ darkMode, toggleMode }) {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
-  } else {
-    if (authenticated) {
-      // Appel direct de Dashboard avec les props
-      return <Dashboard darkMode={darkMode} toggleMode={toggleMode} />;
-    }
+    return <div>Chargement...</div>;
+  }
+
+  if (!authenticated) {
     return <Navigate to="/login" />;
   }
+
+  // ✅ Si connecté, on affiche les routes imbriquées
+  return <Outlet />;
 }
 
 export default Wrapper;

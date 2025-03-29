@@ -11,6 +11,7 @@ import Wrapper from "./pages/Wrapper";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
+import Clients from "./pages/Clients";
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -80,6 +81,13 @@ function App() {
                 <Calendar darkMode={darkMode} toggleMode={toggleMode} />
               }
             />
+
+            <Route
+              path="clients"
+              element={<Clients darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+
+
           </Route>
         </Route>
       </Routes>

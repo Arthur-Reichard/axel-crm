@@ -29,7 +29,6 @@ function Dashboard({ darkMode, toggleMode }) {
 
   return (
     <div className={`dashboard ${darkMode ? "dark" : ""}`}>
-      <DashboardNavbar darkMode={darkMode} toggleMode={toggleMode} />
       <main className="dashboard-main">
         <h1>Bienvenue sur Axel</h1>
         <p>
