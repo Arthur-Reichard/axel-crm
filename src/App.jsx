@@ -4,8 +4,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import Wrapper from "./pages/Wrapper";
 import ForgotPassword from "./pages/ForgotPassword";
+import MyUserProfil from "./pages/MyUserProfil";
+
+import Wrapper from "./pages/Wrapper";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
@@ -31,31 +33,29 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* home */}
+        {/* Pages publiques */}
         <Route
           path="/"
           element={<Home darkMode={darkMode} toggleMode={toggleMode} />}
         />
-
-        {/* register */}
         <Route
           path="/register"
           element={<Register darkMode={darkMode} toggleMode={toggleMode} />}
         />
-
-        {/* login */}
         <Route
           path="/login"
           element={<Login darkMode={darkMode} toggleMode={toggleMode} />}
         />
-
-        {/* forgot password */}
         <Route
           path="/forgot-password"
           element={<ForgotPassword darkMode={darkMode} toggleMode={toggleMode} />}
         />
+        <Route
+          path="/MyUserProfil"
+          element={<MyUserProfil darkMode={darkMode} toggleMode={toggleMode} />}
+        />
 
-        {/* Pages protégées avec layout navbar */}
+        {/* Pages privées avec layout */}
         <Route
           path="/"
           element={<Wrapper darkMode={darkMode} toggleMode={toggleMode} />}

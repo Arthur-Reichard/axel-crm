@@ -1,15 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import supabase from "../helper/supabaseClient";
 import "../pages/css/userMenu.css";
 
 function UserMenu({ darkMode, toggleMode }) {
   const [open, setOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
   const navigate = useNavigate();
+
+  // Récupérer l'email à la connexion
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (user && !error) {
+        setUserEmail(user.email);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (!error) navigate("/login");
+    if (!error) navigate("/");
   };
 
   return (
@@ -20,9 +33,10 @@ function UserMenu({ darkMode, toggleMode }) {
 
       {open && (
         <div className="user-menu">
-          <div className="user-email">arthur.reichard@axelproject.fr</div>
+          <div className="user-email">{userEmail || "Utilisateur"}</div>
+
           <ul className="user-links">
-            <li><a href="#">Mon profil</a></li>
+            <li><a href="/MyUserProfil">Mon profil</a></li>
             <li><a href="#">Mon offre</a></li>
             <li><a href="#">Paramètres</a></li>
             <li><a href="#">Empreinte carbone</a></li>

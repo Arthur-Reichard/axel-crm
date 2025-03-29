@@ -1,0 +1,133 @@
+.mon-profil-app {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dark .mon-profil-app {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+.mon-profil-container {
+  margin-top: 2rem;
+  margin-bottom: 3rem;
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 500px;
+}
+
+.dark .mon-profil-container {
+  background-color: #2c2c2c;
+}
+
+.mon-profil-container h1 {
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.profil-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.profil-field label {
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+}
+
+.profil-field input {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: inherit;
+  color: inherit;
+}
+
+.profil-field input:focus {
+  border-color: #0077ff;
+  outline: none;
+}
+
+.readonly-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f0f0f0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.dark .readonly-line {
+  background-color: #3a3a3a;
+}
+
+.readonly-line span {
+  flex: 1;
+}
+
+.readonly-line button {
+  margin-left: 1rem;
+  background-color: #999;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.readonly-line button:hover {
+  background-color: #777;
+}
+
+form button[type="submit"] {
+  padding: 0.75rem;
+  font-size: 1rem;
+  background-color: #0077ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+form button[type="submit"]:hover {
+  background-color: #005fd1;
+}
+
+/* Responsive */
+@media screen and (max-width: 480px) {
+  .mon-profil-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .profil-field input,
+  .readonly-line {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+  }
+
+  form button[type="submit"] {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+  }
+}
