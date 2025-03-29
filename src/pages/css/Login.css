@@ -13,15 +13,16 @@
   }
   
   .login-container {
-    margin-top: 3rem;
+    margin-top: 1rem;
+    margin-bottom: 3rem; /* espace sous le rectangle */
     background-color: #fff;
     padding: 2rem;
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     width: 100%;
     max-width: 400px;
-    text-align: center;
   }
+  
   
   .dark .login-container {
     background-color: #2c2c2c;
@@ -40,10 +41,7 @@
     max-width: 100%;
     object-fit: contain;
   }
-  
-  /* Le reste ne change pas... */
-  
-  
+   
   .login-container h2 {
     margin-bottom: 1.5rem;
   }

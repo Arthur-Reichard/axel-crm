@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Wrapper from "./pages/Wrapper";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
@@ -19,6 +20,9 @@ function App() {
 
         {/* login */}
         <Route path="/login" element={<Login />} />
+
+        {/* password */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* dashboard */}
         <Route

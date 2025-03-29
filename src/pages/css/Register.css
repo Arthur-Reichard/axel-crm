@@ -14,14 +14,14 @@
 }
 
 .register-container {
-  margin-top: 3rem;
+  margin-top: 1rem;
+  margin-bottom: 3rem; /* espace sous le rectangle */
   background-color: #fff;
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 400px;
-  text-align: center;
 }
 
 .dark .register-container {
@@ -29,7 +29,10 @@
 }
 
 h2 {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  text-align: center;
+  font-weight: bold;
 }
 
 .register-form {
@@ -38,11 +41,28 @@ h2 {
   gap: 1rem;
 }
 
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+}
+
+.required {
+  color: red;
+  margin-left: 0.25rem;
+}
+
 .register-form input {
   padding: 0.75rem;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .register-form input:focus {
@@ -51,6 +71,7 @@ h2 {
 }
 
 .register-form button {
+  margin-top: 1rem;
   padding: 0.75rem;
   font-size: 1rem;
   background-color: #0077ff;
@@ -59,6 +80,7 @@ h2 {
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.3s;
+  width: 100%;
 }
 
 .register-form button:hover {
@@ -69,6 +91,7 @@ h2 {
   margin-bottom: 1rem;
   font-size: 0.95rem;
   color: #0077ff;
+  text-align: center;
 }
 
 .error-message {
@@ -77,11 +100,13 @@ h2 {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   margin-bottom: 1rem;
+  text-align: center;
 }
 
 .register-footer {
   margin-top: 1.5rem;
   font-size: 0.9rem;
+  text-align: center;
 }
 
 .register-footer a {
@@ -98,11 +123,29 @@ h2 {
   display: flex;
   justify-content: center;
   margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .register-logo {
   height: 120px;
   max-width: 100%;
   object-fit: contain;
+}
+
+/* Responsive pour mobile */
+@media screen and (max-width: 480px) {
+  .register-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .register-form input,
+  .register-form button {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+  }
+
+  .register-logo {
+    height: 100px;
+  }
 }

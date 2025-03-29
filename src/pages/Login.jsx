@@ -80,11 +80,6 @@ function Login() {
             <img src={googleLogo} alt="Google" className="social-icon" />
             Se connecter avec Google
           </button>
-
-          <button type="button" className="social-button apple">
-            <img src={appleLogo} alt="Apple" className="social-icon" />
-            Se connecter avec Apple
-          </button>
         </form>
 
         <div className="login-footer">
