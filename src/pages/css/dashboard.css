@@ -15,109 +15,6 @@
   color: #f0f0f0;
 }
 
-.top-navbar {
-  background-color: #ED5F2D;
-  color: white;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  flex-wrap: wrap;
-}
-
-.dark .top-navbar {
-  background-color: #EA4D2A;
-  color: white;
-}
-
-.left-nav,
-.right-nav {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.nav-logo {
-  height: 50px;
-}
-
-.nav-links {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  padding: 0;
-  margin: 0;
-  flex-wrap: wrap;
-}
-
-.nav-links li a {
-  text-decoration: none;
-  color: inherit;
-  font-weight: 500;
-  transition: color 0.3s;
-}
-
-.nav-links li a:hover {
-  color: #0077ff;
-}
-
-.right-nav {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-/* Buttons */
-.btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.95rem;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: background 0.3s, color 0.3s, border 0.3s;
-  font-weight: 600;
-}
-
-.btn.primary {
-  background-color: #0077ff;
-  color: white;
-  border: none;
-}
-
-.btn.primary:hover {
-  background-color: #005fd1;
-}
-
-.btn.outline {
-  background: none;
-  color: #0077ff;
-  border: 2px solid #0077ff;
-}
-
-.btn.outline:hover {
-  background-color: #e0eaff;
-}
-
-.dark .btn.outline {
-  color: #f0f0f0;
-  border-color: #f0f0f0;
-}
-
-.dark .btn.outline:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-link {
-  color: #0077ff;
-  text-decoration: none;
-}
-
-.nav-link:hover {
-  color: #005fd1;
-}
-
 /* Main */
 .dashboard-main {
   text-align: center;
@@ -176,7 +73,6 @@
 }
 
 /* Responsive */
-
 @media (max-width: 1024px) {
   .dashboard-main {
     padding: 3rem 1.5rem;
@@ -184,21 +80,6 @@
 }
 
 @media (max-width: 768px) {
-  .top-navbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-  }
-
-  .left-nav,
-  .right-nav,
-  .nav-links {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
   .dashboard-main h1 {
     font-size: 2rem;
   }
@@ -216,10 +97,5 @@
 
   .dashboard-main h1 {
     font-size: 1.5rem;
-  }
-
-  .btn {
-    width: 100%;
-    text-align: center;
   }
 }
