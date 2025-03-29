@@ -1,11 +1,11 @@
-/* Register.css */
-
 .register-app {
   background-color: #f5f5f5;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .dark {
@@ -14,14 +14,14 @@
 }
 
 .register-container {
-  margin-top: 1rem;
-  margin-bottom: 3rem; /* espace sous le rectangle */
+  margin: 1rem 0 3rem 0;
   background-color: #fff;
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
 }
 
 .dark .register-container {
@@ -35,6 +35,7 @@ h2 {
   font-weight: bold;
 }
 
+/* Form */
 .register-form {
   display: flex;
   flex-direction: column;
@@ -132,20 +133,58 @@ h2 {
   object-fit: contain;
 }
 
-/* Responsive pour mobile */
-@media screen and (max-width: 480px) {
+/* === Responsive === */
+
+/* Tablette large */
+@media screen and (max-width: 1024px) {
+  .register-container {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Tablette standard */
+@media screen and (max-width: 768px) {
   .register-container {
     padding: 1.5rem;
-    margin: 1rem;
+  }
+
+  h2 {
+    font-size: 1.6rem;
   }
 
   .register-form input,
   .register-form button {
     font-size: 0.95rem;
-    padding: 0.6rem;
+    padding: 0.65rem;
   }
 
   .register-logo {
     height: 100px;
+  }
+}
+
+/* Petit mobile */
+@media screen and (max-width: 480px) {
+  .register-container {
+    padding: 1rem;
+    margin: 1rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+  }
+
+  .register-form input,
+  .register-form button {
+    font-size: 0.9rem;
+    padding: 0.6rem;
+  }
+
+  .register-logo {
+    height: 90px;
+  }
+
+  .register-footer {
+    font-size: 0.85rem;
   }
 }

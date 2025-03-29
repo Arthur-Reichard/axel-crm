@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "./Images/logoaxel.png";
+import "./css/Navbar.css";
 
 function Navbar({ darkMode, toggleMode }) {
   return (

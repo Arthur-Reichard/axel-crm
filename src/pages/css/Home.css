@@ -1,14 +1,8 @@
-/* Home.css */
-
+/* Base */
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.dark {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
 }
 
 body {
@@ -18,6 +12,11 @@ body {
   color: #333;
 }
 
+.dark {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
 .home {
   display: flex;
   flex-direction: column;
@@ -25,11 +24,7 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-.dark {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
-}
-
+/* Header */
 .header {
   display: flex;
   justify-content: space-between;
@@ -37,6 +32,7 @@ body {
   padding: 1.5rem;
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
+  flex-wrap: wrap;
 }
 
 .dark .header {
@@ -45,9 +41,10 @@ body {
 }
 
 .logo {
-  height: 70px; /* augmenté depuis 50px */
+  height: 70px;
 }
 
+/* Mode Button */
 .mode-button {
   background: none;
   border: 2px solid currentColor;
@@ -57,6 +54,7 @@ body {
   border-radius: 8px;
   transition: background 0.3s, color 0.3s;
   color: inherit;
+  width: fit-content;
 }
 
 .mode-button:hover {
@@ -72,6 +70,7 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* Main */
 .main-content {
   flex-grow: 1;
   display: flex;
@@ -79,6 +78,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  text-align: center;
 }
 
 h2 {
@@ -86,12 +86,14 @@ h2 {
   font-size: 2rem;
 }
 
+/* Login Form */
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
 }
 
 .login-form input {
@@ -100,6 +102,7 @@ h2 {
   border: 1px solid #ccc;
   border-radius: 8px;
   transition: border-color 0.3s;
+  width: 100%;
 }
 
 .login-form input:focus {
@@ -116,12 +119,14 @@ h2 {
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.3s;
+  width: 100%;
 }
 
 .login-form button:hover {
   background-color: #005fd1;
 }
 
+/* Error */
 .error-message {
   color: #d8000c;
   background-color: #ffd2d2;
@@ -130,6 +135,7 @@ h2 {
   margin-bottom: 1rem;
 }
 
+/* Register redirect */
 .register-redirect {
   margin-top: 1.5rem;
   font-size: 0.95rem;
@@ -145,24 +151,7 @@ h2 {
   text-decoration: underline;
 }
 
-/* Responsive */
-@media (max-width: 500px) {
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .login-form {
-    width: 100%;
-  }
-
-  .logo {
-    height: 60px;
-  }
-}
-
-/* Navbar styles */
-
+/* Navbar */
 .top-navbar {
   display: flex;
   justify-content: space-between;
@@ -171,6 +160,7 @@ h2 {
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
   transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  flex-wrap: wrap;
 }
 
 .dark .top-navbar {
@@ -179,10 +169,11 @@ h2 {
   color: #f0f0f0;
 }
 
-.left-nav {
+.left-nav, .right-nav {
   display: flex;
   align-items: center;
   gap: 2rem;
+  flex-wrap: wrap;
 }
 
 .nav-logo {
@@ -195,6 +186,7 @@ h2 {
   gap: 1.5rem;
   padding: 0;
   margin: 0;
+  flex-wrap: wrap;
 }
 
 .nav-links li a {
@@ -206,12 +198,6 @@ h2 {
 
 .nav-links li a:hover {
   color: #0077ff;
-}
-
-.right-nav {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 
 .nav-link {
@@ -233,6 +219,7 @@ h2 {
   text-decoration: none;
   transition: background 0.3s, color 0.3s, border 0.3s;
   font-weight: 600;
+  width: fit-content;
 }
 
 .btn.primary {
@@ -269,22 +256,55 @@ h2 {
   cursor: pointer;
 }
 
-/* Responsive */
+/* Responsive breakpoints */
+
+/* Tablette */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 2rem 1rem;
+  }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
-  .top-navbar {
+  .top-navbar,
+  .header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .left-nav, .right-nav {
+  .left-nav,
+  .right-nav,
+  .nav-links {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
 
-  .nav-links {
-    flex-direction: column;
-    gap: 0.5rem;
+  .logo, .nav-logo {
+    height: 60px;
+  }
+
+  .login-form {
+    max-width: 100%;
+  }
+}
+
+/* Très petit mobile */
+@media (max-width: 480px) {
+  .btn, .mode-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .login-form input,
+  .login-form button {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+  }
+
+  h2 {
+    font-size: 1.6rem;
   }
 }
