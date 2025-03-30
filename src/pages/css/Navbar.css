@@ -3,14 +3,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: #ffffff;
+  background-color: #ED5F2D;
   border-bottom: 1px solid #ddd;
   transition: background-color 0.3s, color 0.3s;
   flex-wrap: wrap;
 }
 
 .dark.top-navbar {
-  background-color: #2c2c2c;
+  background-color: #EA4D2A;
   color: #f0f0f0;
 }
 

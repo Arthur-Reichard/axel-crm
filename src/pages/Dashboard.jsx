@@ -84,7 +84,6 @@ function Dashboard({ darkMode, toggleMode }) {
 
   return (
     <div className={`dashboard ${darkMode ? "dark" : ""}`}>      
-      <DashboardNavbar darkMode={darkMode} toggleMode={toggleMode} />
 
       {showModal && (
         <div className="modal-overlay">
