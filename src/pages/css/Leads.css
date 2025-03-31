@@ -1,76 +1,287 @@
-/* src/pages/css/Leads.css */
+/* ===================== */
+/* Layout principal      */
+/* ===================== */
 
 .leads-container {
-    max-width: 1000px;
-    margin: auto;
-    padding: 2rem;
-    background-color: #f8f9fb;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
+  margin: auto;
+  padding: 2rem;
+}
+
+.leads-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.leads-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #111;
+}
+
+.add-lead-btn {
+  background-color: #111e23;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.add-lead-btn:hover {
+  background-color: #333;
+}
+
+/* ===================== */
+/* Tableau des leads     */
+/* ===================== */
+
+.lead-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.lead-table th,
+.lead-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.lead-table th {
+  background-color: #f7f7f7;
+  font-weight: 600;
+}
+
+.lead-table tr:last-child td {
+  border-bottom: none;
+}
+
+.lead-table button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+/* ===================== */
+/* Drawer (formulaire)   */
+/* ===================== */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(2px);
+  background-color: rgba(0, 0, 0, 0.2); /* pour l'effet subtil */
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.drawer {
+  background: white;
+  width: 400px;
+  max-width: 90%;
+  height: 100%;
+  padding: 2rem;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  animation: slideIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  color: #111;
+}
+
+.drawer input,
+.drawer textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.drawer textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.drawer-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: auto;
+}
+
+.drawer-buttons button {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.drawer-buttons .cancel-btn {
+  background: #eee;
+  color: #333;
+}
+
+.drawer-buttons button:first-child {
+  background: #111e23;
+  color: white;
+}
+
+/* ===================== */
+/* Animations            */
+/* ===================== */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
   }
-  
-  .leads-title {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
-    color: #111;
+  to {
+    transform: translateX(0%);
   }
-  
-  .lead-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
+}
+
+@keyframes fadeIn {
+  from {
+    background: rgba(0, 0, 0, 0);
   }
-  
-  .lead-form input,
-  .lead-form textarea {
-    padding: 0.75rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
+  to {
+    background: rgba(0, 0, 0, 0.4);
   }
-  
-  .lead-form textarea {
-    grid-column: span 2;
-    resize: vertical;
+}
+
+/* ===================== */
+/* DARK MODE             */
+/* ===================== */
+
+.dark .leads-container {
+  background-color: #111e23;
+  color: #f2f2f2;
+}
+
+.dark .leads-title {
+  color: #ffffff;
+}
+
+.dark .add-lead-btn {
+  background-color: #f2f2f2;
+  color: #111e23;
+}
+
+.dark .add-lead-btn:hover {
+  background-color: #dddddd;
+}
+
+/* TABLEAU */
+.dark .lead-table {
+  background-color: #1c2b36;
+  color: #f2f2f2;
+}
+
+.dark .lead-table th {
+  background-color: #2a3b47;
+  color: #f2f2f2;
+}
+
+.dark .lead-table td {
+  border-color: #374957;
+}
+
+.dark .lead-table tr:hover {
+  background-color: #273846;
+}
+
+/* DRAWER */
+.dark .drawer {
+  background-color: #1c2b36;
+  color: #f2f2f2;
+}
+
+.dark .drawer input,
+.dark .drawer textarea {
+  background-color: #2a3b47;
+  color: #f2f2f2;
+  border: 1px solid #444;
+}
+
+.dark .drawer input::placeholder,
+.dark .drawer textarea::placeholder {
+  color: #aaa;
+}
+
+.dark .drawer-buttons .cancel-btn {
+  background: #374957;
+  color: #ccc;
+}
+
+.dark .drawer-buttons button:first-child {
+  background-color: #f2f2f2;
+  color: #111e23;
+}
+
+.dark .drawer-overlay {
+  backdrop-filter: blur(2px);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .drawer h2 {
+  color: white;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+
+
+
+
+
+@media (max-width: 768px) {
+  .leads-container {
+    padding: 1rem;
   }
-  
-  .lead-form button {
-    padding: 0.75rem;
-    background-color: #111e23;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    grid-column: span 2;
-  }
-  
-  .lead-form button:hover {
-    background-color: #333;
-  }
-  
-  .lead-table {
+
+  .drawer {
     width: 100%;
-    border-collapse: collapse;
+    padding: 1.5rem;
   }
-  
-  .lead-table th,
-  .lead-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #ddd;
-    text-align: left;
+
+  .drawer-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
   }
-  
-  .lead-table th {
-    background-color: #f0f0f0;
-    color: #111;
+
+  .drawer-buttons button {
+    width: 100%;
   }
-  
-  .lead-table td button {
-    background: none;
-    border: none;
-    cursor: pointer;
+
+  .add-lead-btn {
+    width: 100%;
+    padding: 1rem;
     font-size: 1.1rem;
   }
-  
+
+  .leads-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

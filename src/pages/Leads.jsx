@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import '../pages/css/Leads.css';
-import supabase from '../helper/supabaseClient'; // ✅ Correction ici
+import supabase from '../helper/supabaseClient';
 
 export default function Leads() {
   const [leads, setLeads] = useState([]);
   const [entrepriseId, setEntrepriseId] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -59,18 +60,41 @@ export default function Leads() {
   };
 
   const handleAddLead = async () => {
-    if (!entrepriseId) return;
+    if (!entrepriseId) {
+      console.warn("Pas d'entreprise ID");
+      return;
+    }
 
-    const { data, error } = await supabase.from('leads').insert([
-      {
-        ...formData,
-        entreprise_id: entrepriseId,
-      },
-    ]);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      console.warn('Utilisateur non connecté');
+      return;
+    }
+
+    const newLead = {
+      user_id: user.id,
+      entreprise_id: entrepriseId,
+      name: formData.name,
+      email: formData.email,
+      company: formData.company,
+      status: formData.status,
+      source: formData.source,
+      notes: formData.notes,
+    };
+
+    const { data, error } = await supabase.from('leads').insert([newLead]).select();
 
     if (error) {
-      console.error('Erreur ajout lead :', error);
-    } else {
+      console.error('Erreur Supabase :', error);
+      alert("Erreur lors de l’ajout du lead : " + error.message);
+      return;
+    }
+
+    if (data && data.length > 0) {
       setLeads([data[0], ...leads]);
       setFormData({
         name: '',
@@ -78,8 +102,9 @@ export default function Leads() {
         company: '',
         status: 'Nouveau',
         source: '',
-        notes: '',
+        notes: ''
       });
+      setDrawerOpen(false); // Ferme le drawer
     }
   };
 
@@ -94,15 +119,11 @@ export default function Leads() {
 
   return (
     <div className="leads-container">
-      <h1 className="leads-title">Tableau des Leads</h1>
-
-      <div className="lead-form">
-        <input type="text" name="name" placeholder="Nom" value={formData.name} onChange={handleInputChange} />
-        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} />
-        <input type="text" name="company" placeholder="Entreprise" value={formData.company} onChange={handleInputChange} />
-        <input type="text" name="source" placeholder="Source" value={formData.source} onChange={handleInputChange} />
-        <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
-        <button onClick={handleAddLead}>Ajouter un lead</button>
+      <div className="leads-header">
+        <h1 className="leads-title">Tableau des Leads</h1>
+        <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>
+          Ajouter un prospect
+        </button>
       </div>
 
       <table className="lead-table">
@@ -131,6 +152,23 @@ export default function Leads() {
           ))}
         </tbody>
       </table>
+
+      {drawerOpen && (
+        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <h2>Créer un nouveau prospect</h2>
+            <input type="text" name="name" placeholder="Nom" value={formData.name} onChange={handleInputChange} />
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} />
+            <input type="text" name="company" placeholder="Entreprise" value={formData.company} onChange={handleInputChange} />
+            <input type="text" name="source" placeholder="Source" value={formData.source} onChange={handleInputChange} />
+            <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
+            <div className="drawer-buttons">
+              <button onClick={handleAddLead}>Valider</button>
+              <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
