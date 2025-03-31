@@ -8,6 +8,7 @@ export default function LeadDetail() {
   const navigate = useNavigate();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -64,6 +65,22 @@ export default function LeadDetail() {
 
   if (loading || !lead) return <p style={{ padding: '2rem' }}>Chargement...</p>;
 
+  const mainFields = [
+    { label: "Nom", name: "nom" },
+    { label: "Prénom", name: "prenom" },
+    { label: "Email", name: "email", type: "email" },
+    { label: "Téléphone", name: "phone" },
+    { label: "Entreprise", name: "company" },
+  ];
+
+  const extraFields = [
+    { label: "Adresse", name: "adresse" },
+    { label: "Ville", name: "ville" },
+    { label: "Source", name: "source" },
+    { label: "Description", name: "description", type: "textarea" },
+    { label: "Dernières actions", name: "notes", type: "textarea" },
+  ];
+
   return (
     <div className="lead-detail-page">
       <div className="lead-detail-header">
@@ -72,16 +89,7 @@ export default function LeadDetail() {
       </div>
 
       <div className="lead-detail-grid">
-        {[
-          { label: "Nom", name: "nom" },
-          { label: "Prénom", name: "prenom" },
-          { label: "Email", name: "email", type: "email" },
-          { label: "Téléphone", name: "phone" },
-          { label: "Entreprise", name: "company" },
-          { label: "Adresse", name: "adresse" },
-          { label: "Ville", name: "ville" },
-          { label: "Source", name: "source" },
-        ].map(({ label, name, type = "text" }) => (
+        {mainFields.map(({ label, name, type = "text" }) => (
           <div className="lead-field" key={name}>
             <label htmlFor={name}>{label}</label>
             <input
@@ -94,25 +102,35 @@ export default function LeadDetail() {
           </div>
         ))}
 
-        <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={lead.description || ''}
-            onChange={handleChange}
-          />
-        </div>
+        {showMore && extraFields.map(({ label, name, type = "text" }) => (
+          <div className="lead-field" key={name} style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}>
+            <label htmlFor={name}>{label}</label>
+            {type === "textarea" ? (
+              <textarea
+                id={name}
+                name={name}
+                value={lead[name] || ''}
+                onChange={handleChange}
+              />
+            ) : (
+              <input
+                id={name}
+                type={type}
+                name={name}
+                value={lead[name] || ''}
+                onChange={handleChange}
+              />
+            )}
+          </div>
+        ))}
 
-        <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="notes">Dernières actions</label>
-          <textarea
-            id="notes"
-            name="notes"
-            value={lead.notes || ''}
-            onChange={handleChange}
-          />
-        </div>
+        {!showMore && (
+          <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
+            <button onClick={() => setShowMore(true)} style={{ padding: '0.6rem 1.2rem' }}>
+              + Ajouter plus d'infos
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="lead-detail-buttons">

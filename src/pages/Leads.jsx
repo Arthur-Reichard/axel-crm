@@ -80,13 +80,20 @@ export default function Leads() {
   const [colWidths, setColWidths] = useState({});
   const navigate = useNavigate();
 
-  const allColumns = ['Nom', 'Prénom', 'Email', 'Téléphone', 'Entreprise', 'Adresse', 'Ville', 'Source', 'Description', 'Dernières actions'];
+  const allColumns = ['Prénom', 'Nom', 'Email pro', 'Téléphone pro', 'Entreprise', 'Statut', 'Source', 'Assigné à'];
   const [selectedColumns, setSelectedColumns] = useState(() => {
     return JSON.parse(localStorage.getItem('selectedColumns')) || allColumns;
   });
 
   const [formData, setFormData] = useState({
-    nom: '', prenom: '', email: '', phone: '', company: '', adresse: '', ville: '', source: '', description: '', notes: ''
+    prenom: '',
+    nom: '',
+    email_professionnel: '',
+    telephone_professionnel: '',
+    nom_entreprise: '',
+    statut_client: '',
+    source: '',
+    notes: ''
   });
 
   useEffect(() => {
@@ -98,20 +105,23 @@ export default function Leads() {
 
         if (userError || !user) throw userError;
 
-        const { data: utilisateur, error: userInfoError } = await supabase
+        const { data: utilisateurs, error: userInfoError } = await supabase
           .from('utilisateurs')
           .select('entreprise_id')
-          .eq('id', user.id)
-          .single();
+          .eq('id', user.id);
 
-        if (userInfoError) throw userInfoError;
+        if (userInfoError || !utilisateurs || utilisateurs.length === 0) {
+          console.error("Aucun utilisateur trouvé");
+          return;
+        }
 
-        setEntrepriseId(utilisateur.entreprise_id);
+        const entreprise_id = utilisateurs[0].entreprise_id;
+        setEntrepriseId(entreprise_id);
 
         const { data, error } = await supabase
           .from('leads')
           .select('*')
-          .eq('entreprise_id', utilisateur.entreprise_id)
+          .eq('entreprise_id', entreprise_id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -133,37 +143,49 @@ export default function Leads() {
   };
 
   const handleAddLead = async () => {
-    if (!entrepriseId) return;
+    console.log("Tentative ajout lead");
+    if (!entrepriseId) {
+      console.error("Pas d'entreprise ID, impossible de créer un lead.");
+      return;
+    }
 
     const {
       data: { user }, error: authError
     } = await supabase.auth.getUser();
 
-    if (authError || !user) return;
+    if (authError || !user) {
+      console.error("Utilisateur non authentifié");
+      return;
+    }
 
     const newLead = {
       user_id: user.id,
       entreprise_id: entrepriseId,
-      nom: formData.nom,
       prenom: formData.prenom,
-      email: formData.email,
-      phone: formData.phone,
-      company: formData.company,
-      adresse: formData.adresse,
-      ville: formData.ville,
+      nom: formData.nom,
+      email_professionnel: formData.email_professionnel,
+      telephone_professionnel: formData.telephone_professionnel,
+      nom_entreprise: formData.nom_entreprise,
+      statut_client: formData.statut_client,
       source: formData.source === 'autre' ? customSource : formData.source,
-      description: formData.description,
       notes: formData.notes,
     };
 
     const { data, error } = await supabase.from('leads').insert([newLead]).select();
 
-    if (!error && data && data.length > 0) {
-      setLeads([data[0], ...leads]);
-      setFormData({ nom: '', prenom: '', email: '', phone: '', company: '', adresse: '', ville: '', source: '', description: '', notes: '' });
-      setCustomSource('');
-      setDrawerOpen(false);
+    if (error) {
+      console.error("Erreur d'ajout du lead :", error);
+      return;
     }
+
+    console.log("Lead ajouté avec succès :", data);
+    setLeads([...(data || []), ...leads]);
+    setFormData({
+      prenom: '', nom: '', email_professionnel: '', telephone_professionnel: '',
+      nom_entreprise: '', statut_client: '', source: '', notes: ''
+    });
+    setCustomSource('');
+    setDrawerOpen(false);
   };
 
   return (
@@ -190,16 +212,14 @@ export default function Leads() {
           <tbody>
             {leads.map((lead) => (
               <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                {selectedColumns.includes('Nom') && <td>{lead.nom}</td>}
                 {selectedColumns.includes('Prénom') && <td>{lead.prenom}</td>}
-                {selectedColumns.includes('Email') && <td>{lead.email}</td>}
-                {selectedColumns.includes('Téléphone') && <td>{lead.phone}</td>}
-                {selectedColumns.includes('Entreprise') && <td>{lead.company}</td>}
-                {selectedColumns.includes('Adresse') && <td>{lead.adresse}</td>}
-                {selectedColumns.includes('Ville') && <td>{lead.ville}</td>}
+                {selectedColumns.includes('Nom') && <td>{lead.nom}</td>}
+                {selectedColumns.includes('Email pro') && <td>{lead.email_professionnel}</td>}
+                {selectedColumns.includes('Téléphone pro') && <td>{lead.telephone_professionnel}</td>}
+                {selectedColumns.includes('Entreprise') && <td>{lead.nom_entreprise}</td>}
+                {selectedColumns.includes('Statut') && <td>{lead.statut_client}</td>}
                 {selectedColumns.includes('Source') && <td>{lead.source}</td>}
-                {selectedColumns.includes('Description') && <td>{lead.description}</td>}
-                {selectedColumns.includes('Dernières actions') && <td>{lead.notes}</td>}
+                {selectedColumns.includes('Assigné à') && <td>{lead.assigne_a}</td>}
               </tr>
             ))}
           </tbody>
@@ -210,13 +230,12 @@ export default function Leads() {
         <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
           <div className="drawer" onClick={(e) => e.stopPropagation()}>
             <h2>Créer un nouveau prospect</h2>
-            <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
             <input type="text" name="prenom" placeholder="Prénom" value={formData.prenom} onChange={handleInputChange} />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} />
-            <input type="text" name="phone" placeholder="Téléphone" value={formData.phone} onChange={handleInputChange} />
-            <input type="text" name="company" placeholder="Entreprise" value={formData.company} onChange={handleInputChange} />
-            <input type="text" name="adresse" placeholder="Adresse" value={formData.adresse} onChange={handleInputChange} />
-            <input type="text" name="ville" placeholder="Ville" value={formData.ville} onChange={handleInputChange} />
+            <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
+            <input type="email" name="email_professionnel" placeholder="Email pro" value={formData.email_professionnel} onChange={handleInputChange} />
+            <input type="text" name="telephone_professionnel" placeholder="Téléphone pro" value={formData.telephone_professionnel} onChange={handleInputChange} />
+            <input type="text" name="nom_entreprise" placeholder="Entreprise" value={formData.nom_entreprise} onChange={handleInputChange} />
+            <input type="text" name="statut_client" placeholder="Statut" value={formData.statut_client} onChange={handleInputChange} />
             <select name="source" value={formData.source} onChange={handleInputChange}>
               <option value="">-- Source --</option>
               <option value="bouche-à-bouche">Bouche-à-bouche</option>
@@ -226,8 +245,7 @@ export default function Leads() {
             {formData.source === 'autre' && (
               <input type="text" placeholder="Source personnalisée" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
             )}
-            <textarea name="description" placeholder="Description" value={formData.description} onChange={handleInputChange} />
-            <textarea name="notes" placeholder="Dernières actions" value={formData.notes} onChange={handleInputChange} />
+            <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
             <div className="drawer-buttons">
               <button onClick={handleAddLead}>Valider</button>
               <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
