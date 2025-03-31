@@ -7,6 +7,7 @@ import './css/Calendar.css'
 
 export default function Calendar({ userId }) {
   const [calendars, setCalendars] = useState([])
+  const [selectedCalendar, setSelectedCalendar] = useState(null)
   const [events, setEvents] = useState([])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [newEvent, setNewEvent] = useState({ title: '', start_time: '', calendar_id: '' })
@@ -30,68 +31,42 @@ export default function Calendar({ userId }) {
       return
     }
 
-    console.log("👤 Utilisateur :", utilisateur)
-
-    const utilisateurId = utilisateur.id
-    const entrepriseId = utilisateur.entreprise_id
-    const statut = utilisateur.statut
-
+    const { id: utilisateurId, entreprise_id, statut } = utilisateur
     let calendarsList = []
 
-    // Calendrier personnel
-    const { data: persoCal, error: persoErr } = await supabase
+    const { data: persoCal } = await supabase
       .from("calendars")
       .select("*")
       .eq("user_id", utilisateurId)
 
-    if (persoErr) {
-      console.error("Erreur calendrier perso :", persoErr)
-    } else {
-      calendarsList = [...calendarsList, ...persoCal]
-    }
+    if (persoCal) calendarsList = [...calendarsList, ...persoCal]
 
-    // Calendrier entreprise si applicable
-    if ((statut === "ENTREPRISE" || statut === "ASSO") && entrepriseId) {
-      const { data: entCal, error: entErr } = await supabase
+    if ((statut === "ENTREPRISE" || statut === "ASSO") && entreprise_id) {
+      const { data: entCal } = await supabase
         .from("calendars")
         .select("*")
-        .eq("entreprise_id", entrepriseId)
+        .eq("entreprise_id", entreprise_id)
 
-      if (entErr) {
-        console.error("Erreur calendrier entreprise :", entErr)
-      } else {
-        calendarsList = [...calendarsList, ...entCal]
-      }
+      if (entCal) calendarsList = [...calendarsList, ...entCal]
     }
 
-    // Fallback si aucun calendrier trouvé
     if (calendarsList.length === 0) {
-      console.warn("⚠️ Aucun calendrier trouvé. Fallback temporaire appliqué.")
-      calendarsList = [{
-        id: "fallback-id",
-        name: "Calendrier temporaire",
-        entreprise_id: null,
-        user_id: utilisateurId
-      }]
+      console.warn("⚠️ Aucun calendrier trouvé.")
+      return
     }
 
     console.log("📅 Calendriers récupérés :", calendarsList)
-
     setCalendars(calendarsList)
+    setSelectedCalendar(calendarsList[0])
     setNewEvent((prev) => ({ ...prev, calendar_id: calendarsList[0].id }))
     fetchEvents(calendarsList[0].id)
   }
 
   const fetchEvents = async (calendarId) => {
-    if (calendarId === "fallback-id") {
-      setEvents([])
-      return
-    }
-
     const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('calendar_id', calendarId)
+      .from("events")
+      .select("*")
+      .eq("calendar_id", calendarId)
 
     if (!error && data) {
       const formatted = data.map(e => ({
@@ -104,18 +79,19 @@ export default function Calendar({ userId }) {
     }
   }
 
+  useEffect(() => {
+    if (selectedCalendar?.id) {
+      fetchEvents(selectedCalendar.id)
+      setNewEvent((prev) => ({ ...prev, calendar_id: selectedCalendar.id }))
+    }
+  }, [selectedCalendar])
+
   const handleEventCreation = async (e) => {
     e.preventDefault()
-
     const { title, start_time, calendar_id } = newEvent
 
     if (!title.trim() || !start_time || !calendar_id) {
       alert("Merci de remplir tous les champs.")
-      return
-    }
-
-    if (calendar_id === "fallback-id") {
-      alert("Aucun vrai calendrier trouvé. Impossible d’enregistrer l’événement.")
       return
     }
 
@@ -150,11 +126,10 @@ export default function Calendar({ userId }) {
   }
 
   const handleEventDelete = async (clickInfo) => {
-    if (newEvent.calendar_id === "fallback-id") return
-
+    if (!selectedCalendar) return
     if (confirm(`Supprimer "${clickInfo.event.title}" ?`)) {
       await supabase.from('events').delete().eq('id', clickInfo.event.id)
-      fetchEvents(newEvent.calendar_id)
+      fetchEvents(selectedCalendar.id)
     }
   }
 
@@ -162,6 +137,25 @@ export default function Calendar({ userId }) {
     <div className="calendar-container">
       <div className="calendar-header">
         <h1>Mon calendrier</h1>
+
+        {calendars.length > 0 ? (
+          <select
+            value={selectedCalendar?.id || ''}
+            onChange={(e) => {
+              const cal = calendars.find(c => c.id === e.target.value)
+              setSelectedCalendar(cal)
+            }}
+          >
+            {calendars.map((cal) => (
+              <option key={cal.id} value={cal.id}>
+                {cal.name || (cal.entreprise_id ? "🧑‍💼 Entreprise" : "👤 Personnel")}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p style={{ color: '#999' }}>Aucun calendrier disponible</p>
+        )}
+
         <button className="add-event-button" onClick={() => setDrawerOpen(true)}>
           + Nouvel événement
         </button>
@@ -207,7 +201,7 @@ export default function Calendar({ userId }) {
                 required
               />
 
-              <label>Choisir un calendrier</label>
+              <label>Calendrier</label>
               <select
                 value={newEvent.calendar_id}
                 onChange={(e) =>
@@ -217,7 +211,7 @@ export default function Calendar({ userId }) {
               >
                 {calendars.map((cal) => (
                   <option key={cal.id} value={cal.id}>
-                    {cal.entreprise_id ? "🧑‍💼 Calendrier entreprise" : "👤 Calendrier personnel"}
+                    {cal.name || (cal.entreprise_id ? "🧑‍💼 Entreprise" : "👤 Personnel")}
                   </option>
                 ))}
               </select>

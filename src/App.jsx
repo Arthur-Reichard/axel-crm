@@ -6,12 +6,12 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import MyUserProfil from "./pages/MyUserProfil";
-
 import Wrapper from "./pages/Wrapper";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
 import Clients from "./pages/Clients";
+import Leads from "./pages/Leads"; // Ajout de l'import
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -63,31 +63,25 @@ function App() {
         >
           <Route
             element={
-              <DashboardLayout
-                darkMode={darkMode}
-                toggleMode={toggleMode}
-              />
+              <DashboardLayout darkMode={darkMode} toggleMode={toggleMode} />
             }
           >
             <Route
               path="dashboard"
-              element={
-                <Dashboard darkMode={darkMode} toggleMode={toggleMode} />
-              }
+              element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
             />
             <Route
               path="calendar"
-              element={
-                <Calendar darkMode={darkMode} toggleMode={toggleMode} />
-              }
+              element={<Calendar darkMode={darkMode} toggleMode={toggleMode} />}
             />
-
             <Route
               path="clients"
               element={<Clients darkMode={darkMode} toggleMode={toggleMode} />}
             />
-
-
+            <Route
+              path="leads" // Ajout de la route leads
+              element={<Leads darkMode={darkMode} toggleMode={toggleMode} />}
+            />
           </Route>
         </Route>
       </Routes>
