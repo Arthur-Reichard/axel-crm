@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../pages/css/Leads.css';
 import supabase from '../helper/supabaseClient';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import ResizableTH from './ResizableTH';
 
 function ColumnDrawer({ columns, selectedColumns, onClose, onUpdate }) {
   const [localCols, setLocalCols] = useState([]);
@@ -76,6 +77,7 @@ export default function Leads() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [customSource, setCustomSource] = useState('');
   const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
+  const [colWidths, setColWidths] = useState({});
   const navigate = useNavigate();
 
   const allColumns = ['Nom', 'Prénom', 'Email', 'Téléphone', 'Entreprise', 'Adresse', 'Ville', 'Source', 'Description', 'Dernières actions'];
@@ -121,6 +123,10 @@ export default function Leads() {
 
     fetchLeads();
   }, []);
+
+  const handleResize = (key, width) => {
+    setColWidths((prev) => ({ ...prev, [key]: width }));
+  };
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -170,38 +176,65 @@ export default function Leads() {
         </div>
       </div>
 
-      <table className="lead-table">
-        <thead>
-          <tr>
-            {selectedColumns.includes('Nom') && <th>Nom</th>}
-            {selectedColumns.includes('Prénom') && <th>Prénom</th>}
-            {selectedColumns.includes('Email') && <th>Email</th>}
-            {selectedColumns.includes('Téléphone') && <th>Téléphone</th>}
-            {selectedColumns.includes('Entreprise') && <th>Entreprise</th>}
-            {selectedColumns.includes('Adresse') && <th>Adresse</th>}
-            {selectedColumns.includes('Ville') && <th>Ville</th>}
-            {selectedColumns.includes('Source') && <th>Source</th>}
-            {selectedColumns.includes('Description') && <th>Description</th>}
-            {selectedColumns.includes('Dernières actions') && <th>Dernières actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((lead) => (
-            <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-              {selectedColumns.includes('Nom') && <td>{lead.nom}</td>}
-              {selectedColumns.includes('Prénom') && <td>{lead.prenom}</td>}
-              {selectedColumns.includes('Email') && <td>{lead.email}</td>}
-              {selectedColumns.includes('Téléphone') && <td>{lead.phone}</td>}
-              {selectedColumns.includes('Entreprise') && <td>{lead.company}</td>}
-              {selectedColumns.includes('Adresse') && <td>{lead.adresse}</td>}
-              {selectedColumns.includes('Ville') && <td>{lead.ville}</td>}
-              {selectedColumns.includes('Source') && <td>{lead.source}</td>}
-              {selectedColumns.includes('Description') && <td>{lead.description}</td>}
-              {selectedColumns.includes('Dernières actions') && <td>{lead.notes}</td>}
+      <div className="table-wrapper">
+        <table className="lead-table">
+          <thead>
+            <tr>
+              {selectedColumns.map((col) => (
+                <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
+                  {col}
+                </ResizableTH>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {leads.map((lead) => (
+              <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                {selectedColumns.includes('Nom') && <td>{lead.nom}</td>}
+                {selectedColumns.includes('Prénom') && <td>{lead.prenom}</td>}
+                {selectedColumns.includes('Email') && <td>{lead.email}</td>}
+                {selectedColumns.includes('Téléphone') && <td>{lead.phone}</td>}
+                {selectedColumns.includes('Entreprise') && <td>{lead.company}</td>}
+                {selectedColumns.includes('Adresse') && <td>{lead.adresse}</td>}
+                {selectedColumns.includes('Ville') && <td>{lead.ville}</td>}
+                {selectedColumns.includes('Source') && <td>{lead.source}</td>}
+                {selectedColumns.includes('Description') && <td>{lead.description}</td>}
+                {selectedColumns.includes('Dernières actions') && <td>{lead.notes}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {drawerOpen && (
+        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <h2>Créer un nouveau prospect</h2>
+            <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
+            <input type="text" name="prenom" placeholder="Prénom" value={formData.prenom} onChange={handleInputChange} />
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} />
+            <input type="text" name="phone" placeholder="Téléphone" value={formData.phone} onChange={handleInputChange} />
+            <input type="text" name="company" placeholder="Entreprise" value={formData.company} onChange={handleInputChange} />
+            <input type="text" name="adresse" placeholder="Adresse" value={formData.adresse} onChange={handleInputChange} />
+            <input type="text" name="ville" placeholder="Ville" value={formData.ville} onChange={handleInputChange} />
+            <select name="source" value={formData.source} onChange={handleInputChange}>
+              <option value="">-- Source --</option>
+              <option value="bouche-à-bouche">Bouche-à-bouche</option>
+              <option value="appel entrant">Appel entrant</option>
+              <option value="autre">Autre (personnalisée)</option>
+            </select>
+            {formData.source === 'autre' && (
+              <input type="text" placeholder="Source personnalisée" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
+            )}
+            <textarea name="description" placeholder="Description" value={formData.description} onChange={handleInputChange} />
+            <textarea name="notes" placeholder="Dernières actions" value={formData.notes} onChange={handleInputChange} />
+            <div className="drawer-buttons">
+              <button onClick={handleAddLead}>Valider</button>
+              <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {configDrawerOpen && (
         <ColumnDrawer
