@@ -1,26 +1,97 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../pages/css/Leads.css';
 import supabase from '../helper/supabaseClient';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+
+function ColumnDrawer({ columns, selectedColumns, onClose, onUpdate }) {
+  const [localCols, setLocalCols] = useState([]);
+
+  useEffect(() => {
+    setLocalCols(columns);
+  }, [columns]);
+
+  const handleToggle = (column) => {
+    if (selectedColumns.includes(column)) {
+      onUpdate(selectedColumns.filter((col) => col !== column));
+    } else {
+      onUpdate([...selectedColumns, column]);
+    }
+  };
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    const reordered = Array.from(localCols);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    onUpdate(reordered);
+    localStorage.setItem('selectedColumns', JSON.stringify(reordered));
+  };
+
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer" onClick={(e) => e.stopPropagation()}>
+        <h2>Colonnes du tableau</h2>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="columns">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef}>
+                {localCols.map((col, index) => (
+                  <Draggable key={col} draggableId={col} index={index}>
+                    {(provided) => (
+                      <div
+                        className="drag-item"
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={selectedColumns.includes(col)}
+                            onChange={() => handleToggle(col)}
+                          />
+                          {col}
+                        </label>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        <div className="drawer-buttons">
+          <button onClick={onClose}>Fermer</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Leads() {
   const [leads, setLeads] = useState([]);
   const [entrepriseId, setEntrepriseId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [customSource, setCustomSource] = useState('');
+  const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const allColumns = ['Nom', 'Prénom', 'Email', 'Téléphone', 'Entreprise', 'Adresse', 'Ville', 'Source', 'Description', 'Dernières actions'];
+  const [selectedColumns, setSelectedColumns] = useState(() => {
+    return JSON.parse(localStorage.getItem('selectedColumns')) || allColumns;
+  });
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    status: 'Nouveau',
-    source: '',
-    notes: '',
+    nom: '', prenom: '', email: '', phone: '', company: '', adresse: '', ville: '', source: '', description: '', notes: ''
   });
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
         const {
-          data: { user },
-          error: userError,
+          data: { user }, error: userError
         } = await supabase.auth.getUser();
 
         if (userError || !user) throw userError;
@@ -42,7 +113,6 @@ export default function Leads() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-
         setLeads(data);
       } catch (err) {
         console.error('Erreur lors du fetch des leads :', err);
@@ -53,67 +123,40 @@ export default function Leads() {
   }, []);
 
   const handleInputChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleAddLead = async () => {
-    if (!entrepriseId) {
-      console.warn("Pas d'entreprise ID");
-      return;
-    }
+    if (!entrepriseId) return;
 
     const {
-      data: { user },
-      error: authError,
+      data: { user }, error: authError
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      console.warn('Utilisateur non connecté');
-      return;
-    }
+    if (authError || !user) return;
 
     const newLead = {
       user_id: user.id,
       entreprise_id: entrepriseId,
-      name: formData.name,
+      nom: formData.nom,
+      prenom: formData.prenom,
       email: formData.email,
+      phone: formData.phone,
       company: formData.company,
-      status: formData.status,
-      source: formData.source,
+      adresse: formData.adresse,
+      ville: formData.ville,
+      source: formData.source === 'autre' ? customSource : formData.source,
+      description: formData.description,
       notes: formData.notes,
     };
 
     const { data, error } = await supabase.from('leads').insert([newLead]).select();
 
-    if (error) {
-      console.error('Erreur Supabase :', error);
-      alert("Erreur lors de l’ajout du lead : " + error.message);
-      return;
-    }
-
-    if (data && data.length > 0) {
+    if (!error && data && data.length > 0) {
       setLeads([data[0], ...leads]);
-      setFormData({
-        name: '',
-        email: '',
-        company: '',
-        status: 'Nouveau',
-        source: '',
-        notes: ''
-      });
-      setDrawerOpen(false); // Ferme le drawer
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const { error } = await supabase.from('leads').delete().eq('id', id);
-    if (error) {
-      console.error('Erreur suppression lead :', error);
-    } else {
-      setLeads((prev) => prev.filter((lead) => lead.id !== id));
+      setFormData({ nom: '', prenom: '', email: '', phone: '', company: '', adresse: '', ville: '', source: '', description: '', notes: '' });
+      setCustomSource('');
+      setDrawerOpen(false);
     }
   };
 
@@ -121,53 +164,52 @@ export default function Leads() {
     <div className="leads-container">
       <div className="leads-header">
         <h1 className="leads-title">Tableau des Leads</h1>
-        <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>
-          Ajouter un prospect
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
+          <button className="add-lead-btn" onClick={() => setConfigDrawerOpen(true)}>Modifier les colonnes</button>
+        </div>
       </div>
 
       <table className="lead-table">
         <thead>
           <tr>
-            <th>Nom</th>
-            <th>Email</th>
-            <th>Entreprise</th>
-            <th>Statut</th>
-            <th>Source</th>
-            <th>Actions</th>
+            {selectedColumns.includes('Nom') && <th>Nom</th>}
+            {selectedColumns.includes('Prénom') && <th>Prénom</th>}
+            {selectedColumns.includes('Email') && <th>Email</th>}
+            {selectedColumns.includes('Téléphone') && <th>Téléphone</th>}
+            {selectedColumns.includes('Entreprise') && <th>Entreprise</th>}
+            {selectedColumns.includes('Adresse') && <th>Adresse</th>}
+            {selectedColumns.includes('Ville') && <th>Ville</th>}
+            {selectedColumns.includes('Source') && <th>Source</th>}
+            {selectedColumns.includes('Description') && <th>Description</th>}
+            {selectedColumns.includes('Dernières actions') && <th>Dernières actions</th>}
           </tr>
         </thead>
         <tbody>
           {leads.map((lead) => (
-            <tr key={lead.id}>
-              <td>{lead.name}</td>
-              <td>{lead.email}</td>
-              <td>{lead.company}</td>
-              <td>{lead.status}</td>
-              <td>{lead.source}</td>
-              <td>
-                <button onClick={() => handleDelete(lead.id)}>🗑️</button>
-              </td>
+            <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+              {selectedColumns.includes('Nom') && <td>{lead.nom}</td>}
+              {selectedColumns.includes('Prénom') && <td>{lead.prenom}</td>}
+              {selectedColumns.includes('Email') && <td>{lead.email}</td>}
+              {selectedColumns.includes('Téléphone') && <td>{lead.phone}</td>}
+              {selectedColumns.includes('Entreprise') && <td>{lead.company}</td>}
+              {selectedColumns.includes('Adresse') && <td>{lead.adresse}</td>}
+              {selectedColumns.includes('Ville') && <td>{lead.ville}</td>}
+              {selectedColumns.includes('Source') && <td>{lead.source}</td>}
+              {selectedColumns.includes('Description') && <td>{lead.description}</td>}
+              {selectedColumns.includes('Dernières actions') && <td>{lead.notes}</td>}
             </tr>
           ))}
         </tbody>
       </table>
 
-      {drawerOpen && (
-        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
-          <div className="drawer" onClick={(e) => e.stopPropagation()}>
-            <h2>Créer un nouveau prospect</h2>
-            <input type="text" name="name" placeholder="Nom" value={formData.name} onChange={handleInputChange} />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} />
-            <input type="text" name="company" placeholder="Entreprise" value={formData.company} onChange={handleInputChange} />
-            <input type="text" name="source" placeholder="Source" value={formData.source} onChange={handleInputChange} />
-            <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
-            <div className="drawer-buttons">
-              <button onClick={handleAddLead}>Valider</button>
-              <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
-            </div>
-          </div>
-        </div>
+      {configDrawerOpen && (
+        <ColumnDrawer
+          columns={allColumns}
+          selectedColumns={selectedColumns}
+          onUpdate={setSelectedColumns}
+          onClose={() => setConfigDrawerOpen(false)}
+        />
       )}
     </div>
   );

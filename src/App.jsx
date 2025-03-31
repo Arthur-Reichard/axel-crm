@@ -11,7 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
 import Clients from "./pages/Clients";
-import Leads from "./pages/Leads"; // Ajout de l'import
+import Leads from "./pages/Leads"; 
+import LeadDetail from "./pages/LeadDetail";
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -56,7 +57,6 @@ function App() {
           element={<MyUserProfil darkMode={darkMode} toggleMode={toggleMode} />}
         />
 
-        {/* Pages privées avec layout */}
         <Route
           path="/"
           element={<Wrapper darkMode={darkMode} toggleMode={toggleMode} />}
@@ -79,8 +79,12 @@ function App() {
               element={<Clients darkMode={darkMode} toggleMode={toggleMode} />}
             />
             <Route
-              path="leads" // Ajout de la route leads
+              path="leads" 
               element={<Leads darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+
+            <Route path="leads/:id" 
+            element={<LeadDetail darkMode={darkMode} toggleMode={toggleMode} />} 
             />
           </Route>
         </Route>
