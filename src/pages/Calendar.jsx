@@ -12,8 +12,12 @@ export default function Calendar({ userId }) {
   const [newEvent, setNewEvent] = useState({ title: '', start_time: '' })
 
   useEffect(() => {
-    if (userId) fetchCalendars()
+    if (userId) {
+      console.log("userId reçu :", userId)
+      fetchCalendars()
+    }
   }, [userId])
+  
 
   useEffect(() => {
     if (calendars.length > 0) fetchEvents(calendars[0].id)
@@ -24,9 +28,35 @@ export default function Calendar({ userId }) {
       .from('calendars')
       .select('*')
       .eq('user_id', userId)
-
-    if (!error && data) setCalendars(data)
+  
+    if (error) {
+      console.error("Erreur lors de la récupération des calendriers :", error)
+      return
+    }
+  
+    if (data.length === 0) {
+      const { data: newCal, error: createError } = await supabase
+        .from("calendars")
+        .insert([{
+          name: "Mon calendrier",
+          user_id: userId,
+          source: "local",
+          color: "#B6052E"
+        }])
+        .select()
+        .single()
+  
+      if (createError) {
+        console.error("Erreur création calendrier :", createError)
+        return
+      }
+  
+      setCalendars([newCal]) // ✅ on remplit manuellement le state
+    } else {
+      setCalendars(data)
+    }
   }
+  
 
   const fetchEvents = async (calendarId) => {
     const { data, error } = await supabase
@@ -45,25 +75,62 @@ export default function Calendar({ userId }) {
     }
   }
 
-  const createEvent = async (e) => {
+  const handleEventCreation = async (e) => {
     e.preventDefault()
-    if (!newEvent.title || !newEvent.start_time || !calendars[0]) return
 
-    const start = new Date(newEvent.start_time)
+    console.log("Nouvel événement :", newEvent)
+    console.log("Calendars[0] :", calendars[0])
+
+    const { title, start_time } = newEvent
+
+    if (!title.trim()) {
+      alert("Merci d'indiquer un titre.")
+      return
+    }
+
+    if (!start_time) {
+      alert("Merci de choisir une date et une heure.")
+      return
+    }
+
+    if (!calendars.length || !calendars[0]?.id) {
+      alert("Aucun calendrier disponible.")
+      return
+    }
+
+    const start = new Date(start_time)
+    if (isNaN(start.getTime())) {
+      alert("Date invalide.")
+      return
+    }
+
     const end = new Date(start.getTime() + 60 * 60 * 1000)
 
-    const { error } = await supabase.from('events').insert([{
-      title: newEvent.title,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      calendar_id: calendars[0].id,
+    const { data: insertedEvent, error } = await supabase
+      .from("events")
+      .insert([{
+        title,
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        calendar_id: calendars[0].id,
+      }])
+      .select()
+      .single()
+
+    if (error) {
+      alert("Erreur lors de la création : " + error.message)
+      return
+    }
+
+    setEvents((prev) => [...prev, {
+      id: insertedEvent.id,
+      title: insertedEvent.title,
+      start: insertedEvent.start_time,
+      end: insertedEvent.end_time
     }])
 
-    if (!error) {
-      setNewEvent({ title: '', start_time: '' })
-      setDrawerOpen(false)
-      fetchEvents(calendars[0].id)
-    }
+    setNewEvent({ title: '', start_time: '' })
+    setDrawerOpen(false)
   }
 
   const handleEventDelete = async (clickInfo) => {
@@ -100,13 +167,15 @@ export default function Calendar({ userId }) {
               <button onClick={() => setDrawerOpen(false)} className="close-drawer">&times;</button>
             </div>
 
-            <form className="calendar-form" onSubmit={createEvent}>
+            <form className="calendar-form" onSubmit={handleEventCreation}>
               <label>Titre</label>
               <input
                 type="text"
                 placeholder="Nom de l’événement"
                 value={newEvent.title}
-                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                onChange={(e) =>
+                  setNewEvent((prev) => ({ ...prev, title: e.target.value }))
+                }
                 required
               />
               <label>Date & heure</label>
