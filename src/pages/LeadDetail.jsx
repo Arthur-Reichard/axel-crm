@@ -8,7 +8,23 @@ export default function LeadDetail() {
   const navigate = useNavigate();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showMore, setShowMore] = useState(false);
+  const [visibleFields, setVisibleFields] = useState([
+    'nom', 'prenom', 'email', 'phone', 'company'
+  ]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const allFields = [
+    { label: "Nom", name: "nom" },
+    { label: "Prénom", name: "prenom" },
+    { label: "Email", name: "email", type: "email" },
+    { label: "Téléphone", name: "phone" },
+    { label: "Entreprise", name: "company" },
+    { label: "Adresse", name: "adresse" },
+    { label: "Ville", name: "ville" },
+    { label: "Source", name: "source" },
+    { label: "Description", name: "description", type: "textarea" },
+    { label: "Dernières actions", name: "notes", type: "textarea" },
+  ];
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -63,23 +79,15 @@ export default function LeadDetail() {
     }
   };
 
+  const toggleField = (fieldName) => {
+    setVisibleFields((prev) =>
+      prev.includes(fieldName)
+        ? prev.filter((f) => f !== fieldName)
+        : [...prev, fieldName]
+    );
+  };
+
   if (loading || !lead) return <p style={{ padding: '2rem' }}>Chargement...</p>;
-
-  const mainFields = [
-    { label: "Nom", name: "nom" },
-    { label: "Prénom", name: "prenom" },
-    { label: "Email", name: "email", type: "email" },
-    { label: "Téléphone", name: "phone" },
-    { label: "Entreprise", name: "company" },
-  ];
-
-  const extraFields = [
-    { label: "Adresse", name: "adresse" },
-    { label: "Ville", name: "ville" },
-    { label: "Source", name: "source" },
-    { label: "Description", name: "description", type: "textarea" },
-    { label: "Dernières actions", name: "notes", type: "textarea" },
-  ];
 
   return (
     <div className="lead-detail-page">
@@ -89,49 +97,63 @@ export default function LeadDetail() {
       </div>
 
       <div className="lead-detail-grid">
-        {mainFields.map(({ label, name, type = "text" }) => (
-          <div className="lead-field" key={name}>
-            <label htmlFor={name}>{label}</label>
-            <input
-              id={name}
-              type={type}
-              name={name}
-              value={lead[name] || ''}
-              onChange={handleChange}
-            />
-          </div>
-        ))}
-
-        {showMore && extraFields.map(({ label, name, type = "text" }) => (
-          <div className="lead-field" key={name} style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}>
-            <label htmlFor={name}>{label}</label>
-            {type === "textarea" ? (
-              <textarea
-                id={name}
-                name={name}
-                value={lead[name] || ''}
-                onChange={handleChange}
-              />
-            ) : (
-              <input
-                id={name}
-                type={type}
-                name={name}
-                value={lead[name] || ''}
-                onChange={handleChange}
-              />
-            )}
-          </div>
-        ))}
-
-        {!showMore && (
-          <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
-            <button onClick={() => setShowMore(true)} style={{ padding: '0.6rem 1.2rem' }}>
-              + Ajouter plus d'infos
-            </button>
-          </div>
+        {allFields.map(({ label, name, type = "text" }) =>
+          visibleFields.includes(name) ? (
+            <div
+              className="lead-field"
+              key={name}
+              style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
+            >
+              <label htmlFor={name}>{label}</label>
+              {type === "textarea" ? (
+                <textarea
+                  id={name}
+                  name={name}
+                  value={lead[name] || ''}
+                  onChange={handleChange}
+                />
+              ) : (
+                <input
+                  id={name}
+                  type={type}
+                  name={name}
+                  value={lead[name] || ''}
+                  onChange={handleChange}
+                />
+              )}
+            </div>
+          ) : null
         )}
+
+        <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
+          <button onClick={() => setDrawerOpen(true)} style={{ padding: '0.6rem 1.2rem' }}>
+            + Ajouter ou retirer des champs
+          </button>
+        </div>
       </div>
+
+      {drawerOpen && (
+        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <h2>Champs supplémentaires</h2>
+            {allFields.map((field) => (
+              <div key={field.name} className="drag-item">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={visibleFields.includes(field.name)}
+                    onChange={() => toggleField(field.name)}
+                  />{' '}
+                  {field.label}
+                </label>
+              </div>
+            ))}
+            <div className="drawer-buttons">
+              <button onClick={() => setDrawerOpen(false)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="lead-detail-buttons">
         <button onClick={handleSave}>💾 Enregistrer</button>
