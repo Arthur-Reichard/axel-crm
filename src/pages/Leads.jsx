@@ -2,89 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../pages/css/Leads.css';
 import supabase from '../helper/supabaseClient';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ResizableTH from './ResizableTH';
 
-function ColumnDrawer({ columns, selectedColumns, onClose, onUpdate }) {
-  const [localCols, setLocalCols] = useState([]);
+const allColumns = [
+  'Prénom', 'Nom', 'Email pro', 'Téléphone pro',
+  'Entreprise', 'Statut', 'Assigné à', 'Notes'
+];
 
-  useEffect(() => {
-    setLocalCols(columns);
-  }, [columns]);
-
-  const handleToggle = (column) => {
-    if (selectedColumns.includes(column)) {
-      onUpdate(selectedColumns.filter((col) => col !== column));
-    } else {
-      onUpdate([...selectedColumns, column]);
-    }
-  };
-
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    const reordered = Array.from(localCols);
-    const [moved] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, moved);
-    onUpdate(reordered);
-    localStorage.setItem('selectedColumns', JSON.stringify(reordered));
-  };
-
-  return (
-    <div className="drawer-overlay" onClick={onClose}>
-      <div className="drawer" onClick={(e) => e.stopPropagation()}>
-        <h2>Colonnes du tableau</h2>
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="columns">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {localCols.map((col, index) => (
-                  <Draggable key={col} draggableId={col} index={index}>
-                    {(provided) => (
-                      <div
-                        className="drag-item"
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={selectedColumns.includes(col)}
-                            onChange={() => handleToggle(col)}
-                          />
-                          {col}
-                        </label>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-        <div className="drawer-buttons">
-          <button onClick={onClose}>Fermer</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+const columnFieldMap = {
+  'Prénom': 'prenom',
+  'Nom': 'nom',
+  'Email pro': 'email_professionnel',
+  'Téléphone pro': 'telephone_professionnel',
+  'Entreprise': 'nom_entreprise',
+  'Statut': 'statut_client',
+  'Assigné à': 'assigne_a',
+  'Notes': 'notes'
+};
 
 export default function Leads() {
   const [leads, setLeads] = useState([]);
   const [entrepriseId, setEntrepriseId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [customSource, setCustomSource] = useState('');
-  const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
   const [colWidths, setColWidths] = useState({});
   const navigate = useNavigate();
 
-  const allColumns = ['Prénom', 'Nom', 'Email pro', 'Téléphone pro', 'Entreprise', 'Statut', 'Source', 'Assigné à'];
   const [selectedColumns, setSelectedColumns] = useState(() => {
-    return JSON.parse(localStorage.getItem('selectedColumns')) || allColumns;
+    const stored = JSON.parse(localStorage.getItem('selectedColumns'));
+    const defaultCols = allColumns;
+    return Array.isArray(stored) ? stored.filter(col => defaultCols.includes(col)) : defaultCols;
   });
-
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
@@ -93,16 +41,14 @@ export default function Leads() {
     nom_entreprise: '',
     statut_client: '',
     source: '',
-    notes: ''
+    notes: '',
+    assigne_a: ''
   });
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const {
-          data: { user }, error: userError
-        } = await supabase.auth.getUser();
-
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) throw userError;
 
         const { data: utilisateurs, error: userInfoError } = await supabase
@@ -143,46 +89,24 @@ export default function Leads() {
   };
 
   const handleAddLead = async () => {
-    console.log("Tentative ajout lead");
-    if (!entrepriseId) {
-      console.error("Pas d'entreprise ID, impossible de créer un lead.");
-      return;
-    }
-
-    const {
-      data: { user }, error: authError
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      console.error("Utilisateur non authentifié");
-      return;
-    }
+    if (!entrepriseId) return;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return;
 
     const newLead = {
       user_id: user.id,
       entreprise_id: entrepriseId,
-      prenom: formData.prenom,
-      nom: formData.nom,
-      email_professionnel: formData.email_professionnel,
-      telephone_professionnel: formData.telephone_professionnel,
-      nom_entreprise: formData.nom_entreprise,
-      statut_client: formData.statut_client,
-      source: formData.source === 'autre' ? customSource : formData.source,
-      notes: formData.notes,
+      ...formData,
+      source: formData.source === 'autre' ? customSource : formData.source
     };
 
     const { data, error } = await supabase.from('leads').insert([newLead]).select();
+    if (error) return;
 
-    if (error) {
-      console.error("Erreur d'ajout du lead :", error);
-      return;
-    }
-
-    console.log("Lead ajouté avec succès :", data);
     setLeads([...(data || []), ...leads]);
     setFormData({
       prenom: '', nom: '', email_professionnel: '', telephone_professionnel: '',
-      nom_entreprise: '', statut_client: '', source: '', notes: ''
+      nom_entreprise: '', statut_client: '', source: '', notes: '', assigne_a: ''
     });
     setCustomSource('');
     setDrawerOpen(false);
@@ -192,10 +116,7 @@ export default function Leads() {
     <div className="leads-container">
       <div className="leads-header">
         <h1 className="leads-title">Tableau des Leads</h1>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
-          <button className="add-lead-btn" onClick={() => setConfigDrawerOpen(true)}>Modifier les colonnes</button>
-        </div>
+        <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
       </div>
 
       <div className="table-wrapper">
@@ -212,14 +133,9 @@ export default function Leads() {
           <tbody>
             {leads.map((lead) => (
               <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                {selectedColumns.includes('Prénom') && <td>{lead.prenom}</td>}
-                {selectedColumns.includes('Nom') && <td>{lead.nom}</td>}
-                {selectedColumns.includes('Email pro') && <td>{lead.email_professionnel}</td>}
-                {selectedColumns.includes('Téléphone pro') && <td>{lead.telephone_professionnel}</td>}
-                {selectedColumns.includes('Entreprise') && <td>{lead.nom_entreprise}</td>}
-                {selectedColumns.includes('Statut') && <td>{lead.statut_client}</td>}
-                {selectedColumns.includes('Source') && <td>{lead.source}</td>}
-                {selectedColumns.includes('Assigné à') && <td>{lead.assigne_a}</td>}
+                {selectedColumns.map((col) => (
+                  <td key={col}>{lead[columnFieldMap[col]]}</td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -245,6 +161,7 @@ export default function Leads() {
             {formData.source === 'autre' && (
               <input type="text" placeholder="Source personnalisée" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
             )}
+            <input type="text" name="assigne_a" placeholder="Assigné à" value={formData.assigne_a} onChange={handleInputChange} />
             <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
             <div className="drawer-buttons">
               <button onClick={handleAddLead}>Valider</button>
@@ -252,15 +169,6 @@ export default function Leads() {
             </div>
           </div>
         </div>
-      )}
-
-      {configDrawerOpen && (
-        <ColumnDrawer
-          columns={allColumns}
-          selectedColumns={selectedColumns}
-          onUpdate={setSelectedColumns}
-          onClose={() => setConfigDrawerOpen(false)}
-        />
       )}
     </div>
   );

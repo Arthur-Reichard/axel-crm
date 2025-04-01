@@ -29,7 +29,7 @@ function App() {
   };
 
   useEffect(() => {
-    document.body.className = darkMode ? "dark" : "";
+    document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
   return (
