@@ -90,19 +90,38 @@ export default function Leads() {
 
   const handleAddLead = async () => {
     if (!entrepriseId) return;
+  
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return;
-
+  
     const newLead = {
       user_id: user.id,
       entreprise_id: entrepriseId,
-      ...formData,
-      source: formData.source === 'autre' ? customSource : formData.source
+      prenom: formData.prenom || '',
+      nom: formData.nom || '',
+      email_professionnel: formData.email_professionnel || '',
+      telephone_professionnel: formData.telephone_professionnel || '',
+      nom_entreprise: formData.nom_entreprise || '',
+      statut_client: formData.statut_client || '',
+      source: formData.source === 'autre' ? customSource || '' : formData.source || '',
+      notes: formData.notes || ''
     };
-
+  
+    // 👉 Ajouter assigne_a uniquement si c’est une vraie valeur UUID
+    if (formData.assigne_a && formData.assigne_a.trim() !== '') {
+      newLead.assigne_a = formData.assigne_a.trim();
+    }
+  
+    console.log("👉 Lead à insérer :", newLead);
+  
     const { data, error } = await supabase.from('leads').insert([newLead]).select();
-    if (error) return;
-
+  
+    if (error) {
+      console.error("❌ Erreur Supabase :", error.message);
+      alert("Erreur lors de l'ajout du prospect : " + error.message);
+      return;
+    }
+  
     setLeads([...(data || []), ...leads]);
     setFormData({
       prenom: '', nom: '', email_professionnel: '', telephone_professionnel: '',
@@ -111,6 +130,7 @@ export default function Leads() {
     setCustomSource('');
     setDrawerOpen(false);
   };
+  
 
   return (
     <div className="leads-container">
