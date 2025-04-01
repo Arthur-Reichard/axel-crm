@@ -26,13 +26,14 @@ export default function Leads() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [customSource, setCustomSource] = useState('');
   const [colWidths, setColWidths] = useState({});
+  const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
 
   const [selectedColumns, setSelectedColumns] = useState(() => {
     const stored = JSON.parse(localStorage.getItem('selectedColumns'));
-    const defaultCols = allColumns;
-    return Array.isArray(stored) ? stored.filter(col => defaultCols.includes(col)) : defaultCols;
+    return Array.isArray(stored) ? stored.filter(col => allColumns.includes(col)) : allColumns;
   });
+
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
@@ -80,6 +81,15 @@ export default function Leads() {
     fetchLeads();
   }, []);
 
+  useEffect(() => {
+    const wasUpdated = localStorage.getItem('leadUpdated');
+    if (wasUpdated === 'true') {
+      setShowToast(true);
+      localStorage.removeItem('leadUpdated');
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  }, []);
+
   const handleResize = (key, width) => {
     setColWidths((prev) => ({ ...prev, [key]: width }));
   };
@@ -90,10 +100,10 @@ export default function Leads() {
 
   const handleAddLead = async () => {
     if (!entrepriseId) return;
-  
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return;
-  
+
     const newLead = {
       user_id: user.id,
       entreprise_id: entrepriseId,
@@ -106,22 +116,19 @@ export default function Leads() {
       source: formData.source === 'autre' ? customSource || '' : formData.source || '',
       notes: formData.notes || ''
     };
-  
-    // 👉 Ajouter assigne_a uniquement si c’est une vraie valeur UUID
+
     if (formData.assigne_a && formData.assigne_a.trim() !== '') {
       newLead.assigne_a = formData.assigne_a.trim();
     }
-  
-    console.log("👉 Lead à insérer :", newLead);
-  
+
     const { data, error } = await supabase.from('leads').insert([newLead]).select();
-  
+
     if (error) {
-      console.error("❌ Erreur Supabase :", error.message);
+      console.error("Erreur Supabase :", error.message);
       alert("Erreur lors de l'ajout du prospect : " + error.message);
       return;
     }
-  
+
     setLeads([...(data || []), ...leads]);
     setFormData({
       prenom: '', nom: '', email_professionnel: '', telephone_professionnel: '',
@@ -130,66 +137,73 @@ export default function Leads() {
     setCustomSource('');
     setDrawerOpen(false);
   };
-  
 
   return (
-    <div className="leads-container">
-      <div className="leads-header">
-        <h1 className="leads-title">Tableau des Leads</h1>
-        <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
-      </div>
-
-      <div className="table-wrapper">
-        <table className="lead-table">
-          <thead>
-            <tr>
-              {selectedColumns.map((col) => (
-                <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
-                  {col}
-                </ResizableTH>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => (
-              <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                {selectedColumns.map((col) => (
-                  <td key={col}>{lead[columnFieldMap[col]]}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {drawerOpen && (
-        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
-          <div className="drawer" onClick={(e) => e.stopPropagation()}>
-            <h2>Créer un nouveau prospect</h2>
-            <input type="text" name="prenom" placeholder="Prénom" value={formData.prenom} onChange={handleInputChange} />
-            <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
-            <input type="email" name="email_professionnel" placeholder="Email pro" value={formData.email_professionnel} onChange={handleInputChange} />
-            <input type="text" name="telephone_professionnel" placeholder="Téléphone pro" value={formData.telephone_professionnel} onChange={handleInputChange} />
-            <input type="text" name="nom_entreprise" placeholder="Entreprise" value={formData.nom_entreprise} onChange={handleInputChange} />
-            <input type="text" name="statut_client" placeholder="Statut" value={formData.statut_client} onChange={handleInputChange} />
-            <select name="source" value={formData.source} onChange={handleInputChange}>
-              <option value="">-- Source --</option>
-              <option value="bouche-à-bouche">Bouche-à-bouche</option>
-              <option value="appel entrant">Appel entrant</option>
-              <option value="autre">Autre (personnalisée)</option>
-            </select>
-            {formData.source === 'autre' && (
-              <input type="text" placeholder="Source personnalisée" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
-            )}
-            <input type="text" name="assigne_a" placeholder="Assigné à" value={formData.assigne_a} onChange={handleInputChange} />
-            <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
-            <div className="drawer-buttons">
-              <button onClick={handleAddLead}>Valider</button>
-              <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
-            </div>
-          </div>
+    <>
+      {showToast && (
+        <div className="toast-success">
+          ✅ Lead mis à jour avec succès
         </div>
       )}
-    </div>
+
+      <div className="leads-container">
+        <div className="leads-header">
+          <h1 className="leads-title">Tableau des Leads</h1>
+          <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
+        </div>
+
+        <div className="table-wrapper">
+          <table className="lead-table">
+            <thead>
+              <tr>
+                {selectedColumns.map((col) => (
+                  <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
+                    {col}
+                  </ResizableTH>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map((lead) => (
+                <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                  {selectedColumns.map((col) => (
+                    <td key={col}>{lead[columnFieldMap[col]]}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {drawerOpen && (
+          <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+            <div className="drawer" onClick={(e) => e.stopPropagation()}>
+              <h2>Créer un nouveau prospect</h2>
+              <input type="text" name="prenom" placeholder="Prénom" value={formData.prenom} onChange={handleInputChange} />
+              <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
+              <input type="email" name="email_professionnel" placeholder="Email pro" value={formData.email_professionnel} onChange={handleInputChange} />
+              <input type="text" name="telephone_professionnel" placeholder="Téléphone pro" value={formData.telephone_professionnel} onChange={handleInputChange} />
+              <input type="text" name="nom_entreprise" placeholder="Entreprise" value={formData.nom_entreprise} onChange={handleInputChange} />
+              <input type="text" name="statut_client" placeholder="Statut" value={formData.statut_client} onChange={handleInputChange} />
+              <select name="source" value={formData.source} onChange={handleInputChange}>
+                <option value="">-- Source --</option>
+                <option value="bouche-à-bouche">Bouche-à-bouche</option>
+                <option value="appel entrant">Appel entrant</option>
+                <option value="autre">Autre (personnalisée)</option>
+              </select>
+              {formData.source === 'autre' && (
+                <input type="text" placeholder="Source personnalisée" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
+              )}
+              <input type="text" name="assigne_a" placeholder="Assigné à" value={formData.assigne_a} onChange={handleInputChange} />
+              <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
+              <div className="drawer-buttons">
+                <button onClick={handleAddLead}>Valider</button>
+                <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
