@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import supabase from "../helper/supabaseClient";
+import { supabase } from '../helper/supabaseClient';
 import "../pages/css/userMenu.css";
 
 function UserMenu({ darkMode, toggleMode }) {

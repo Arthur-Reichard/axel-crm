@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import supabase from "../helper/supabaseClient";
+import { supabase } from '../helper/supabaseClient';
 import { Navigate, Outlet } from "react-router-dom";
 
 function Wrapper({ darkMode, toggleMode }) {

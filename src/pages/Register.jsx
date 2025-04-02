@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import supabase from "../helper/supabaseClient";
+import { supabase } from '../helper/supabaseClient';
 import { Link } from "react-router-dom";
 import "./css/Register.css";
 import logo from "./Images/logoaxel.png";

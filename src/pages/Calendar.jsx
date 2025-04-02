@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import supabase from '../helper/supabaseClient'
+import { supabase } from '../helper/supabaseClient';
 import './css/Calendar.css'
 
 export default function Calendar({ userId }) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import supabase from "../helper/supabaseClient";
+import { supabase } from '../helper/supabaseClient';
 import "./css/Login.css";
 import logo from "./Images/logoaxel.png";
 import googleLogo from "./Images/Googleicon.svg";

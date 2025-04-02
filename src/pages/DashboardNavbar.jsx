@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../pages/Images/logoaxel.png";
-import supabase from "../helper/supabaseClient";
+import { supabase } from '../helper/supabaseClient';
 import UserMenu from "./UserMenu";
 
 function DashboardNavbar({ darkMode, toggleMode }) {
@@ -25,6 +25,7 @@ function DashboardNavbar({ darkMode, toggleMode }) {
           <li><Link to="/clients">Clients</Link></li>
           <li><Link to="/stats">Statistiques</Link></li>
           <li><Link to="/calendar">Calendrier</Link></li>
+          <Link to="/materiel" className="nav-link">Parc Matériel</Link>
         </ul>
       </div>
 

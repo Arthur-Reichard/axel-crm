@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../pages/css/Leads.css';
-import supabase from '../helper/supabaseClient';
+import { supabase } from '../helper/supabaseClient';
 import ResizableTH from './ResizableTH';
 
 const allColumns = [

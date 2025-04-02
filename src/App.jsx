@@ -11,8 +11,9 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
 import Clients from "./pages/Clients";
-import Leads from "./pages/Leads"; 
+import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
+import ParcMateriel from './pages/ParcMateriel';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -37,7 +38,7 @@ function App() {
       <Routes>
         {/* Pages publiques */}
         <Route
-          path="/"
+          path="/home"
           element={<Home darkMode={darkMode} toggleMode={toggleMode} />}
         />
         <Route
@@ -57,6 +58,7 @@ function App() {
           element={<MyUserProfil darkMode={darkMode} toggleMode={toggleMode} />}
         />
 
+        {/* Routes protégées dans le layout */}
         <Route
           path="/"
           element={<Wrapper darkMode={darkMode} toggleMode={toggleMode} />}
@@ -66,6 +68,12 @@ function App() {
               <DashboardLayout darkMode={darkMode} toggleMode={toggleMode} />
             }
           >
+            {/* ✅ Route par défaut à la racine */}
+            <Route
+              index
+              element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+
             <Route
               path="dashboard"
               element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
@@ -79,12 +87,16 @@ function App() {
               element={<Clients darkMode={darkMode} toggleMode={toggleMode} />}
             />
             <Route
-              path="leads" 
+              path="leads"
               element={<Leads darkMode={darkMode} toggleMode={toggleMode} />}
             />
-
-            <Route path="leads/:id" 
-            element={<LeadDetail darkMode={darkMode} toggleMode={toggleMode} />} 
+            <Route
+              path="leads/:id"
+              element={<LeadDetail darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route
+              path="materiel"
+              element={<ParcMateriel darkMode={darkMode} toggleMode={toggleMode} />}
             />
           </Route>
         </Route>

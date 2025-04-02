@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import supabase from '../helper/supabaseClient';
+import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
 

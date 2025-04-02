@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import supabase from "../helper/supabaseClient";
+import { supabase } from '../helper/supabaseClient';
 
 function Clients({ darkMode }) {
   const [clients, setClients] = useState([]);
