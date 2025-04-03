@@ -14,6 +14,7 @@ import Clients from "./pages/Clients";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import ParcMateriel from './pages/ParcMateriel';
+import MaterielDetail from './pages/MaterielDetail';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -97,6 +98,10 @@ function App() {
             <Route
               path="materiel"
               element={<ParcMateriel darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route
+              path="materiel/:id"
+              element={<MaterielDetail darkMode={darkMode} toggleMode={toggleMode} />}
             />
           </Route>
         </Route>
