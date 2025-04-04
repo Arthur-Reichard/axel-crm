@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "Axel Lead Importer",
+    "version": "1.0",
+    "description": "Ajoute un contact LinkedIn dans Axel CRM",
+    "permissions": ["scripting", "activeTab"],
+    "host_permissions": [
+      "https://www.linkedin.com/in/*"
+    ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": "icon.png"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.linkedin.com/in/*"],
+        "js": ["popup.js"]
+      }
+    ]
+  }
+  

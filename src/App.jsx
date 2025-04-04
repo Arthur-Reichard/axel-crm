@@ -13,7 +13,8 @@ import DashboardLayout from "./pages/DashboardLayout";
 import Clients from "./pages/Clients";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
-import ParcMateriel from './pages/ParcMateriel';
+import ParcMateriel from "./pages/ParcMateriel";
+import MaterielDetail from "./pages/MaterielDetail"; // ✅ AJOUT
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -68,12 +69,10 @@ function App() {
               <DashboardLayout darkMode={darkMode} toggleMode={toggleMode} />
             }
           >
-            {/* ✅ Route par défaut à la racine */}
             <Route
               index
               element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
             />
-
             <Route
               path="dashboard"
               element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
@@ -97,6 +96,10 @@ function App() {
             <Route
               path="materiel"
               element={<ParcMateriel darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route
+              path="materiel/:id"
+              element={<MaterielDetail darkMode={darkMode} toggleMode={toggleMode} />}
             />
           </Route>
         </Route>
