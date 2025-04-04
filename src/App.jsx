@@ -13,6 +13,7 @@ import DashboardLayout from "./pages/DashboardLayout";
 import Clients from "./pages/Clients";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
+
 import ParcMateriel from "./pages/ParcMateriel";
 import MaterielDetail from "./pages/MaterielDetail"; // ✅ AJOUT
 

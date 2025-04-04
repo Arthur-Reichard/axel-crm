@@ -8,11 +8,11 @@ import { supabase } from '../helper/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
 const ParcMateriel = () => {
+  const navigate = useNavigate();
   const [materiels, setMateriels] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [entrepriseId, setEntrepriseId] = useState('');
   const [formData, setFormData] = useState({
-    
     nom: '',
     type: '',
     statut: 'En service',
@@ -22,8 +22,7 @@ const ParcMateriel = () => {
     remarques: '',
   });
 
-  const navigate = useNavigate();
-
+  // 🔐 Vérification de session
   useEffect(() => {
     const checkSession = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -35,6 +34,7 @@ const ParcMateriel = () => {
     checkSession();
   }, []);
 
+  // 📦 Récupération de l'entreprise de l'utilisateur
   useEffect(() => {
     const fetchEntrepriseId = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -51,12 +51,14 @@ const ParcMateriel = () => {
         localStorage.setItem('entrepriseId', userDetails.entreprise_id);
       }
     };
+
     fetchEntrepriseId();
   }, []);
 
-  // ✅ Fetch matos
+  // 🔄 Fetch matériels
   useEffect(() => {
     const fetchData = async () => {
+      if (!entrepriseId) return;
       try {
         const data = await getMaterielsByEntreprise(entrepriseId);
         setMateriels(data);
@@ -64,7 +66,8 @@ const ParcMateriel = () => {
         console.error('Erreur de chargement du parc matériel', error.message);
       }
     };
-    if (entrepriseId) fetchData();
+
+    fetchData();
   }, [entrepriseId]);
 
   const handleChange = (e) => {
@@ -75,13 +78,16 @@ const ParcMateriel = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
 
+    if (!entrepriseId) {
+      alert("Impossible d’ajouter : entreprise non définie");
+      return;
+    }
+
     const materielData = {
       ...formData,
       entreprise_id: entrepriseId,
       date_acquisition: formData.date_acquisition || null,
     };
-
-    console.log("FormData envoyé à Supabase:", materielData);
 
     try {
       await createMateriel(materielData);
@@ -120,19 +126,23 @@ const ParcMateriel = () => {
           </tr>
         </thead>
         <tbody>
-          {materiels.map((m) => (
-            <tr
-              key={m.id}
-              onClick={() => navigate(`/materiel/${m.id}`)}
-              style={{ cursor: 'pointer' }}
-            >
-              <td>{m.nom}</td>
-              <td>{m.type}</td>
-              <td>{m.statut}</td>
-              <td>{m.localisation}</td>
-              <td>{m.date_acquisition}</td>
+          {materiels.length === 0 ? (
+            <tr>
+              <td colSpan="5" style={{ textAlign: "center", padding: "1rem" }}>
+                Aucun matériel enregistré
+              </td>
             </tr>
-          ))}
+          ) : (
+            materiels.map((m) => (
+              <tr key={m.id} onClick={() => navigate(`/materiel/${m.id}`)} style={{ cursor: 'pointer' }}>
+                <td>{m.nom}</td>
+                <td>{m.type}</td>
+                <td>{m.statut}</td>
+                <td>{m.localisation}</td>
+                <td>{m.date_acquisition ? new Date(m.date_acquisition).toLocaleDateString('fr-FR') : '—'}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 

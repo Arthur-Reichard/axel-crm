@@ -49,24 +49,24 @@ export default function MaterielDetail() {
   const handleSave = async () => {
     const { error } = await supabase
       .from('materiels')
-      .update(materiel)
+      .update({
+        ...materiel,
+        date_acquisition: materiel.date_acquisition || null
+      })
       .eq('id', id);
 
     if (error) {
-      alert("Erreur de mise à jour : " + error.message);
+      alert("Erreur lors de la mise à jour : " + error.message);
     } else {
       navigate('/materiel');
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Supprimer définitivement ce matériel ?")) return;
+    const confirmDelete = window.confirm("Supprimer ce matériel ?");
+    if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .from('materiels')
-      .delete()
-      .eq('id', id);
-
+    const { error } = await supabase.from('materiels').delete().eq('id', id);
     if (error) {
       alert("Erreur lors de la suppression : " + error.message);
     } else {
@@ -79,42 +79,71 @@ export default function MaterielDetail() {
   return (
     <div className="lead-detail-page">
       <div className="lead-detail-header">
-        <h1>Fiche Matériel</h1>
+        <h1>Détail Matériel</h1>
         <button onClick={() => navigate('/materiel')}>← Retour</button>
       </div>
 
       <div className="lead-detail-grid">
         {fields.map(({ label, name, type = "text", options }) => (
-          <div key={name} className="lead-field" style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}>
+          <div
+            key={name}
+            className="lead-field"
+            style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
+          >
             <label htmlFor={name}>{label}</label>
             {type === "textarea" ? (
-              <textarea name={name} value={materiel[name] || ''} onChange={handleChange} />
+              <textarea
+                id={name}
+                name={name}
+                value={materiel[name] || ''}
+                onChange={handleChange}
+              />
             ) : type === "select" ? (
-              <select name={name} value={materiel[name] || ''} onChange={handleChange}>
+              <select
+                id={name}
+                name={name}
+                value={materiel[name] || ''}
+                onChange={handleChange}
+              >
                 {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             ) : (
-              <input type={type} name={name} value={materiel[name] || ''} onChange={handleChange} />
+              <input
+                id={name}
+                type={type}
+                name={name}
+                value={materiel[name] || ''}
+                onChange={handleChange}
+              />
             )}
           </div>
         ))}
 
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
-        <label>Date d'ajout</label>
-        <input
+          <label>Date d'acquisition</label>
+          <input
             type="text"
-            value={materiel.created_at ? new Date(materiel.created_at).toLocaleString('fr-FR') : '—'}
+            value={materiel.date_acquisition ? new Date(materiel.date_acquisition).toLocaleDateString() : '—'}
             readOnly
-        />
+          />
         </div>
 
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
-        <label>Dernière modification</label>
-        <input
+          <label>Date de création</label>
+          <input
             type="text"
-            value={materiel.updated_at ? new Date(materiel.updated_at).toLocaleString('fr-FR') : '—'}
+            value={new Date(materiel.created_at).toLocaleString()}
             readOnly
-        />
+          />
+        </div>
+
+        <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
+          <label>Dernière modification</label>
+          <input
+            type="text"
+            value={new Date(materiel.updated_at).toLocaleString()}
+            readOnly
+          />
         </div>
       </div>
 

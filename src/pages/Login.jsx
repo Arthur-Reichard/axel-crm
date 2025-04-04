@@ -6,7 +6,6 @@ import logo from "./Images/logoaxel.png";
 import googleLogo from "./Images/Googleicon.svg";
 import appleLogo from "./Images/appleicon.svg";
 
-
 function Login() {
   const [darkMode, setDarkMode] = useState(false);
   const [email, setEmail] = useState("");
@@ -29,7 +28,11 @@ function Login() {
     event.preventDefault();
     setMessage("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // Authentification
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       setMessage(error.message);
@@ -38,9 +41,34 @@ function Login() {
       return;
     }
 
-    if (data) {
-      navigate("/dashboard");
+    // Récupération de l'utilisateur connecté
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      setMessage("Connexion réussie, mais impossible de récupérer l'utilisateur.");
+      return;
     }
+
+    // Requête pour obtenir entreprise_id
+    const { data: userDetails, error: detailError } = await supabase
+      .from("utilisateurs")
+      .select("entreprise_id")
+      .eq("id", user.id)
+      .single();
+
+    if (detailError || !userDetails) {
+      setMessage("Impossible de récupérer les infos de l'entreprise.");
+      return;
+    }
+
+    // Stockage dans localStorage
+    localStorage.setItem("entrepriseId", userDetails.entreprise_id);
+
+    // Redirection
+    navigate("/dashboard");
   };
 
   return (
