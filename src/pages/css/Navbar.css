@@ -88,3 +88,27 @@
   font-size: 1.2rem;
   cursor: pointer;
 }
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin-left: 1rem;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem;
+  transition: border 0.3s ease;
+}
+
+.nav-link:hover {
+  border-bottom: 2px solid white;
+}
+
+.nav-link.active {
+  color: #ffffff;
+  font-weight: 600;
+}

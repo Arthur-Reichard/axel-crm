@@ -1,7 +1,7 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import logo from "../pages/Images/logoaxel.png";
-import { supabase } from '../helper/supabaseClient';
+import { supabase } from "../helper/supabaseClient";
 import UserMenu from "./UserMenu";
 
 function DashboardNavbar({ darkMode, toggleMode }) {
@@ -16,16 +16,17 @@ function DashboardNavbar({ darkMode, toggleMode }) {
   return (
     <nav className={darkMode ? "top-navbar dark" : "top-navbar"}>
       <div className="left-nav">
-        <Link to="/dashboard">
+        <NavLink to="/dashboard">
           <img src={logo} alt="Logo" className="nav-logo" />
-        </Link>
+        </NavLink>
         <ul className="nav-links">
-          <li><Link to="/dashboard">Dashboard</Link></li>
-          <li><Link to="/leads">Leads</Link></li>
-          <li><Link to="/clients">Clients</Link></li>
-          <li><Link to="/stats">Statistiques</Link></li>
-          <li><Link to="/calendar">Calendrier</Link></li>
-          <Link to="/materiel" className="nav-link">Parc Matériel</Link>
+          <li><NavLink to="/dashboard" className="nav-link">Dashboard</NavLink></li>
+          <li><NavLink to="/leads" className="nav-link">Leads</NavLink></li>
+          <li><NavLink to="/clients" className="nav-link">Clients</NavLink></li>
+          <li><NavLink to="/stats" className="nav-link">Statistiques</NavLink></li>
+          <li><NavLink to="/calendar" className="nav-link">Calendrier</NavLink></li>
+          <li><NavLink to="/materiel" className="nav-link">Parc Matériel</NavLink></li>
+          <li><NavLink to="/factures" className="nav-link">Factures</NavLink></li>
         </ul>
       </div>
 

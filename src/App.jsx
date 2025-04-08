@@ -13,9 +13,10 @@ import DashboardLayout from "./pages/DashboardLayout";
 import Clients from "./pages/Clients";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
-
 import ParcMateriel from "./pages/ParcMateriel";
-import MaterielDetail from "./pages/MaterielDetail"; // ✅ AJOUT
+import MaterielDetail from "./pages/MaterielDetail"; 
+import Factures from "./pages/Factures"; 
+import FactureDetail from "./pages/FactureDetail";
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -101,6 +102,14 @@ function App() {
             <Route
               path="materiel/:id"
               element={<MaterielDetail darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route
+              path="factures"
+              element={<Factures darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route
+              path="factures/:id"
+              element={<FactureDetail darkMode={darkMode} toggleMode={toggleMode} />}
             />
           </Route>
         </Route>

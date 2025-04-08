@@ -5,11 +5,20 @@
     <style>
       body { font-family: sans-serif; padding: 10px; width: 250px; }
     </style>
+    <script type="module" src="popup.js"></script>
   </head>
   <body>
     <h3>Scraper LinkedIn</h3>
     <button id="scrape">Récupérer les infos</button>
-    <div id="result"></div>
-    <script src="popup.js"></script>
+
+    <div id="auth-section">
+      <h3>Connexion</h3>
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Mot de passe" />
+      <button id="login">Se connecter</button>
+    </div>
+
+    <pre id="result" style="white-space: pre-wrap;"></pre>
+    <button id="send" style="display:none;">Ajouter au CRM</button>
   </body>
 </html>
