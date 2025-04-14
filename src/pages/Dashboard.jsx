@@ -47,6 +47,16 @@ function Dashboard({ darkMode, toggleMode }) {
     if (!entityName || !entityType) {
       alert("Merci de sélectionner un type d'entité et d'entrer un nom.");
       return;
+    await supabase
+    .from("calendars")
+    .insert([
+      {
+        name: `Calendrier ${entityType}`,
+        entreprise_id: newEntreprise.id,
+        color: "#1E90FF" // couleur différente du perso
+      }
+]);
+
     }
 
     let entrepriseData = { nom: entityName, type: entityType };

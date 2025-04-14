@@ -64,7 +64,15 @@ function Register() {
     setEmail("");
     setPassword("");
     setConfirmPassword("");
+
+    await supabase.from("calendars").insert([{
+      name: "Calendrier personnel",
+      color: "#2ECC71",
+      user_id: userId
+    }]);
+    
   };
+  
 
   return (
     <div className={darkMode ? "register-app dark" : "register-app"}>

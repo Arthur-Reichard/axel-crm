@@ -1,161 +1,94 @@
-import { useState, useEffect } from 'react'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction'
+// 📁 components/Calendar.jsx
+import { useEffect, useState } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import toast, { Toaster } from 'react-hot-toast';
+import {
+  getUtilisateur,
+  getCalendars,
+  getEventsForCalendars,
+  createEvent,
+  deleteEvent
+} from '../services/calendarService';
 import { supabase } from '../helper/supabaseClient';
-import './css/Calendar.css'
+import './css/Calendar.css';
 
-export default function Calendar({ userId }) {
-  const [calendars, setCalendars] = useState([])
-  const [selectedCalendar, setSelectedCalendar] = useState(null)
-  const [events, setEvents] = useState([])
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [newEvent, setNewEvent] = useState({ title: '', start_time: '', calendar_id: '' })
-
-  useEffect(() => {
-    if (userId) {
-      console.log("🧩 userId reçu :", userId)
-      fetchCalendars()
-    }
-  }, [userId])
-
-  const fetchCalendars = async () => {
-    const { data: utilisateur, error: userError } = await supabase
-      .from("utilisateurs")
-      .select("id, entreprise_id, statut")
-      .eq("id", userId)
-      .single()
-
-    if (userError || !utilisateur) {
-      console.error("❌ Utilisateur non trouvé :", userError)
-      return
-    }
-
-    const { id: utilisateurId, entreprise_id, statut } = utilisateur
-    let calendarsList = []
-
-    const { data: persoCal } = await supabase
-      .from("calendars")
-      .select("*")
-      .eq("user_id", utilisateurId)
-
-    if (persoCal) calendarsList = [...calendarsList, ...persoCal]
-
-    if ((statut === "ENTREPRISE" || statut === "ASSO") && entreprise_id) {
-      const { data: entCal } = await supabase
-        .from("calendars")
-        .select("*")
-        .eq("entreprise_id", entreprise_id)
-
-      if (entCal) calendarsList = [...calendarsList, ...entCal]
-    }
-
-    if (calendarsList.length === 0) {
-      console.warn("⚠️ Aucun calendrier trouvé.")
-      return
-    }
-
-    console.log("📅 Calendriers récupérés :", calendarsList)
-    setCalendars(calendarsList)
-    setSelectedCalendar(calendarsList[0])
-    setNewEvent((prev) => ({ ...prev, calendar_id: calendarsList[0].id }))
-    fetchEvents(calendarsList[0].id)
-  }
-
-  const fetchEvents = async (calendarId) => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .eq("calendar_id", calendarId)
-
-    if (!error && data) {
-      const formatted = data.map(e => ({
-        id: e.id,
-        title: e.title,
-        start: e.start_time,
-        end: e.end_time,
-      }))
-      setEvents(formatted)
-    }
-  }
+export default function Calendar() {
+  const [userId, setUserId] = useState(null);
+  const [calendars, setCalendars] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({ title: '', start_time: '', calendar_id: '' });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (selectedCalendar?.id) {
-      fetchEvents(selectedCalendar.id)
-      setNewEvent((prev) => ({ ...prev, calendar_id: selectedCalendar.id }))
+    const loadAllEvents = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Utilisateur non connecté.");
+        setUserId(user.id);
+
+        const utilisateur = await getUtilisateur(user.id);
+        const calendars = await getCalendars(utilisateur);
+        setCalendars(calendars);
+
+        const calendarIds = calendars.map((c) => c.id);
+        const allEvents = await getEventsForCalendars(calendarIds);
+        setEvents(allEvents);
+
+        // Fix: affecter automatiquement le premier calendrier pour le drawer
+        if (calendars.length > 0) {
+          setNewEvent((prev) => ({ ...prev, calendar_id: calendars[0].id }));
+        }
+      } catch (err) {
+        toast.error("Erreur : " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllEvents();
+  }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      if (!newEvent.title.trim() || !newEvent.start_time || !newEvent.calendar_id) {
+        toast.error("Merci de remplir tous les champs.");
+        return;
+      }
+      console.log("Création event avec :", newEvent);
+      const evt = await createEvent(newEvent);
+      setEvents((prev) => [...prev, evt]);
+      setDrawerOpen(false);
+      setNewEvent({ title: '', start_time: '', calendar_id: calendars[0]?.id || '' });
+      toast.success("Événement créé !");
+    } catch (err) {
+      toast.error("Erreur création : " + err.message);
     }
-  }, [selectedCalendar])
+  };
 
-  const handleEventCreation = async (e) => {
-    e.preventDefault()
-    const { title, start_time, calendar_id } = newEvent
-
-    if (!title.trim() || !start_time || !calendar_id) {
-      alert("Merci de remplir tous les champs.")
-      return
+  const handleDelete = async (clickInfo) => {
+    const confirmDelete = confirm(`Supprimer "${clickInfo.event.title}" ?`);
+    if (!confirmDelete) return;
+    try {
+      await deleteEvent(clickInfo.event.id);
+      setEvents((prev) => prev.filter((evt) => evt.id !== clickInfo.event.id));
+      toast.success("Événement supprimé.");
+    } catch (err) {
+      toast.error("Erreur suppression : " + err.message);
     }
+  };
 
-    const start = new Date(start_time)
-    const end = new Date(start.getTime() + 60 * 60 * 1000)
-
-    const { data: insertedEvent, error } = await supabase
-      .from("events")
-      .insert([{
-        title,
-        start_time: start.toISOString(),
-        end_time: end.toISOString(),
-        calendar_id,
-      }])
-      .select()
-      .single()
-
-    if (error) {
-      alert("Erreur création événement : " + error.message)
-      return
-    }
-
-    setEvents((prev) => [...prev, {
-      id: insertedEvent.id,
-      title: insertedEvent.title,
-      start: insertedEvent.start_time,
-      end: insertedEvent.end_time
-    }])
-
-    setNewEvent({ title: '', start_time: '', calendar_id })
-    setDrawerOpen(false)
-  }
-
-  const handleEventDelete = async (clickInfo) => {
-    if (!selectedCalendar) return
-    if (confirm(`Supprimer "${clickInfo.event.title}" ?`)) {
-      await supabase.from('events').delete().eq('id', clickInfo.event.id)
-      fetchEvents(selectedCalendar.id)
-    }
-  }
+  if (loading) return <p style={{ padding: '2rem' }}>Chargement du calendrier...</p>;
 
   return (
     <div className="calendar-container">
+      <Toaster position="top-right" />
+
       <div className="calendar-header">
         <h1>Mon calendrier</h1>
-
-        {calendars.length > 0 ? (
-          <select
-            value={selectedCalendar?.id || ''}
-            onChange={(e) => {
-              const cal = calendars.find(c => c.id === e.target.value)
-              setSelectedCalendar(cal)
-            }}
-          >
-            {calendars.map((cal) => (
-              <option key={cal.id} value={cal.id}>
-                {cal.name || (cal.entreprise_id ? "🧑‍💼 Entreprise" : "👤 Personnel")}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <p style={{ color: '#999' }}>Aucun calendrier disponible</p>
-        )}
-
         <button className="add-event-button" onClick={() => setDrawerOpen(true)}>
           + Nouvel événement
         </button>
@@ -164,8 +97,8 @@ export default function Calendar({ userId }) {
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        events={events}
-        eventClick={handleEventDelete}
+        events={events} // couleurs définies dans getEventsForCalendars()
+        eventClick={handleDelete}
         height="auto"
       />
 
@@ -179,7 +112,7 @@ export default function Calendar({ userId }) {
               <button onClick={() => setDrawerOpen(false)} className="close-drawer">&times;</button>
             </div>
 
-            <form className="calendar-form" onSubmit={handleEventCreation}>
+            <form className="calendar-form" onSubmit={handleCreate}>
               <label>Titre</label>
               <input
                 type="text"
@@ -201,7 +134,7 @@ export default function Calendar({ userId }) {
                 required
               />
 
-              <label>Calendrier</label>
+              <label>Calendrier utilisé (auto)</label>
               <select
                 value={newEvent.calendar_id}
                 onChange={(e) =>
@@ -211,7 +144,7 @@ export default function Calendar({ userId }) {
               >
                 {calendars.map((cal) => (
                   <option key={cal.id} value={cal.id}>
-                    {cal.name || (cal.entreprise_id ? "🧑‍💼 Entreprise" : "👤 Personnel")}
+                    {cal.name || "Calendrier"}
                   </option>
                 ))}
               </select>
@@ -224,5 +157,5 @@ export default function Calendar({ userId }) {
         </>
       )}
     </div>
-  )
+  );
 }

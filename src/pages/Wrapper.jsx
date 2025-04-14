@@ -23,7 +23,7 @@ function Wrapper({ darkMode, toggleMode }) {
   }
 
   if (!authenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/home" />;
   }
 
   // ✅ Si connecté, on affiche les routes imbriquées
