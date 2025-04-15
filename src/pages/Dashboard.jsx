@@ -47,16 +47,6 @@ function Dashboard({ darkMode, toggleMode }) {
     if (!entityName || !entityType) {
       alert("Merci de sélectionner un type d'entité et d'entrer un nom.");
       return;
-    await supabase
-    .from("calendars")
-    .insert([
-      {
-        name: `Calendrier ${entityType}`,
-        entreprise_id: newEntreprise.id,
-        color: "#1E90FF" // couleur différente du perso
-      }
-]);
-
     }
 
     let entrepriseData = { nom: entityName, type: entityType };
@@ -64,9 +54,7 @@ function Dashboard({ darkMode, toggleMode }) {
       alert("Le numéro SIREN doit contenir exactement 9 chiffres.");
       return;
     }
-    if (entityType === "entreprise") {
-      entrepriseData.siren = siren; // ✅ <--- AJOUTE CETTE LIGNE
-    }
+    if (entityType === "entreprise") entrepriseData.siren = siren;
     if (entityType === "association" && rna) entrepriseData.rna = rna;
 
     const { data: newEntreprise, error: entrepriseError } = await supabase
@@ -93,8 +81,7 @@ function Dashboard({ darkMode, toggleMode }) {
   };
 
   return (
-    <div className={`dashboard ${darkMode ? "dark" : ""}`}>      
-
+    <div className={`dashboard ${darkMode ? "dark" : ""}`}>
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-box">
@@ -104,7 +91,7 @@ function Dashboard({ darkMode, toggleMode }) {
             <div className="entity-type-selector">
               <button onClick={() => setEntityType("entreprise")} className={entityType === "entreprise" ? "selected" : ""}>Entreprise</button>
               <button onClick={() => setEntityType("association")} className={entityType === "association" ? "selected" : ""}>Association</button>
-              <button onClick={() => setEntityType("indépendant") } className={entityType === "indépendant" ? "selected" : ""}>Indépendant</button>
+              <button onClick={() => setEntityType("indépendant")} className={entityType === "indépendant" ? "selected" : ""}>Indépendant</button>
             </div>
 
             <input

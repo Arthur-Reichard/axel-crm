@@ -27,49 +27,67 @@ function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setMessage("");
-
+  
     // Authentification
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
+  
     if (error) {
       setMessage(error.message);
       setEmail("");
       setPassword("");
       return;
     }
-
+  
     // Récupération de l'utilisateur connecté
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
-
+  
     if (userError || !user) {
       setMessage("Connexion réussie, mais impossible de récupérer l'utilisateur.");
       return;
     }
-
-    // Requête pour obtenir entreprise_id
-    const { data: userDetails, error: detailError } = await supabase
+  
+    // Récupération ou création du profil utilisateur
+    let { data: userDetails, error: detailError } = await supabase
       .from("utilisateurs")
       .select("entreprise_id")
       .eq("id", user.id)
       .single();
-
+  
     if (detailError || !userDetails) {
-      setMessage("Impossible de récupérer les infos de l'entreprise.");
-      return;
+      // Création si inexistant
+      const { error: insertError } = await supabase
+        .from("utilisateurs")
+        .insert([
+          {
+            id: user.id,
+            prenom: "",
+            nom: "",
+            phone: "",
+            birthdate: null,
+            entreprise_id: null,
+          }
+        ]);
+  
+      if (insertError) {
+        console.error("Erreur insert :", insertError.message);
+        setMessage("Erreur lors de la création du profil utilisateur.");
+        return;
+      }
+  
+      userDetails = { entreprise_id: null };
     }
-
-    // Stockage dans localStorage
-    localStorage.setItem("entrepriseId", userDetails.entreprise_id);
-
-    // Redirection
+  
+    // Stockage local
+    localStorage.setItem("entrepriseId", userDetails.entreprise_id || "");
     navigate("/dashboard");
   };
+  
 
   return (
     <div className={darkMode ? "login-app dark" : "login-app"}>

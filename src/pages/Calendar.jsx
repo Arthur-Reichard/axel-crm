@@ -30,14 +30,33 @@ export default function Calendar() {
         setUserId(user.id);
 
         const utilisateur = await getUtilisateur(user.id);
-        const calendars = await getCalendars(utilisateur);
+        let calendars = await getCalendars(utilisateur);
+
+        // 🔄 Si aucun calendrier n'existe → on en crée un automatiquement
+        if (calendars.length === 0) {
+          const { data: created, error } = await supabase
+            .from("calendars")
+            .insert([
+              {
+                name: utilisateur.entreprise_id ? "Calendrier entreprise" : "Calendrier personnel",
+                user_id: utilisateur.entreprise_id ? null : user.id, // ← correction ici
+                entreprise_id: utilisateur.entreprise_id || null,
+                color: utilisateur.entreprise_id ? "#1E90FF" : "#4CAF50"
+              }
+            ])
+            .select();
+
+
+          if (error) throw error;
+          calendars = created;
+        }
+
         setCalendars(calendars);
 
         const calendarIds = calendars.map((c) => c.id);
         const allEvents = await getEventsForCalendars(calendarIds);
         setEvents(allEvents);
 
-        // Fix: affecter automatiquement le premier calendrier pour le drawer
         if (calendars.length > 0) {
           setNewEvent((prev) => ({ ...prev, calendar_id: calendars[0].id }));
         }
@@ -58,7 +77,6 @@ export default function Calendar() {
         toast.error("Merci de remplir tous les champs.");
         return;
       }
-      console.log("Création event avec :", newEvent);
       const evt = await createEvent(newEvent);
       setEvents((prev) => [...prev, evt]);
       setDrawerOpen(false);
@@ -97,7 +115,7 @@ export default function Calendar() {
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        events={events} // couleurs définies dans getEventsForCalendars()
+        events={events}
         eventClick={handleDelete}
         height="auto"
       />
@@ -105,7 +123,6 @@ export default function Calendar() {
       {drawerOpen && (
         <>
           <div className="calendar-overlay" onClick={() => setDrawerOpen(false)}></div>
-
           <div className="calendar-drawer">
             <div className="calendar-drawer-header">
               <h2>Créer un événement</h2>
@@ -118,9 +135,7 @@ export default function Calendar() {
                 type="text"
                 placeholder="Nom de l’événement"
                 value={newEvent.title}
-                onChange={(e) =>
-                  setNewEvent((prev) => ({ ...prev, title: e.target.value }))
-                }
+                onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
                 required
               />
 
@@ -128,18 +143,14 @@ export default function Calendar() {
               <input
                 type="datetime-local"
                 value={newEvent.start_time}
-                onChange={(e) =>
-                  setNewEvent((prev) => ({ ...prev, start_time: e.target.value }))
-                }
+                onChange={(e) => setNewEvent((prev) => ({ ...prev, start_time: e.target.value }))}
                 required
               />
 
-              <label>Calendrier utilisé (auto)</label>
+              <label>Calendrier utilisé</label>
               <select
                 value={newEvent.calendar_id}
-                onChange={(e) =>
-                  setNewEvent((prev) => ({ ...prev, calendar_id: e.target.value }))
-                }
+                onChange={(e) => setNewEvent((prev) => ({ ...prev, calendar_id: e.target.value }))}
                 required
               >
                 {calendars.map((cal) => (

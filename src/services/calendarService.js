@@ -18,7 +18,8 @@ export async function getCalendars(utilisateur) {
   const { data: persoCal, error: err1 } = await supabase
     .from("calendars")
     .select("*")
-    .eq("user_id", utilisateurId);
+    .eq("user_id", utilisateurId); // ← CORRECT
+
   if (err1) throw err1;
   if (persoCal) calendars = [...calendars, ...persoCal];
 
