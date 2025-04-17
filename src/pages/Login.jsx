@@ -4,7 +4,6 @@ import { supabase } from '../helper/supabaseClient';
 import "./css/Login.css";
 import logo from "./Images/logoaxel.png";
 import googleLogo from "./Images/Googleicon.svg";
-import appleLogo from "./Images/appleicon.svg";
 
 function Login() {
   const [darkMode, setDarkMode] = useState(false);
