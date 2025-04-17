@@ -45,16 +45,19 @@ export async function getEventsForCalendars(calendarIds) {
   return data.map((e) => ({
     id: e.id,
     title: e.title,
-    start: e.start_time,
-    end: e.end_time,
+    start_time: e.start_time,
+    end_time: e.end_time,
     calendar_id: e.calendar_id,
+    description: e.description,
+    lieu: e.lieu,
+    duration: e.duration,
     color: e.calendars?.color || '#999'
-  }));
+  }));  
 }
 
-export async function createEvent({ title, start_time, calendar_id }) {
+export async function createEvent({ title, start_time, calendar_id, description, lieu, duration = 60 }) {
   const start = new Date(start_time);
-  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const end = new Date(start.getTime() + duration * 60 * 1000);
 
   const { data, error } = await supabase
     .from("events")
@@ -63,33 +66,79 @@ export async function createEvent({ title, start_time, calendar_id }) {
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       calendar_id,
+      description,
+      lieu,
+      duration,
     }])
     .select()
     .single();
 
   if (error) throw error;
+
   return {
     id: data.id,
     title: data.title,
-    start: data.start_time,
-    end: data.end_time,
+    start_time: data.start_time,
+    end_time: data.end_time,
     calendar_id: data.calendar_id,
+    description: data.description,
+    lieu: data.lieu,
+    duration: data.duration,
     color: '#999'
   };
 }
 
 export async function updateEvent(event) {
-  const { id, title, start, calendar_id } = event;
-  const startDate = new Date(start);
-  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+  const { id, title, start_time, calendar_id, description, lieu, duration = 60 } = event;
+  const startDate = new Date(start_time);
+  const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+
+  const updateData = {
+    title: String(title),
+    start_time: startDate.toISOString(),
+    end_time: endDate.toISOString(),
+    calendar_id: String(calendar_id),
+    description,
+    lieu,
+    duration
+  };
+
+  const { data, error } = await supabase
+    .from("events")
+    .update(updateData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    title: data.title,
+    start_time: data.start_time,
+    end_time: data.end_time,
+    calendar_id: data.calendar_id,
+    description: data.description,
+    lieu: data.lieu,
+    duration: data.duration,
+    color: '#999'
+  };
+}
+
+export async function deleteEvent(eventId) {
+  const { error } = await supabase.from("events").delete().eq("id", eventId);
+  if (error) throw error;
+}
+
+export async function updateEventTime({ id, start_time, end_time }) {
+  const start = new Date(start_time);
+  const end = new Date(end_time);
 
   const { data, error } = await supabase
     .from("events")
     .update({
-      title,
-      start_time: startDate.toISOString(),
-      end_time: endDate.toISOString(),
-      calendar_id,
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
     })
     .eq("id", id)
     .select()
@@ -100,14 +149,9 @@ export async function updateEvent(event) {
   return {
     id: data.id,
     title: data.title,
-    start: data.start_time,
-    end: data.end_time,
+    start_time: data.start_time,
+    end_time: data.end_time,
     calendar_id: data.calendar_id,
     color: '#999'
   };
-}
-
-export async function deleteEvent(eventId) {
-  const { error } = await supabase.from("events").delete().eq("id", eventId);
-  if (error) throw error;
 }
