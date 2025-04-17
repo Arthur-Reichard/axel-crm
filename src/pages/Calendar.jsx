@@ -23,7 +23,7 @@ import { supabase } from '../helper/supabaseClient';
 import EventTooltip from '../components/EventTooltip';
 import './css/Calendar.css';
 
-export default function Calendar() {
+export default function Calendar({ darkMode }) {
   const [userId, setUserId] = useState(null);
   const [calendars, setCalendars] = useState([]);
   const [events, setEvents] = useState([]);
@@ -84,6 +84,17 @@ export default function Calendar() {
     };
     loadAll();
   }, []);
+
+  useEffect(() => {
+    const body = document.body;
+    if (drawerOpen) {
+      body.classList.add('drawer-open');
+    } else {
+      body.classList.remove('drawer-open');
+    }
+  }, [drawerOpen]);
+  
+  
 
   useEffect(() => {
     if (!userId || calendars.length === 0) return;
@@ -227,7 +238,7 @@ export default function Calendar() {
   if (loading) return <p className="my-calendar-app-loading">Chargement du calendrier...</p>;
 
   return (
-    <div className="my-calendar-app">
+    <div className={`my-calendar-app ${darkMode ? 'dark' : ''}`}>
       <Toaster position="top-right" />
 
       {showMobileSidebar && (
@@ -312,11 +323,15 @@ export default function Calendar() {
           className={currentView === 'listWeek' ? 'active' : ''}
           onClick={() => {
             setCurrentView('listWeek');
-            calendarRef.current?.getApi().changeView('listWeek');
+            const api = calendarRef.current?.getApi();
+            if (api) {
+              api.changeView('listWeek', new Date()); // 👈 focus sur aujourd’hui
+            }
           }}
         >
           Liste
         </button>
+
       </div>
 
 
@@ -341,9 +356,12 @@ export default function Calendar() {
 
       <div className="my-calendar-main">
         <div className={`my-calendar-header-mobile ${currentView === 'listWeek' ? 'no-arrows' : ''}`}>
-          <button className={`my-calendar-hamburger ${showMobileSidebar ? 'invisible' : ''}`} onClick={() => setShowMobileSidebar(true)}>
-            ☰
-          </button>
+        <button
+          className={`my-calendar-hamburger ${(showMobileSidebar || drawerOpen) ? 'invisible' : ''}`}
+          onClick={() => setShowMobileSidebar(true)}
+        >
+          ☰
+        </button>
           <button className="prev" onClick={() => calendarRef.current?.getApi().prev()}>←</button>
           <div className="my-calendar-current-month">
             {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
