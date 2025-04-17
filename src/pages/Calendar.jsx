@@ -43,6 +43,7 @@ export default function Calendar({ darkMode }) {
   const isMobile = window.innerWidth <= 900;
   const [mobileEventOverlay, setMobileEventOverlay] = useState(null);
   const [quickPopup, setQuickPopup] = useState(null);
+  const [quickEventPopup, setQuickEventPopup] = useState(null);
 
 
   function createElement(html) {
@@ -160,6 +161,7 @@ export default function Calendar({ darkMode }) {
   const handleDelete = async () => {
     if (!confirm(`Supprimer "${eventToEdit.title}" ?`)) return;
     try {
+      console.log("Suppression ID :", quickEventPopup.event?.id);
       await deleteEvent(eventToEdit.id);
       setEvents(prev => prev.filter(ev => ev.id !== eventToEdit.id));
       setDrawerOpen(false);
@@ -188,7 +190,7 @@ export default function Calendar({ darkMode }) {
   
     const isTimeGrid = currentView === 'timeGridDay' || currentView === 'timeGridWeek';
   
-    if (isMobile || isTimeGrid) return; // ❌ pas de tooltip sur mobile ni en vue jour/semaine
+    if (isMobile || isTimeGrid) return;
   
     const event = events.find(e => e.id === info.event.id);
     if (!event) return;
@@ -384,20 +386,24 @@ export default function Calendar({ darkMode }) {
           events={displayedEvents}
           eventClick={(info) => {
             const isMobile = window.innerWidth <= 900;
-          
             const event = events.find(e => e.id === info.event.id);
             if (!event) return;
           
             if (isMobile && (currentView === 'timeGridWeek' || currentView === 'timeGridDay')) {
               setMobileEventOverlay(event);
             } else {
-              setQuickPopup({
-                x: info.jsEvent.pageX,
-                y: info.jsEvent.pageY,
-                event // 👈 on stocke l'event ici
-              });
+              setQuickPopup(null);
+          
+              setTimeout(() => {
+                setQuickEventPopup({
+                  x: info.jsEvent.pageX,
+                  y: info.jsEvent.pageY,
+                  event
+                });
+              }, 20);
             }
           }}
+          
           eventDrop={handleEventDrop}
           eventResize={handleEventDrop}
           dateClick={(arg) => {
@@ -526,7 +532,17 @@ export default function Calendar({ darkMode }) {
         </div>
       )}
 
-      {quickPopup && (
+      {(quickPopup || quickEventPopup) && (
+        <div
+          className="popup-overlay"
+          onClick={() => {
+            setQuickPopup(null);
+            setQuickEventPopup(null);
+          }}
+        />
+      )}
+
+      {quickPopup && !quickPopup.event && (
         <QuickEventPopup
           x={quickPopup.x}
           y={quickPopup.y}
@@ -538,6 +554,7 @@ export default function Calendar({ darkMode }) {
               const newEvt = await createEvent(data);
               setEvents(prev => [...prev, newEvt]);
               toast.success("Événement ajouté !");
+              setQuickPopup(null);
             } catch (err) {
               toast.error("Erreur : " + err.message);
             }
@@ -547,28 +564,56 @@ export default function Calendar({ darkMode }) {
               ...evtData,
               duration: evtData.duration ?? 60
             });
+            setDrawerOpen(true);
+            setQuickPopup(null);
           }}
         />
       )}
 
-      {quickPopup?.event && (
+
+      {quickEventPopup && (
         <EventDetailsPopup
-          x={quickPopup.x}
-          y={quickPopup.y}
-          event={quickPopup.event}
+          x={quickEventPopup.x}
+          y={quickEventPopup.y}
+          event={quickEventPopup.event}
           calendars={calendars}
-          onClose={() => setQuickPopup(null)}
+          onClose={() => setQuickEventPopup(null)}
           onUpdate={async (updatedData) => {
-            const result = await updateEvent(updatedData);
-            setEvents(prev => prev.map(ev => ev.id === result.id ? result : ev));
-            toast.success("Événement modifié !");
+            try {
+              const result = await updateEvent(updatedData);
+              setEvents(prev => prev.map(ev => ev.id === result.id ? result : ev));
+              toast.success("Événement modifié !");
+              setQuickEventPopup(null);
+            } catch (err) {
+              toast.error("Erreur modification : " + err.message);
+            }
           }}
           onDelete={async () => {
-            await deleteEvent(quickPopup.event.id);
-            setEvents(prev => prev.filter(ev => ev.id !== quickPopup.event.id));
-            toast.success("Événement supprimé !");
-            setQuickPopup(null);
-          }}
+            const event = quickEventPopup?.event;
+            const eventId = event?.id;
+          
+            console.log("🧪 Suppression demandée pour :", event);
+            console.log("🧪 ID transmis :", eventId);
+          
+            if (!eventId) {
+              toast.error("Événement introuvable pour suppression.");
+              return;
+            }
+          
+            try {
+              await deleteEvent(eventId);
+              toast.success("Événement supprimé !");
+          
+              const calendarIds = calendars.map(c => c.id);
+              const refreshed = await getEventsForCalendars(calendarIds);
+              setEvents(refreshed);
+          
+            } catch (err) {
+              toast.error("Erreur suppression : " + err.message);
+            } finally {
+              setQuickEventPopup(null);
+            }
+          }}                 
         />
       )}
     </div>
