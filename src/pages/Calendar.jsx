@@ -8,6 +8,10 @@ import interactionPlugin from '@fullcalendar/interaction';
 import toast, { Toaster } from 'react-hot-toast';
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
+import QuickEventPopup from '../components/QuickEventPopup';
+import EventDetailsPopup from '../components/EventDetailsPopup';
+
+
 
 import {
   getUtilisateur,
@@ -38,6 +42,8 @@ export default function Calendar({ darkMode }) {
   const [currentView, setCurrentView] = useState('dayGridMonth');
   const isMobile = window.innerWidth <= 900;
   const [mobileEventOverlay, setMobileEventOverlay] = useState(null);
+  const [quickPopup, setQuickPopup] = useState(null);
+
 
   function createElement(html) {
     const temp = document.createElement('div');
@@ -174,7 +180,6 @@ export default function Calendar({ darkMode }) {
       lieu: '',
       duration: 60
     });
-    setDrawerOpen(true);
   };
 
   const handleTooltip = (info) => {
@@ -284,7 +289,6 @@ export default function Calendar({ darkMode }) {
                 lieu: '',
                 duration: 60
               });
-              setDrawerOpen(true);
             }
           }}
           />
@@ -357,7 +361,7 @@ export default function Calendar({ darkMode }) {
       <div className="my-calendar-main">
         <div className={`my-calendar-header-mobile ${currentView === 'listWeek' ? 'no-arrows' : ''}`}>
         <button
-          className={`my-calendar-hamburger ${(showMobileSidebar || drawerOpen) ? 'invisible' : ''}`}
+          className={`my-calendar-hamburger ${showMobileSidebar ? 'invisible' : ''}`}
           onClick={() => setShowMobileSidebar(true)}
         >
           ☰
@@ -387,22 +391,25 @@ export default function Calendar({ darkMode }) {
             if (isMobile && (currentView === 'timeGridWeek' || currentView === 'timeGridDay')) {
               setMobileEventOverlay(event);
             } else {
-              setEventToEdit(event);
-              setDrawerOpen(true);
+              setQuickPopup({
+                x: info.jsEvent.pageX,
+                y: info.jsEvent.pageY,
+                event // 👈 on stocke l'event ici
+              });
             }
           }}
           eventDrop={handleEventDrop}
           eventResize={handleEventDrop}
           dateClick={(arg) => {
-            const isMobile = window.innerWidth <= 900;
-          
             if (isMobile) {
               calendarRef.current?.getApi().changeView('timeGridDay', arg.date);
               setCurrentView('timeGridDay');
             } else {
-              handleDateClick(arg);
+              const x = arg.jsEvent.pageX;
+              const y = arg.jsEvent.pageY;
+              setQuickPopup({ x, y, date: arg.dateStr });
             }
-          }}
+          }}                   
           eventDidMount={handleTooltip}
           datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
           height="calc(var(--vh, 1vh) * 100)"
@@ -498,43 +505,6 @@ export default function Calendar({ darkMode }) {
         />
       </div>
 
-      {drawerOpen && (
-        <>
-          <div className="my-calendar-overlay" onClick={() => { setDrawerOpen(false); setEventToEdit(null); }}></div>
-          <div className="my-calendar-drawer">
-          <div className="my-calendar-drawer-header">
-              <h2>{eventToEdit ? "Modifier l’événement" : "Créer un événement"}</h2>
-              <button className="my-calendar-close-btn" onClick={() => { setDrawerOpen(false); setEventToEdit(null); }}>&times;</button>
-            </div>
-
-            <form className="my-calendar-form" onSubmit={eventToEdit ? handleUpdate : handleCreate}>
-              <label>Titre</label>
-              <input type="text" value={eventToEdit ? eventToEdit.title ?? '' : newEvent.title} onChange={(e) => eventToEdit ? setEventToEdit({ ...eventToEdit, title: e.target.value }) : setNewEvent(prev => ({ ...prev, title: e.target.value }))} required />
-
-              <label>Description</label>
-              <textarea rows={3} value={eventToEdit ? eventToEdit.description ?? '' : newEvent.description ?? ''} onChange={(e) => eventToEdit ? setEventToEdit({ ...eventToEdit, description: e.target.value }) : setNewEvent(prev => ({ ...prev, description: e.target.value }))} />
-
-              <label>Lieu</label>
-              <input type="text" value={eventToEdit ? eventToEdit.lieu ?? '' : newEvent.lieu ?? ''} onChange={(e) => eventToEdit ? setEventToEdit({ ...eventToEdit, lieu: e.target.value }) : setNewEvent(prev => ({ ...prev, lieu: e.target.value }))} />
-
-              <label>Durée (en minutes)</label>
-              <input type="number" min={15} max={480} step={15} value={eventToEdit ? eventToEdit.duration ?? 60 : newEvent.duration ?? 60} onChange={(e) => eventToEdit ? setEventToEdit({ ...eventToEdit, duration: parseInt(e.target.value) }) : setNewEvent(prev => ({ ...prev, duration: parseInt(e.target.value) }))} />
-
-              <label>Date & heure</label>
-              <input type="datetime-local" value={eventToEdit ? eventToEdit.start_time?.slice(0, 16) : newEvent.start_time} onChange={(e) => eventToEdit ? setEventToEdit({ ...eventToEdit, start_time: e.target.value }) : setNewEvent(prev => ({ ...prev, start_time: e.target.value }))} required />
-
-              <label>Calendrier utilisé</label>
-              <select value={eventToEdit ? eventToEdit.calendar_id : newEvent.calendar_id} onChange={(e) => eventToEdit ? setEventToEdit({ ...eventToEdit, calendar_id: e.target.value }) : setNewEvent(prev => ({ ...prev, calendar_id: e.target.value }))} required>
-                {calendars.map(cal => <option key={cal.id} value={cal.id}>{cal.name || "Calendrier"}</option>)}
-              </select>
-
-              <button type="submit" className="my-calendar-submit-btn">{eventToEdit ? "Mettre à jour" : "Créer l’événement"}</button>
-              {eventToEdit && <button type="button" className="my-calendar-delete-btn" onClick={handleDelete}>Supprimer</button>}
-            </form>
-          </div>
-        </>
-        
-      )}
       {mobileEventOverlay && (
         <div className="my-calendar-event-overlay">
           <div className="my-calendar-event-overlay-header">
@@ -542,7 +512,6 @@ export default function Calendar({ darkMode }) {
             <span>Détails</span>
             <button onClick={() => {
               setEventToEdit(mobileEventOverlay);
-              setDrawerOpen(true);
               setMobileEventOverlay(null);
             }}>✎</button>
           </div>
@@ -555,6 +524,52 @@ export default function Calendar({ darkMode }) {
             {mobileEventOverlay.duration && <p>⏱ {mobileEventOverlay.duration} minutes</p>}
           </div>
         </div>
+      )}
+
+      {quickPopup && (
+        <QuickEventPopup
+          x={quickPopup.x}
+          y={quickPopup.y}
+          date={quickPopup.date}
+          calendars={calendars}
+          onClose={() => setQuickPopup(null)}
+          onSave={async (data) => {
+            try {
+              const newEvt = await createEvent(data);
+              setEvents(prev => [...prev, newEvt]);
+              toast.success("Événement ajouté !");
+            } catch (err) {
+              toast.error("Erreur : " + err.message);
+            }
+          }}
+          onMoreOptions={(evtData) => {
+            setNewEvent({
+              ...evtData,
+              duration: evtData.duration ?? 60
+            });
+          }}
+        />
+      )}
+
+      {quickPopup?.event && (
+        <EventDetailsPopup
+          x={quickPopup.x}
+          y={quickPopup.y}
+          event={quickPopup.event}
+          calendars={calendars}
+          onClose={() => setQuickPopup(null)}
+          onUpdate={async (updatedData) => {
+            const result = await updateEvent(updatedData);
+            setEvents(prev => prev.map(ev => ev.id === result.id ? result : ev));
+            toast.success("Événement modifié !");
+          }}
+          onDelete={async () => {
+            await deleteEvent(quickPopup.event.id);
+            setEvents(prev => prev.filter(ev => ev.id !== quickPopup.event.id));
+            toast.success("Événement supprimé !");
+            setQuickPopup(null);
+          }}
+        />
       )}
     </div>
   );

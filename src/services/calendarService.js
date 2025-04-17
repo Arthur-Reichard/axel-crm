@@ -55,7 +55,7 @@ export async function getEventsForCalendars(calendarIds) {
   }));  
 }
 
-export async function createEvent({ title, start_time, calendar_id, description, lieu, duration = 60 }) {
+export async function createEvent({ title, start_time, calendar_id, description, lieu, duration = 60, recurrence = 'none', recurrence_end_date }) {
   const start = new Date(start_time);
   const end = new Date(start.getTime() + duration * 60 * 1000);
 
@@ -69,6 +69,9 @@ export async function createEvent({ title, start_time, calendar_id, description,
       description,
       lieu,
       duration,
+      recurrence,
+      recurrence_end_date: recurrence !== 'none' ? recurrence_end_date : null,
+      is_recurring: recurrence !== 'none'
     }])
     .select()
     .single();
@@ -76,17 +79,11 @@ export async function createEvent({ title, start_time, calendar_id, description,
   if (error) throw error;
 
   return {
-    id: data.id,
-    title: data.title,
-    start_time: data.start_time,
-    end_time: data.end_time,
-    calendar_id: data.calendar_id,
-    description: data.description,
-    lieu: data.lieu,
-    duration: data.duration,
+    ...data,
     color: '#999'
   };
 }
+
 
 export async function updateEvent(event) {
   const { id, title, start_time, calendar_id, description, lieu, duration = 60 } = event;
