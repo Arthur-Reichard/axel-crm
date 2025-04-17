@@ -1,0 +1,85 @@
+.event-details-popup {
+    position: absolute;
+    background: white;
+    border: 1px solid #dadce0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 1rem;
+    width: auto;
+    max-width: 560px;
+    min-width: 420px;
+    z-index: 1001;
+    font-family: 'Segoe UI', sans-serif;
+    overflow: visible;
+  }
+  
+  .event-details-popup h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #202124;
+    font-weight: 600;
+  }
+  
+  .event-details-popup p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #3c4043;
+  }
+  
+  .event-details-popup form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .event-details-popup input[type="text"],
+  .event-details-popup input[type="datetime-local"],
+  .event-details-popup textarea {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .event-details-popup textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  
+  .popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .popup-actions button {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
+  }
+  
+  .popup-actions button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .popup-actions button:first-of-type {
+    background-color: #f1f3f4;
+    color: #202124;
+  }
+  
+  .popup-actions button:last-of-type {
+    background-color: #ea4335;
+    color: white;
+  }
+
+  .popup-overlay {
+    z-index: 998;
+  }
+  
+  

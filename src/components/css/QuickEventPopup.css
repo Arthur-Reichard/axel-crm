@@ -8,7 +8,7 @@
   width: auto;
   max-width: 560px;
   min-width: 420px;
-  z-index: 999;
+  z-index: 1001;
   font-family: 'Segoe UI', sans-serif;
   overflow: visible;
 }
@@ -153,4 +153,8 @@
 
 .quick-popup-actions button[type="button"]:hover {
   background-color: #e0e0e0;
+}
+
+.popup-overlay {
+  z-index: 998;
 }

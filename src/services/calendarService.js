@@ -1,4 +1,3 @@
-// 📁 services/calendarService.js
 import { supabase } from '../helper/supabaseClient';
 
 export async function getUtilisateur(userId) {
@@ -40,19 +39,26 @@ export async function getEventsForCalendars(calendarIds) {
     .from("events")
     .select("*, calendars(color)")
     .in("calendar_id", calendarIds);
+
   if (error) throw error;
 
-  return data.map((e) => ({
-    id: e.id,
-    title: e.title,
-    start_time: e.start_time,
-    end_time: e.end_time,
-    calendar_id: e.calendar_id,
-    description: e.description,
-    lieu: e.lieu,
-    duration: e.duration,
-    color: e.calendars?.color || '#999'
-  }));  
+  return data.map((e) => {
+    const fixedId = e.id ?? e.fid ?? e.uuid;
+    console.log("→ Event brut Supabase :", e);
+    console.log("✅ ID utilisé :", fixedId);
+
+    return {
+      id: fixedId,
+      title: e.title,
+      start_time: e.start_time,
+      end_time: e.end_time,
+      calendar_id: e.calendar_id,
+      description: e.description,
+      lieu: e.lieu,
+      duration: e.duration,
+      color: e.calendars?.color || '#999'
+    };
+  });
 }
 
 export async function createEvent({ title, start_time, calendar_id, description, lieu, duration = 60, recurrence = 'none', recurrence_end_date }) {
@@ -83,7 +89,6 @@ export async function createEvent({ title, start_time, calendar_id, description,
     color: '#999'
   };
 }
-
 
 export async function updateEvent(event) {
   const { id, title, start_time, calendar_id, description, lieu, duration = 60 } = event;
@@ -123,8 +128,28 @@ export async function updateEvent(event) {
 }
 
 export async function deleteEvent(eventId) {
-  const { error } = await supabase.from("events").delete().eq("id", eventId);
-  if (error) throw error;
+  const cleanedId = String(eventId).trim();
+
+  console.log("🗑️ Tentative de suppression Supabase pour l'ID :", cleanedId);
+  console.log("Type:", typeof cleanedId, "Longueur:", cleanedId.length);
+
+  const { data, error } = await supabase
+    .from("events")
+    .delete()
+    .eq("id", cleanedId) // ✅ colonne correcte
+    .select();            // ✅ utile pour log
+
+  if (error) {
+    console.error("❌ Erreur Supabase :", error);
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    console.warn("⚠️ Rien n'a été supprimé. L’ID n’a probablement rien matché !");
+    throw new Error("Aucune ligne supprimée.");
+  } else {
+    console.log("✅ Événement supprimé :", data);
+  }
 }
 
 export async function updateEventTime({ id, start_time, end_time }) {

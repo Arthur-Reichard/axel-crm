@@ -1,6 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useClickAway } from 'ahooks';
 import './css/QuickEventPopup.css';
+
+const formatDate = (dateStr) => {
+  try {
+    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', options);
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatRecurrence = (value) => {
+  switch (value) {
+    case 'daily': return 'Tous les jours';
+    case 'weekly': return 'Toutes les semaines';
+    case 'monthly': return 'Tous les mois';
+    default: return 'Une seule fois';
+  }
+};
 
 export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave, onMoreOptions }) {
   const [title, setTitle] = useState('');
@@ -15,6 +35,9 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
   const [showDateFields, setShowDateFields] = useState(false);
   const [calendarId, setCalendarId] = useState('');
 
+  const popupRef = useRef(null);
+  useClickAway(() => onClose(), popupRef);
+
   useEffect(() => {
     if (date) {
       const formatted = new Date(date).toISOString().slice(0, 10);
@@ -26,54 +49,20 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
     }
   }, [date, calendars]);
 
-  // === Gestion position popup
+  const padding = 50;
   const popupWidth = 440;
   const popupHeight = 450;
-  const padding = 50;
-
-  let adjustedX = x;
-  let adjustedY = y;
-
-  if (x + popupWidth + padding > window.innerWidth) {
-    adjustedX = window.innerWidth - popupWidth - padding;
-  }
-  if (adjustedX < padding) {
-    adjustedX = padding;
-  }
-
-  const flipUp = y + popupHeight + padding > window.innerHeight;
-  if (flipUp) {
-    adjustedY = y - popupHeight;
-    if (adjustedY < padding) adjustedY = padding;
-  } else {
-    if (y + popupHeight > window.innerHeight) {
-      adjustedY = window.innerHeight - popupHeight - padding;
-    }
-  }
-
-  const formatDate = (dateStr) => {
-    try {
-      const options = { weekday: 'long', day: 'numeric', month: 'long' };
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('fr-FR', options);
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const formatRecurrence = (rec) => {
-    switch (rec) {
-      case 'daily': return 'Tous les jours';
-      case 'weekly': return 'Toutes les semaines';
-      case 'monthly': return 'Tous les mois';
-      default: return 'Une seule fois';
-    }
-  };
+  
+  // Assurer que le popup reste à l'intérieur de l'écran
+  let adjustedX = Math.max(padding, Math.min(x, window.innerWidth - popupWidth - padding));
+  let adjustedY = Math.max(padding, Math.min(y, window.innerHeight - popupHeight - padding))
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const start = new Date(`${startDate}T${showTimeFields ? startTime || '00:00' : '00:00'}`);
     const end = new Date(`${endDate}T${showTimeFields ? endTime || startTime || '00:00' : '23:59'}`);
+
     const duration = Math.max(Math.floor((end - start) / 60000), 15);
 
     onSave({

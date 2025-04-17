@@ -312,7 +312,7 @@
   position: absolute; /* au lieu de fixed */
   top: 15px;
   left: 15px;
-  z-index: 1001;
+  z-index: 999;
   font-size: 2rem;
   background: none;
   border: none;
@@ -329,7 +329,7 @@
   top: 15px;
   left: 65px;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 999;
 }
 
 /* La croix s'affiche uniquement quand la classe .my-calendar-sidebar est ouverte */
