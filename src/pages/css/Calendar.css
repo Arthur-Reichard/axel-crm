@@ -1,32 +1,43 @@
-/* === Structure principale === */
-.calendar-container {
+/* === Variables personnalisables === */
+:root {
+  --calendar-font: 'Roboto', sans-serif;
+  --calendar-text: #202124;
+  --calendar-bg: #f8f9fa;
+  --calendar-accent: #1a73e8;
+  --calendar-hover: #1558b0;
+  --calendar-border: #e0e0e0;
+  --calendar-overlay: rgba(0, 0, 0, 0.35);
+  --calendar-shadow: rgba(0, 0, 0, 0.05);
+  --calendar-drawer-shadow: rgba(0, 0, 0, 0.1);
+  --calendar-delete: #ccc;
+  --calendar-danger: #d93025;
+}
+
+.my-calendar-app {
+  font-family: var(--calendar-font);
+  color: var(--calendar-text);
+  background-color: var(--calendar-bg);
   display: flex;
   flex-direction: row;
   min-height: 100vh;
-  background-color: #f8f9fa;
-  font-family: 'Roboto', sans-serif;
-  color: #202124;
 }
 
-/* === Sidebar === */
-.calendar-sidebar {
-  flex: 0 0 280px; /* largeur fixe mais responsive */
-  max-width: 100%;
+.my-calendar-sidebar {
+  flex: 0 0 280px;
   background-color: white;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--calendar-border);
   padding: 1.75rem 1.25rem;
-  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 1px 0 4px var(--calendar-shadow);
 }
 
-.calendar-sidebar h3 {
+.my-calendar-sidebar h3 {
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
-  color: #3c4043;
   text-transform: uppercase;
 }
 
-.calendar-sidebar label {
+.my-calendar-sidebar label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -35,16 +46,14 @@
   font-size: 0.95rem;
 }
 
-/* === Zone principale === */
-.calendar-main {
+.my-calendar-main {
   flex-grow: 1;
   padding: 2rem 2.5rem;
   min-width: 0;
   box-sizing: border-box;
 }
 
-/* === Header calendrier === */
-.calendar-header {
+.my-calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -53,17 +62,15 @@
   gap: 1rem;
 }
 
-.calendar-header h1 {
+.my-calendar-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #202124;
   margin: 0;
 }
 
-/* === Boutons === */
-.add-event-button,
-.submit-button {
-  background-color: #1a73e8;
+.my-calendar-add-btn,
+.my-calendar-submit-btn {
+  background-color: var(--calendar-accent);
   color: white;
   padding: 0.6rem 1.3rem;
   border-radius: 8px;
@@ -75,26 +82,35 @@
   box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
 }
 
-.add-event-button:hover,
-.submit-button:hover {
-  background-color: #1558b0;
+.my-calendar-add-btn:hover,
+.my-calendar-submit-btn:hover {
+  background-color: var(--calendar-hover);
 }
 
-.submit-button:disabled {
-  background-color: #ccc;
+.my-calendar-submit-btn:disabled {
+  background-color: var(--calendar-delete);
   cursor: not-allowed;
 }
 
-/* === Overlay drawer === */
-.calendar-overlay {
+.my-calendar-delete-btn {
+  background-color: var(--calendar-delete);
+  color: black;
+  border: none;
+  padding: 0.6rem 1.3rem;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.my-calendar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--calendar-overlay);
   z-index: 998;
 }
 
-/* === Drawer === */
-.calendar-drawer {
+.my-calendar-drawer {
   position: fixed;
   top: 0;
   right: 0;
@@ -103,7 +119,7 @@
   background-color: white;
   z-index: 999;
   padding: 2rem 1.5rem;
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+  box-shadow: -4px 0 12px var(--calendar-drawer-shadow);
   animation: slideIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
@@ -116,18 +132,13 @@
   to   { transform: translateX(0); }
 }
 
-.calendar-drawer-header {
+.my-calendar-drawer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.calendar-drawer-header h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.close-drawer {
+.my-calendar-close-btn {
   background: none;
   border: none;
   font-size: 2rem;
@@ -135,20 +146,19 @@
   cursor: pointer;
 }
 
-.close-drawer:hover {
-  color: #d93025;
+.my-calendar-close-btn:hover {
+  color: var(--calendar-danger);
 }
 
-/* === Formulaire === */
-.calendar-form {
+.my-calendar-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.calendar-form input,
-.calendar-form select,
-.calendar-form textarea {
+.my-calendar-form input,
+.my-calendar-form select,
+.my-calendar-form textarea {
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   border: 1px solid #dadce0;
@@ -156,72 +166,140 @@
   transition: all 0.2s ease;
 }
 
-.calendar-form input:focus,
-.calendar-form select:focus,
-.calendar-form textarea:focus {
+.my-calendar-form input:focus,
+.my-calendar-form select:focus,
+.my-calendar-form textarea:focus {
   outline: none;
-  border-color: #1a73e8;
+  border-color: var(--calendar-accent);
   box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
-/* === Responsive mobile et tablette === */
+/* === Create dropdown === */
+.my-calendar-create-wrapper {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.my-calendar-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #eef2f7;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--calendar-text);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  width: 100%;
+  justify-content: space-between;
+}
+
+.my-calendar-create-btn:hover {
+  background-color: #e0e5ec;
+}
+
+.my-calendar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  margin-top: 0.3rem;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.my-calendar-dropdown div {
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.my-calendar-dropdown div:hover {
+  background-color: #f1f3f4;
+}
+
+/* === Responsive === */
 @media (max-width: 900px) {
-  .calendar-container {
+  .my-calendar-app {
     flex-direction: column;
   }
 
-  .calendar-sidebar {
+  .my-calendar-sidebar {
     width: 100%;
-    flex: none;
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--calendar-border);
     padding: 1rem;
     box-shadow: none;
   }
 
-  .calendar-main {
+  .my-calendar-main {
     padding: 1rem;
   }
 
-  .calendar-header {
+  .my-calendar-header {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
 
-  .calendar-header h1 {
+  .my-calendar-header h1 {
     font-size: 1.3rem;
     text-align: left;
   }
 
-  .add-event-button {
+  .my-calendar-add-btn {
     width: 100%;
     padding: 0.75rem;
     font-size: 1rem;
   }
+}
 
-  .fc-toolbar-chunk {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
+/* === FullCalendar override in sidebar === */
+.my-calendar-sidebar .fc {
+  border: none;
+  font-size: 0.85rem;
+  background-color: transparent;
+  box-shadow: none;
+}
 
-  .fc-toolbar {
-    flex-direction: column !important;
-    gap: 1rem !important;
-  }
+.my-calendar-sidebar .fc .fc-scrollgrid,
+.my-calendar-sidebar .fc .fc-daygrid-day,
+.my-calendar-sidebar .fc table,
+.my-calendar-sidebar .fc .fc-col-header-cell {
+  border: none !important;
+  background: transparent !important;
+}
 
-  .fc-toolbar-title {
-    font-size: 1.25rem;
-    text-align: center;
-  }
+.my-calendar-sidebar .fc .fc-daygrid-day-frame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 2.5rem;
+}
 
-  .fc-button-group {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-  }
+.my-calendar-sidebar .fc .fc-daygrid-day-number {
+  width: 2rem;
+  height: 2rem;
+  line-height: 2;
+  text-align: center;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.my-calendar-sidebar .fc .fc-daygrid-day-number:hover {
+  background-color: #e8f0fe;
+  cursor: pointer;
+}
+
+.my-calendar-sidebar .fc .fc-day-today .fc-daygrid-day-number {
+  background-color: var(--calendar-accent);
+  color: white;
+  font-weight: 500;
 }

@@ -1,4 +1,4 @@
-// 📁 components/EventTooltip.js
+// 📁 components/EventTooltip.jsx
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 
