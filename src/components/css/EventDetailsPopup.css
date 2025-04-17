@@ -1,85 +1,131 @@
 .event-details-popup {
-    position: absolute;
-    background: white;
-    border: 1px solid #dadce0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
-    padding: 1rem;
-    width: auto;
-    max-width: 560px;
-    min-width: 420px;
-    z-index: 1001;
-    font-family: 'Segoe UI', sans-serif;
-    overflow: visible;
-  }
-  
-  .event-details-popup h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #202124;
-    font-weight: 600;
-  }
-  
-  .event-details-popup p {
-    margin: 0.5rem 0;
-    font-size: 0.95rem;
-    color: #3c4043;
-  }
-  
-  .event-details-popup form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .event-details-popup input[type="text"],
-  .event-details-popup input[type="datetime-local"],
-  .event-details-popup textarea {
-    padding: 0.45rem 0.6rem;
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  .event-details-popup textarea {
-    resize: vertical;
-    min-height: 60px;
-  }
-  
-  .popup-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-  
-  .popup-actions button {
-    padding: 0.45rem 0.8rem;
-    font-size: 0.9rem;
-    border-radius: 8px;
-    cursor: pointer;
-    border: none;
-    transition: background-color 0.2s ease;
-  }
-  
-  .popup-actions button:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .popup-actions button:first-of-type {
-    background-color: #f1f3f4;
-    color: #202124;
-  }
-  
-  .popup-actions button:last-of-type {
-    background-color: #ea4335;
-    color: white;
-  }
+  position: absolute;
+  background: white;
+  border: 1px solid #dadce0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 1.25rem;
+  width: auto;
+  max-width: 560px;
+  min-width: 420px;
+  z-index: 1001;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  overflow: visible;
+  font-size: 14px;
+}
 
-  .popup-overlay {
-    z-index: 998;
-  }
-  
-  
+.event-details-popup h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #202124;
+  font-weight: 600;
+}
+
+.event-details-popup p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  color: #3c4043;
+}
+
+.event-details-popup form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Champs */
+.event-details-popup input,
+.event-details-popup select,
+.event-details-popup textarea {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  color: #202124;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  height: 40px;
+  line-height: 1.2;
+}
+
+
+.event-details-popup textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.event-details-popup select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='%23666' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 16px;
+  padding-right: 2.5rem;
+}
+
+.event-details-popup input::placeholder,
+.event-details-popup textarea::placeholder {
+  color: #9aa0a6;
+}
+
+/* Focus effect */
+.event-details-popup input:focus,
+.event-details-popup textarea:focus,
+.event-details-popup select:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+/* Actions */
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.popup-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease, filter 0.2s ease;
+  font-family: inherit;
+  min-width: 120px;
+}
+
+/* Enregistrer */
+.popup-actions button:first-of-type {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+/* Annuler ou supprimer */
+.popup-actions button:last-of-type {
+  background-color: #ea4335;
+  color: white;
+}
+
+.popup-actions button:hover {
+  filter: brightness(0.95);
+}
+
+/* Optionnel : overlay pour pop-up flottant */
+.popup-overlay {
+  z-index: 998;
+}
+
+.popup-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5f6368;
+  margin-bottom: 0.2rem;
+}

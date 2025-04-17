@@ -136,19 +136,16 @@ export async function deleteEvent(eventId) {
   const { data, error } = await supabase
     .from("events")
     .delete()
-    .eq("id", cleanedId) // ✅ colonne correcte
-    .select();            // ✅ utile pour log
+    .eq("id", cleanedId)
+    .select();
 
   if (error) {
-    console.error("❌ Erreur Supabase :", error);
     throw error;
   }
 
   if (!data || data.length === 0) {
-    console.warn("⚠️ Rien n'a été supprimé. L’ID n’a probablement rien matché !");
     throw new Error("Aucune ligne supprimée.");
   } else {
-    console.log("✅ Événement supprimé :", data);
   }
 }
 

@@ -50,8 +50,8 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
   }, [date, calendars]);
 
   const padding = 50;
-  const popupWidth = 440;
-  const popupHeight = 450;
+  const popupWidth = 500;
+  const popupHeight = 550;
   
   // Assurer que le popup reste à l'intérieur de l'écran
   let adjustedX = Math.max(padding, Math.min(x, window.innerWidth - popupWidth - padding));
@@ -201,26 +201,6 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
 
         <div className="quick-popup-actions">
           <button type="button" onClick={onClose}>Annuler</button>
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onMoreOptions?.({
-                title,
-                start_time: `${startDate}T${showTimeFields ? startTime : '00:00:00'}`,
-                end_time: `${endDate}T${showTimeFields ? (endTime || startTime) : '23:59:59'}`,
-                lieu,
-                description,
-                recurrence,
-                duration: showTimeFields
-                  ? Math.max(Math.floor((new Date(`${endDate}T${endTime || startTime}`) - new Date(`${startDate}T${startTime}`)) / 60000), 15)
-                  : 1440,
-                calendar_id: calendarId
-              });
-            }}
-          >
-            Autres options
-          </button>
           <button type="submit">Enregistrer</button>
         </div>
       </form>

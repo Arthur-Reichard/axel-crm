@@ -282,17 +282,27 @@ export default function Calendar({ darkMode }) {
             if (isMobile) {
               calendarRef.current?.getApi().changeView('timeGridDay', arg.start);
               setCurrentView('timeGridDay');
-            } else {
-              setNewEvent({
-                title: '',
-                start_time: arg.startStr.slice(0, 16),
-                calendar_id: calendars[0]?.id || '',
-                description: '',
-                lieu: '',
-                duration: 60
-              });
+              return;
             }
+          
+            const start = new Date(arg.start);
+            const end = new Date(arg.end);
+            const duration = Math.round((end - start) / (1000 * 60)); // durée en minutes
+          
+            const startStr = start.toISOString().slice(0, 16); // ex: '2025-04-17T09:00'
+          
+            setNewEvent({
+              title: '',
+              start_time: startStr,
+              calendar_id: calendars[0]?.id || '',
+              description: '',
+              lieu: '',
+              duration: duration || 60
+            });
+          
+            setDrawerOpen(true);
           }}
+                          
           />
       </div>
 
@@ -517,9 +527,10 @@ export default function Calendar({ darkMode }) {
             <button onClick={() => setMobileEventOverlay(null)}>×</button>
             <span>Détails</span>
             <button onClick={() => {
-              setEventToEdit(mobileEventOverlay);
-              setMobileEventOverlay(null);
-            }}>✎</button>
+              setEventToEdit(event);
+              setQuickEventPopup(null);
+              setDrawerOpen(true);
+            }}>✎ Modifier</button>
           </div>
 
           <div className="my-calendar-event-overlay-content">

@@ -8,11 +8,13 @@ export default function EventDetailsPopup({ x, y, event, calendars, onClose, onU
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ ...event });
 
-  useClickAway(() => onClose(), popupRef);
+  useClickAway((e) => {
+    if (!editMode) onClose();
+  }, popupRef);
 
   const padding = 20;
-  const popupWidth = 440;
-  const popupHeight = 450;
+  const popupWidth = editMode ? 460 : 620;
+  const popupHeight = editMode ? 550 : 500;
 
   const adjustedX = Math.max(padding, Math.min(x, window.innerWidth - popupWidth - padding));
   const adjustedY = Math.max(padding, Math.min(y, window.innerHeight - popupHeight - padding));
@@ -32,33 +34,59 @@ export default function EventDetailsPopup({ x, y, event, calendars, onClose, onU
     <motion.div
       ref={popupRef}
       className="event-details-popup"
-      style={{ top: adjustedY, left: adjustedX }}
+      style={{ top: adjustedY, left: adjustedX, width: popupWidth }}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
       {editMode ? (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="event-edit-form">
           <input
+            placeholder="Titre"
             value={form.title}
             onChange={(e) => handleChange('title', e.target.value)}
             required
           />
           <textarea
-            value={form.description}
+            placeholder="Description"
+            value={form.description || ''}
             onChange={(e) => handleChange('description', e.target.value)}
           />
           <input
-            value={form.lieu}
+            placeholder="Lieu"
+            value={form.lieu || ''}
             onChange={(e) => handleChange('lieu', e.target.value)}
           />
           <input
             type="datetime-local"
-            value={form.start_time.slice(0, 16)}
+            value={form.start_time?.slice(0, 16)}
             onChange={(e) => handleChange('start_time', e.target.value)}
             required
           />
+          <input
+            type="number"
+            min="5"
+            step="5"
+            value={form.duration || 60}
+            onChange={(e) => handleChange('duration', parseInt(e.target.value, 10))}
+            placeholder="Durée (min)"
+          />
+
+          {/* Optionnel : si tu veux permettre de changer de calendrier */}
+          {calendars?.length > 1 && (
+            <select
+              value={form.calendar_id}
+              onChange={(e) => handleChange('calendar_id', e.target.value)}
+            >
+            {calendars.map((cal) => (
+              <option key={cal.id} value={cal.id}>
+                {cal.type === 'pro' ? 'Calendrier pro' : 'Calendrier perso'}
+              </option>
+            ))}
+            </select>
+          )}
+
           <div className="popup-actions">
             <button type="submit">✅ Enregistrer</button>
             <button type="button" onClick={() => setEditMode(false)}>❌ Annuler</button>
@@ -70,9 +98,18 @@ export default function EventDetailsPopup({ x, y, event, calendars, onClose, onU
           {event.description && <p>{event.description}</p>}
           {event.lieu && <p>📍 {event.lieu}</p>}
           <p>🕒 {new Date(event.start_time).toLocaleString()}</p>
+          {event.duration && <p>⏱ {event.duration} minutes</p>}
 
           <div className="popup-actions">
-            <button type="button" onClick={() => setEditMode(true)}>✎ Modifier</button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation(); // 👈 empêche le clickAway
+                setEditMode(true);
+              }}
+            >
+              ✎ Modifier
+            </button>
             <button type="button" onClick={onDelete}>🗑 Supprimer</button>
           </div>
         </div>
