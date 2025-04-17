@@ -1,8 +1,9 @@
+/* === Navbar globale === */
 .top-navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0.5rem 1rem;
   background-color: #ED5F2D;
   border-bottom: 1px solid #ddd;
   transition: background-color 0.3s, color 0.3s;
@@ -15,13 +16,20 @@
   color: #f0f0f0;
 }
 
-/* === Conteneurs === */
+/* === Structure === */
+.nav-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .left-nav,
 .right-nav {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* === Logo === */
@@ -104,47 +112,7 @@
   cursor: pointer;
 }
 
-/* === Responsive === */
-@media (max-width: 768px) {
-  .top-navbar {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .left-nav,
-  .right-nav {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-
-  .nav-links {
-    flex-direction: column;
-    width: 100%;
-    gap: 0.75rem;
-  }
-
-  .nav-link {
-    display: block;
-    width: 100%;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .mode-button {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .btn {
-    width: 100%;
-    text-align: center;
-  }
-}
-
-/* 🍔 Burger toggle visible uniquement sur mobile */
+/* === Burger === */
 .burger-toggle {
   display: none;
   font-size: 2rem;
@@ -152,12 +120,38 @@
   border: none;
   color: white;
   cursor: pointer;
+  padding: 0;
+  margin: 0;
 }
 
-/* Responsive mobile */
+/* === Responsive === */
 @media (max-width: 768px) {
+  .top-navbar {
+    padding: 0.5rem 1rem;
+  }
+
+  .nav-logo {
+    height: 40px;
+  }
+
   .burger-toggle {
     display: block;
+    font-size: 1.8rem;
+  }
+
+  .left-nav,
+  .right-nav {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+
+  .right-nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    width: auto;
   }
 
   .nav-links {
@@ -168,6 +162,7 @@
     overflow: hidden;
     transition: all 0.3s ease;
     pointer-events: none;
+    gap: 0.75rem;
   }
 
   .nav-links.show {
@@ -177,16 +172,18 @@
   }
 
   .nav-link {
+    display: block;
     width: 100%;
     padding: 1rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: left;
   }
 
-  .right-nav {
-    flex-direction: column;
-    align-items: flex-start;
+  .mode-button,
+  .btn {
     width: 100%;
-    margin-top: 1rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
   }
 
   .right-nav .btn,
