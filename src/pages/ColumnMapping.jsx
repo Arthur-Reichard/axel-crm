@@ -75,9 +75,43 @@ export default function ColumnMapping({ headers: propsHeaders, previewData: prop
     setMapping(prev => ({ ...prev, [header]: value }));
   };
 
-  const handleSubmit = () => {
-    if (onMappingComplete) onMappingComplete(mapping);
+  const handleSubmit = async () => {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return;
+  
+    const { data: userData, error: userError } = await supabase
+      .from('utilisateurs')
+      .select('entreprise_id')
+      .eq('id', user.id)
+      .single();
+  
+    if (userError || !userData) return;
+  
+    const entrepriseId = userData.entreprise_id;
+  
+    const leadsToInsert = location.state?.parsedRows.map(row => {
+      const lead = {
+        user_id: user.id,
+        entreprise_id: entrepriseId,
+        source: 'import_csv'
+      };
+      for (const [fileCol, crmField] of Object.entries(mapping)) {
+        if (crmField && row[fileCol] !== undefined) {
+          lead[crmField] = row[fileCol];
+        }
+      }
+      return lead;
+    });
+  
+    const { error: insertError } = await supabase.from('leads').insert(leadsToInsert);
+    if (insertError) {
+      alert("Erreur lors de l'import : " + insertError.message);
+    } else {
+      alert("Import réussi ✅");
+      navigate('/leads');
+    }
   };
+  
 
   const numProspects = previewData[headers[0]]?.length || 0;
 

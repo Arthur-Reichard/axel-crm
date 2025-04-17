@@ -260,7 +260,10 @@ export default function Leads() {
       <div className="leads-header">
         <h1 className="leads-title">Tableau des Leads</h1>
         <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
-        <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} style={{ marginLeft: '1rem' }} />
+        <label className="import-btn">
+          Importer
+          <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
+        </label>
         {selectedLeads.length > 0 && (
           <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
         )}

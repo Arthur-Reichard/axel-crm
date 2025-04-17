@@ -44,6 +44,7 @@ body {
   font-size: 2.4rem;
   font-weight: 700;
   color: #111;
+  margin: 0 0 1rem 1.5rem;
 }
 
 .add-lead-btn,
@@ -73,21 +74,28 @@ body {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
+  min-width: 800px; /* Pour éviter que tout se compresse */
 }
 
-.lead-table thead th {
-  background-color: #111e23;
-  color: white;
-  padding: 1.2rem;
+.lead-table thead {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.lead-table th,
+.lead-table td {
+  padding: 1rem;
   text-align: left;
-  font-size: 0.95rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .lead-table tbody tr {
   transition: background 0.2s ease, transform 0.1s ease;
   cursor: pointer;
+  border-bottom: 1px solid #ccc;
 }
 
 .lead-table tbody tr:hover {
@@ -119,7 +127,22 @@ body {
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-  overflow-x: auto;
+  overflow: auto;
+  max-height: calc(100vh - 220px); /* Ajuste selon tes besoins */
+  padding-bottom: 2rem; /* pour pas que la taskbar masque */
+}
+
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }
 
 /* ===================== */
@@ -423,8 +446,11 @@ body {
   }
 
   .leads-header {
-    flex-direction: column;
-    align-items: flex-start;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 2rem 2rem 1rem 2rem;
     gap: 1rem;
   }
 }
@@ -451,3 +477,20 @@ body {
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
 
+
+.import-btn {
+  background-color: #fc602c;
+  color: white;
+  font-weight: 600;
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-right: 1rem;   
+  margin-top: 0.3rem;    
+}
+
+.import-btn:hover {
+  background-color: #e15524;
+}
