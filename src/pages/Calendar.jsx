@@ -9,6 +9,7 @@ import {
   getCalendars,
   getEventsForCalendars,
   createEvent,
+  updateEvent,
   deleteEvent
 } from '../services/calendarService';
 import { supabase } from '../helper/supabaseClient';
@@ -18,8 +19,10 @@ export default function Calendar() {
   const [userId, setUserId] = useState(null);
   const [calendars, setCalendars] = useState([]);
   const [events, setEvents] = useState([]);
+  const [selectedCalendars, setSelectedCalendars] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', start_time: '', calendar_id: '' });
+  const [eventToEdit, setEventToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,26 +35,23 @@ export default function Calendar() {
         const utilisateur = await getUtilisateur(user.id);
         let calendars = await getCalendars(utilisateur);
 
-        // 🔄 Si aucun calendrier n'existe → on en crée un automatiquement
         if (calendars.length === 0) {
           const { data: created, error } = await supabase
             .from("calendars")
-            .insert([
-              {
-                name: utilisateur.entreprise_id ? "Calendrier entreprise" : "Calendrier personnel",
-                user_id: utilisateur.entreprise_id ? null : user.id, // ← correction ici
-                entreprise_id: utilisateur.entreprise_id || null,
-                color: utilisateur.entreprise_id ? "#1E90FF" : "#4CAF50"
-              }
-            ])
+            .insert([{
+              name: utilisateur.entreprise_id ? "Calendrier entreprise" : "Calendrier personnel",
+              user_id: utilisateur.entreprise_id ? null : user.id,
+              entreprise_id: utilisateur.entreprise_id || null,
+              color: utilisateur.entreprise_id ? "#1E90FF" : "#4CAF50"
+            }])
             .select();
-
 
           if (error) throw error;
           calendars = created;
         }
 
         setCalendars(calendars);
+        setSelectedCalendars(calendars.map((c) => c.id));
 
         const calendarIds = calendars.map((c) => c.id);
         const allEvents = await getEventsForCalendars(calendarIds);
@@ -87,16 +87,38 @@ export default function Calendar() {
     }
   };
 
-  const handleDelete = async (clickInfo) => {
-    const confirmDelete = confirm(`Supprimer "${clickInfo.event.title}" ?`);
-    if (!confirmDelete) return;
+  const handleUpdate = async (e) => {
+    e.preventDefault();
     try {
-      await deleteEvent(clickInfo.event.id);
-      setEvents((prev) => prev.filter((evt) => evt.id !== clickInfo.event.id));
+      const updated = await updateEvent(eventToEdit);
+      setEvents((prev) => prev.map((ev) => (ev.id === updated.id ? updated : ev)));
+      setDrawerOpen(false);
+      setEventToEdit(null);
+      toast.success("Événement mis à jour !");
+    } catch (err) {
+      toast.error("Erreur mise à jour : " + err.message);
+    }
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const confirmDel = confirm(`Supprimer "${eventToEdit.title}" ?`);
+    if (!confirmDel) return;
+    try {
+      await deleteEvent(eventToEdit.id);
+      setEvents((prev) => prev.filter((evt) => evt.id !== eventToEdit.id));
+      setDrawerOpen(false);
+      setEventToEdit(null);
       toast.success("Événement supprimé.");
     } catch (err) {
       toast.error("Erreur suppression : " + err.message);
     }
+  };
+
+  const handleEventClick = (clickInfo) => {
+    const event = events.find(e => e.id === clickInfo.event.id);
+    if (!event) return;
+    setEventToEdit(event);
+    setDrawerOpen(true);
   };
 
   if (loading) return <p style={{ padding: '2rem' }}>Chargement du calendrier...</p>;
@@ -105,52 +127,97 @@ export default function Calendar() {
     <div className="calendar-container">
       <Toaster position="top-right" />
 
-      <div className="calendar-header">
-        <h1>Mon calendrier</h1>
-        <button className="add-event-button" onClick={() => setDrawerOpen(true)}>
-          + Nouvel événement
-        </button>
+      <div className="calendar-sidebar">
+        <h3>Mes agendas</h3>
+        {calendars.map((cal) => (
+          <label key={cal.id} style={{ display: 'block', marginBottom: '4px' }}>
+            <input
+              type="checkbox"
+              checked={selectedCalendars.includes(cal.id)}
+              onChange={() => {
+                if (selectedCalendars.includes(cal.id)) {
+                  setSelectedCalendars(selectedCalendars.filter(id => id !== cal.id));
+                } else {
+                  setSelectedCalendars([...selectedCalendars, cal.id]);
+                }
+              }}
+            />
+            <span style={{ marginLeft: '8px', color: cal.color }}>{cal.name}</span>
+          </label>
+        ))}
       </div>
 
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        events={events}
-        eventClick={handleDelete}
-        height="auto"
-      />
+      <div style={{ flexGrow: 1, paddingLeft: '1rem' }}>
+        <div className="calendar-header">
+          <h1>Mon calendrier</h1>
+          <button className="add-event-button" onClick={() => {
+            setEventToEdit(null);
+            setDrawerOpen(true);
+          }}>
+            + Nouvel événement
+          </button>
+        </div>
+
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          events={events.filter(evt => selectedCalendars.includes(evt.calendar_id))}
+          eventClick={handleEventClick}
+          height="auto"
+        />
+      </div>
 
       {drawerOpen && (
         <>
-          <div className="calendar-overlay" onClick={() => setDrawerOpen(false)}></div>
+          <div className="calendar-overlay" onClick={() => {
+            setDrawerOpen(false);
+            setEventToEdit(null);
+          }}></div>
           <div className="calendar-drawer">
             <div className="calendar-drawer-header">
-              <h2>Créer un événement</h2>
-              <button onClick={() => setDrawerOpen(false)} className="close-drawer">&times;</button>
+              <h2>{eventToEdit ? "Modifier l’événement" : "Créer un événement"}</h2>
+              <button onClick={() => {
+                setDrawerOpen(false);
+                setEventToEdit(null);
+              }} className="close-drawer">&times;</button>
             </div>
 
-            <form className="calendar-form" onSubmit={handleCreate}>
+            <form
+              className="calendar-form"
+              onSubmit={eventToEdit ? handleUpdate : handleCreate}
+            >
               <label>Titre</label>
               <input
                 type="text"
-                placeholder="Nom de l’événement"
-                value={newEvent.title}
-                onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
+                value={eventToEdit ? eventToEdit.title : newEvent.title}
+                onChange={(e) =>
+                  eventToEdit
+                    ? setEventToEdit({ ...eventToEdit, title: e.target.value })
+                    : setNewEvent((prev) => ({ ...prev, title: e.target.value }))
+                }
                 required
               />
 
               <label>Date & heure</label>
               <input
                 type="datetime-local"
-                value={newEvent.start_time}
-                onChange={(e) => setNewEvent((prev) => ({ ...prev, start_time: e.target.value }))}
+                value={eventToEdit ? eventToEdit.start.slice(0, 16) : newEvent.start_time}
+                onChange={(e) =>
+                  eventToEdit
+                    ? setEventToEdit({ ...eventToEdit, start: e.target.value })
+                    : setNewEvent((prev) => ({ ...prev, start_time: e.target.value }))
+                }
                 required
               />
 
               <label>Calendrier utilisé</label>
               <select
-                value={newEvent.calendar_id}
-                onChange={(e) => setNewEvent((prev) => ({ ...prev, calendar_id: e.target.value }))}
+                value={eventToEdit ? eventToEdit.calendar_id : newEvent.calendar_id}
+                onChange={(e) =>
+                  eventToEdit
+                    ? setEventToEdit({ ...eventToEdit, calendar_id: e.target.value })
+                    : setNewEvent((prev) => ({ ...prev, calendar_id: e.target.value }))
+                }
                 required
               >
                 {calendars.map((cal) => (
@@ -161,8 +228,19 @@ export default function Calendar() {
               </select>
 
               <button type="submit" className="submit-button">
-                Enregistrer l’événement
+                {eventToEdit ? "Mettre à jour" : "Créer l’événement"}
               </button>
+
+              {eventToEdit && (
+                <button
+                  type="button"
+                  className="submit-button"
+                  onClick={handleDeleteConfirmed}
+                  style={{ backgroundColor: "#ccc", color: "#000" }}
+                >
+                  Supprimer l’événement
+                </button>
+              )}
             </form>
           </div>
         </>

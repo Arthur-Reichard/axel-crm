@@ -18,7 +18,7 @@ export async function getCalendars(utilisateur) {
   const { data: persoCal, error: err1 } = await supabase
     .from("calendars")
     .select("*")
-    .eq("user_id", utilisateurId); // ← CORRECT
+    .eq("user_id", utilisateurId);
 
   if (err1) throw err1;
   if (persoCal) calendars = [...calendars, ...persoCal];
@@ -47,6 +47,7 @@ export async function getEventsForCalendars(calendarIds) {
     title: e.title,
     start: e.start_time,
     end: e.end_time,
+    calendar_id: e.calendar_id,
     color: e.calendars?.color || '#999'
   }));
 }
@@ -72,6 +73,36 @@ export async function createEvent({ title, start_time, calendar_id }) {
     title: data.title,
     start: data.start_time,
     end: data.end_time,
+    calendar_id: data.calendar_id,
+    color: '#999'
+  };
+}
+
+export async function updateEvent(event) {
+  const { id, title, start, calendar_id } = event;
+  const startDate = new Date(start);
+  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+  const { data, error } = await supabase
+    .from("events")
+    .update({
+      title,
+      start_time: startDate.toISOString(),
+      end_time: endDate.toISOString(),
+      calendar_id,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    title: data.title,
+    start: data.start_time,
+    end: data.end_time,
+    calendar_id: data.calendar_id,
     color: '#999'
   };
 }
