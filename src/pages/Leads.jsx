@@ -149,22 +149,19 @@ export default function Leads() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+  
     const parseData = (rawData) => {
       const headers = Object.keys(rawData[0] || {});
-      const sample = {};
-      headers.forEach(h => {
-        sample[h] = rawData.map(row => row[h]).slice(0, 3);
-      });
-      navigate('/mapping', {
+      navigate('/column-mapping', {
         state: {
           headers,
-          parsedRows
+          parsedRows: rawData
         }
-      });    
+      });
     };
-
+  
     const reader = new FileReader();
+  
     if (file.name.endsWith('.csv')) {
       Papa.parse(file, {
         header: true,
@@ -177,8 +174,8 @@ export default function Leads() {
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(worksheet, {
-          defval: '',         
-          blankrows: false    
+          defval: '',
+          blankrows: false
         }).filter(row =>
           Object.values(row).some(cell => cell && cell.toString().trim() !== '')
         );
@@ -189,6 +186,7 @@ export default function Leads() {
       alert('Format non supporté');
     }
   };
+  
 
   const handleMappingComplete = async (mapping) => {
     console.log('parsedRows:', parsedRows.length);
@@ -256,81 +254,50 @@ export default function Leads() {
 
   return (
     <>
-      {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
+  {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
 
-      <div className="leads-container">
-        <div className="leads-header">
-          <h1 className="leads-title">Tableau des Leads</h1>
-          <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
-          {step === 1 && (
-            <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} style={{ marginLeft: '1rem' }} />
-          )}
-          {selectedLeads.length > 0 && (
-            <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
-          )}
-        </div>
-
-        {step === 2 ? (
-          <div className="mapping-fullpage">
-            <div className="leads-header">
-              <h1 className="leads-title">🧩 Données de mapping</h1>
-              <button className="btn-retour" onClick={() => setStep(1)}>← Retour</button>
-            </div>
-
-            <ColumnMapping
-              headers={headers}
-              previewData={parsedRows.reduce((acc, row) => {
-                headers.forEach(h => {
-                  acc[h] = acc[h] || [];
-                  acc[h].push(row[h]);
-                });
-                return acc;
-              }, {})}
-              onMappingComplete={handleMappingComplete}
-            />
-          </div>
-        ) : (
-          <>
-            <div className="leads-header">
-              {selectedLeads.length > 0 && (
-                <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
-              )}
-            </div>
-
-            <div className="table-wrapper">
-              <table className="lead-table">
-                <thead>
-                  <tr>
-                    <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
-                    {selectedColumns.map((col) => (
-                      <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
-                        {col}
-                      </ResizableTH>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((lead) => (
-                    <tr key={lead.id}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={selectedLeads.includes(lead.id)}
-                          onChange={() => toggleSelectLead(lead.id)}
-                        />
-                      </td>
-                      {selectedColumns.map((col) => (
-                        <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                          {lead[columnFieldMap[col]]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+    <div className="leads-container">
+      <div className="leads-header">
+        <h1 className="leads-title">Tableau des Leads</h1>
+        <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
+        <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} style={{ marginLeft: '1rem' }} />
+        {selectedLeads.length > 0 && (
+          <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
         )}
+      </div>
+
+      <div className="table-wrapper">
+        <table className="lead-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
+              {selectedColumns.map((col) => (
+                <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
+                  {col}
+                </ResizableTH>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {leads.map((lead) => (
+              <tr key={lead.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedLeads.includes(lead.id)}
+                    onChange={() => toggleSelectLead(lead.id)}
+                  />
+                </td>
+                {selectedColumns.map((col) => (
+                  <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    {lead[columnFieldMap[col]]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
 
         {drawerOpen && (

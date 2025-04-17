@@ -114,7 +114,7 @@ function App() {
               element={<FactureDetail darkMode={darkMode} toggleMode={toggleMode} />}
             />
             <Route 
-            path="/mapping" element={<ColumnMapping />} 
+            path="/column-mapping" element={<ColumnMapping />}
             />
           </Route>
         </Route>
