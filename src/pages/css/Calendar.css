@@ -49,7 +49,7 @@
 
 .my-calendar-main {
   flex-grow: 1;
-  padding: 0;
+  padding-top: 1.5rem;
   min-width: 0;
   box-sizing: border-box;
 }
@@ -427,8 +427,8 @@
   }
 
   .my-calendar-main {
-    padding: 0;
-    margin-top: 3rem;
+    padding-top: 0;
+    margin-top: 0;
   }
 
   .my-calendar-header {
@@ -549,5 +549,316 @@
   .fc {
     flex-grow: 1;
     height: unset !important;
+  }
+}
+
+.my-calendar-hamburger.invisible {
+  visibility: hidden;
+}
+
+/* Cache les flèches uniquement en mode mobile + vue "liste" */
+@media (max-width: 900px) {
+  .my-calendar-header-mobile.no-arrows button:nth-child(2),
+  .my-calendar-header-mobile.no-arrows button:nth-child(4) {
+    display: none;
+  }
+
+  .my-calendar-header-mobile.no-arrows .my-calendar-current-month {
+    text-align: left;
+    padding-left: 0.25rem;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .my-calendar-header-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--calendar-text);
+    position: relative;
+  }
+
+  .my-calendar-header-mobile .my-calendar-hamburger {
+    font-size: 1.5rem;
+  }
+
+  .my-calendar-header-mobile .my-calendar-current-month {
+    flex-grow: 1;
+    text-align: center;
+    text-transform: capitalize;
+    font-weight: 600;
+  }
+
+  .my-calendar-header-mobile.no-arrows button.prev,
+  .my-calendar-header-mobile.no-arrows button.next {
+    visibility: hidden; /* garde l’espace mais cache visuellement */
+  }
+}
+
+.fc-event {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 900px) {
+  .my-calendar-event-overlay {
+    position: fixed;
+    inset: 0;
+    background: white;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .my-calendar-event-overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .my-calendar-event-overlay-header button {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+  }
+
+  .my-calendar-event-overlay-content h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .my-calendar-event-overlay-content p {
+    margin: 0.4rem 0;
+    font-size: 1rem;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+/* Effet hover supprimé sur mobile */
+@media (hover: none) and (pointer: coarse) {
+  .fc .fc-daygrid-event:hover,
+  .fc .fc-timegrid-event:hover {
+    background: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .fc-event:hover {
+    background-color: inherit !important;
+  }
+}
+
+
+html, body {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.my-calendar-app {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+.my-calendar-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fc {
+  flex-grow: 1;
+  height: unset !important;
+}
+
+
+@media (min-width: 901px) {
+  .my-calendar-header-mobile {
+    margin-top: 1.5rem; /* ajuste ici la taille */
+  }
+}
+
+@media (min-width: 901px) {
+  .my-calendar-header-mobile {
+    margin-top: 1.5rem;
+    padding-top: 0.5rem;
+  }
+}
+
+/* Padding horizontal autour des boutons (navigation + switch) */
+.fc-header-toolbar {
+  padding: 0 1rem; /* ✅ ajoute du padding à gauche/droite uniquement */
+}
+
+/* Optionnel : ajouter un petit espace entre les groupes */
+.fc-header-toolbar > div {
+  margin-right: 0.5rem;
+}
+
+@media (min-width: 901px) {
+  .fc-header-toolbar {
+    padding: 0 1.5rem;
+  }
+}
+.fc .fc-daygrid-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  line-height: 1.2;
+}
+
+/* Supprime l'heure automatiquement injectée */
+.fc-event-time {
+  display: none !important;
+}
+
+/* Supprime aussi le point coloré de l'heure si tu veux */
+.fc-event-dot {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .fc .fc-daygrid-event {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+    padding: 0 2px;
+  }
+
+  .fc-event-time,
+  .fc-event-dot {
+    display: none !important;
+  }
+}
+
+/* Mobile : juste le titre */
+.custom-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  padding: 0 2px;
+}
+
+/* Desktop : heure + titre */
+.custom-event-pc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-event-pc .event-time {
+  font-weight: normal;
+  color: #444;
+}
+
+.custom-event-pc .event-title {
+  font-weight: bold;
+  color: #000;
+}
+
+/* Style commun à tous les événements */
+.fc .fc-daygrid-event,
+.fc .fc-timegrid-event {
+  background: none !important; /* on va le gérer nous-mêmes */
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Conteneur custom de l'événement */
+.fc-custom-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.2); /* fallback au cas où */
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Heure en normal */
+.fc-custom-time {
+  font-weight: normal;
+  opacity: 0.9;
+}
+
+/* Titre en gras */
+.fc-custom-title {
+  font-weight: bold;
+}
+
+/* Pour toutes les vues */
+.fc-event-inner {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: white;
+  background-color: currentColor; /* Fallback au cas où */
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  gap: 5px;
+}
+
+/* Heure normale */
+.fc-time-label {
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* Titre en gras */
+.fc-title {
+  font-weight: bold;
+}
+
+/* Mobile : juste le titre, sans l'heure */
+.fc-title-only {
+  font-weight: bold;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empêche les effets moches sur mobile */
+@media (hover: none) and (pointer: coarse) {
+  .fc-event:hover {
+    background: none !important;
+    box-shadow: none !important;
   }
 }
