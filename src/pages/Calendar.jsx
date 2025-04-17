@@ -23,7 +23,7 @@ import { supabase } from '../helper/supabaseClient';
 import EventTooltip from '../components/EventTooltip';
 import './css/Calendar.css';
 
-export default function Calendar() {
+export default function Calendar({ darkMode }) {
   const [userId, setUserId] = useState(null);
   const [calendars, setCalendars] = useState([]);
   const [events, setEvents] = useState([]);
@@ -36,7 +36,14 @@ export default function Calendar() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const calendarRef = useRef(null);
   const [currentView, setCurrentView] = useState('dayGridMonth');
+  const isMobile = window.innerWidth <= 900;
+  const [mobileEventOverlay, setMobileEventOverlay] = useState(null);
 
+  function createElement(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html.trim();
+    return temp.firstChild;
+  }
   useEffect(() => {
     const loadAll = async () => {
       try {
@@ -77,6 +84,17 @@ export default function Calendar() {
     };
     loadAll();
   }, []);
+
+  useEffect(() => {
+    const body = document.body;
+    if (drawerOpen) {
+      body.classList.add('drawer-open');
+    } else {
+      body.classList.remove('drawer-open');
+    }
+  }, [drawerOpen]);
+  
+  
 
   useEffect(() => {
     if (!userId || calendars.length === 0) return;
@@ -160,16 +178,32 @@ export default function Calendar() {
   };
 
   const handleTooltip = (info) => {
+    const isMobile = window.innerWidth <= 900;
+    const currentView = info.view?.type;
+  
+    const isTimeGrid = currentView === 'timeGridDay' || currentView === 'timeGridWeek';
+  
+    if (isMobile || isTimeGrid) return; // ❌ pas de tooltip sur mobile ni en vue jour/semaine
+  
     const event = events.find(e => e.id === info.event.id);
     if (!event) return;
+  
     const content = `
       <strong>${event.title}</strong><br/>
       ${event.lieu ? '📍 ' + event.lieu + '<br/>' : ''}
       ${event.description ? event.description + '<br/>' : ''}
       ${event.duration ? '⏱️ ' + event.duration + ' min' : ''}
     `;
-    tippy(info.el, { content, placement: 'top', allowHTML: true, theme: 'light' });
+  
+    tippy(info.el, {
+      content,
+      placement: 'top',
+      allowHTML: true,
+      theme: 'light',
+    });
   };
+  
+  
 
   const handleEventDrop = async (info) => {
     try {
@@ -186,16 +220,25 @@ export default function Calendar() {
     }
   };
 
-  const displayedEvents = events.filter(evt => selectedCalendars.includes(evt.calendar_id)).map(evt => ({
-    ...evt,
-    start: evt.start_time,
-    end: evt.end_time
-  }));
+  const displayedEvents = events
+  .filter(evt => selectedCalendars.includes(evt.calendar_id))
+  .map(evt => {
+    const cal = calendars.find(c => c.id === evt.calendar_id);
+    return {
+      ...evt,
+      start: evt.start_time,
+      end: evt.end_time,
+      backgroundColor: cal?.color || '#1e88e5',
+      borderColor: cal?.color || '#1e88e5',
+      textColor: '#fff'
+    };
+  });
+
 
   if (loading) return <p className="my-calendar-app-loading">Chargement du calendrier...</p>;
 
   return (
-    <div className="my-calendar-app">
+    <div className={`my-calendar-app ${darkMode ? 'dark' : ''}`}>
       <Toaster position="top-right" />
 
       {showMobileSidebar && (
@@ -220,14 +263,29 @@ export default function Calendar() {
           plugins={[dayGridPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
-          height="auto"
+          height="100%"
+          contentHeight="auto"
           fixedWeekCount={false}
           dayMaxEventRows={1}
           selectable
           datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
-          dateClick={(arg) => {
-            setCurrentDate(arg.date);
-            calendarRef.current?.getApi().gotoDate(arg.date);
+          select={(arg) => {
+            const isMobile = window.innerWidth <= 900;
+          
+            if (isMobile) {
+              calendarRef.current?.getApi().changeView('timeGridDay', arg.start);
+              setCurrentView('timeGridDay');
+            } else {
+              setNewEvent({
+                title: '',
+                start_time: arg.startStr.slice(0, 16),
+                calendar_id: calendars[0]?.id || '',
+                description: '',
+                lieu: '',
+                duration: 60
+              });
+              setDrawerOpen(true);
+            }
           }}
           />
       </div>
@@ -265,11 +323,15 @@ export default function Calendar() {
           className={currentView === 'listWeek' ? 'active' : ''}
           onClick={() => {
             setCurrentView('listWeek');
-            calendarRef.current?.getApi().changeView('listWeek');
+            const api = calendarRef.current?.getApi();
+            if (api) {
+              api.changeView('listWeek', new Date()); // 👈 focus sur aujourd’hui
+            }
           }}
         >
           Liste
         </button>
+
       </div>
 
 
@@ -293,17 +355,18 @@ export default function Calendar() {
       </div>
 
       <div className="my-calendar-main">
-        <div className="my-calendar-header-mobile">
-          {!showMobileSidebar && (
-            <button className="my-calendar-hamburger" onClick={() => setShowMobileSidebar(true)}>
-              ☰
-            </button>
-          )}
-          <button onClick={() => calendarRef.current?.getApi().prev()}>←</button>
-            <div className="my-calendar-current-month">
-              {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-            </div>
-          <button onClick={() => calendarRef.current?.getApi().next()}>→</button>
+        <div className={`my-calendar-header-mobile ${currentView === 'listWeek' ? 'no-arrows' : ''}`}>
+        <button
+          className={`my-calendar-hamburger ${(showMobileSidebar || drawerOpen) ? 'invisible' : ''}`}
+          onClick={() => setShowMobileSidebar(true)}
+        >
+          ☰
+        </button>
+          <button className="prev" onClick={() => calendarRef.current?.getApi().prev()}>←</button>
+          <div className="my-calendar-current-month">
+            {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+          </div>
+          <button className="next" onClick={() => calendarRef.current?.getApi().next()}>→</button>
         </div>
 
 
@@ -316,13 +379,30 @@ export default function Calendar() {
           eventResizableFromStart
           events={displayedEvents}
           eventClick={(info) => {
+            const isMobile = window.innerWidth <= 900;
+          
             const event = events.find(e => e.id === info.event.id);
-            setEventToEdit(event);
-            setDrawerOpen(true);
+            if (!event) return;
+          
+            if (isMobile && (currentView === 'timeGridWeek' || currentView === 'timeGridDay')) {
+              setMobileEventOverlay(event);
+            } else {
+              setEventToEdit(event);
+              setDrawerOpen(true);
+            }
           }}
           eventDrop={handleEventDrop}
           eventResize={handleEventDrop}
-          dateClick={handleDateClick}
+          dateClick={(arg) => {
+            const isMobile = window.innerWidth <= 900;
+          
+            if (isMobile) {
+              calendarRef.current?.getApi().changeView('timeGridDay', arg.date);
+              setCurrentView('timeGridDay');
+            } else {
+              handleDateClick(arg);
+            }
+          }}
           eventDidMount={handleTooltip}
           datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
           height="calc(var(--vh, 1vh) * 100)"
@@ -345,6 +425,76 @@ export default function Calendar() {
           viewDidMount={(arg) => {
             setCurrentView(arg.view.type);
           }}
+          eventStartEditable={true}
+          eventDurationEditable={true}
+          longPressDelay={isMobile ? 400 : 0}
+          eventLongPressDelay={isMobile ? 400 : 0}
+          dragScroll={isMobile}
+          eventContent={(arg) => {
+            const view = arg.view.type;
+            const isTimeGrid = view === 'timeGridDay' || view === 'timeGridWeek';
+            const isMonth = view === 'dayGridMonth';
+            const isMobile = window.innerWidth <= 900;
+            
+            const title = arg.event.title;
+            const start = arg.event.start;
+            const hours = start.getHours().toString().padStart(2, '0');
+            const minutes = start.getMinutes().toString().padStart(2, '0');
+            const timeStr = `${hours}:${minutes}`;
+            const color = arg.event.backgroundColor || arg.event.color || '#1e88e5';
+
+            if (isTimeGrid) {
+              const lieu = arg.event.extendedProps.lieu;
+              const description = arg.event.extendedProps.description;
+              const duration = arg.event.extendedProps.duration;
+          
+              return {
+                domNodes: [createElement(`
+                  <div style="
+                    background-color: ${color};
+                    border: 1px solid ${color};
+                    color: white;
+                    border-radius: 6px;
+                    padding: 6px 8px;
+                    font-size: 0.8rem;
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    gap: 2px;
+                  ">
+                    <div style="font-weight: bold;">${title}</div>
+                    ${lieu ? `<div style="font-size: 0.75rem;">📍 ${lieu}</div>` : ''}
+                    ${description ? `<div style="font-size: 0.75rem; opacity: 0.85;">${description}</div>` : ''}
+                    ${duration ? `<div style="font-size: 0.75rem;">⏱ ${duration} min</div>` : ''}
+                  </div>
+                `)]
+              };
+            }
+          
+            return {
+              domNodes: [createElement(`
+                <div style="
+                  background-color: ${color};
+                  border: 1px solid ${color};
+                  color: white;
+                  border-radius: 6px;
+                  padding: 2px 6px;
+                  font-size: 0.8rem;
+                  display: block;
+                  width: 100%;
+                  box-sizing: border-box;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                ">
+                  <strong>${title}</strong>
+                </div>
+              `)]
+            };
+
+          }}                   
         />
       </div>
 
@@ -383,6 +533,28 @@ export default function Calendar() {
             </form>
           </div>
         </>
+        
+      )}
+      {mobileEventOverlay && (
+        <div className="my-calendar-event-overlay">
+          <div className="my-calendar-event-overlay-header">
+            <button onClick={() => setMobileEventOverlay(null)}>×</button>
+            <span>Détails</span>
+            <button onClick={() => {
+              setEventToEdit(mobileEventOverlay);
+              setDrawerOpen(true);
+              setMobileEventOverlay(null);
+            }}>✎</button>
+          </div>
+
+          <div className="my-calendar-event-overlay-content">
+            <h2>{mobileEventOverlay.title}</h2>
+            {mobileEventOverlay.lieu && <p>📍 {mobileEventOverlay.lieu}</p>}
+            {mobileEventOverlay.description && <p>{mobileEventOverlay.description}</p>}
+            {mobileEventOverlay.start_time && <p>🕒 {new Date(mobileEventOverlay.start_time).toLocaleString()}</p>}
+            {mobileEventOverlay.duration && <p>⏱ {mobileEventOverlay.duration} minutes</p>}
+          </div>
+        </div>
       )}
     </div>
   );

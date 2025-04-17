@@ -2,7 +2,7 @@
 :root {
   --calendar-font: 'Roboto', sans-serif;
   --calendar-text: #202124;
-  --calendar-bg: #f8f9fa;
+  --calendar-bg: #f5f5f5;
   --calendar-accent: #1a73e8;
   --calendar-hover: #1558b0;
   --calendar-border: #e0e0e0;
@@ -25,7 +25,7 @@
 
 .my-calendar-sidebar {
   flex: 0 0 280px;
-  background-color: white;
+  background-color: var(--calendar-bg);
   border-right: 1px solid var(--calendar-border);
   padding: 1.75rem 1.25rem;
   box-shadow: 1px 0 4px var(--calendar-shadow);
@@ -49,7 +49,7 @@
 
 .my-calendar-main {
   flex-grow: 1;
-  padding: 0;
+  padding-top: 1.5rem;
   min-width: 0;
   box-sizing: border-box;
 }
@@ -95,7 +95,7 @@
 
 .my-calendar-delete-btn {
   background-color: var(--calendar-delete);
-  color: black;
+  color: var(--calendar-text);
   border: none;
   padding: 0.6rem 1.3rem;
   border-radius: 8px;
@@ -117,7 +117,7 @@
   right: 0;
   height: 100vh;
   width: 360px;
-  background-color: white;
+  background-color: var(--calendar-bg);
   z-index: 999;
   padding: 2rem 1.5rem;
   box-shadow: -4px 0 12px var(--calendar-drawer-shadow);
@@ -186,8 +186,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #eef2f7;
-  border: none;
+  background-color: var(--calendar-bg);
+  border: 1px solid var(--calendar-border);
   border-radius: 999px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -199,7 +199,7 @@
 }
 
 .my-calendar-create-btn:hover {
-  background-color: #e0e5ec;
+  background-color: var(--calendar-hover);
 }
 
 .my-calendar-dropdown {
@@ -207,7 +207,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--calendar-bg);
   border-radius: 0.5rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   margin-top: 0.3rem;
@@ -303,7 +303,7 @@
 
 .my-calendar-sidebar .fc .fc-day-today .fc-daygrid-day-number {
   background-color: var(--calendar-accent);
-  color: white;
+  color: var(--calendar-bg);
   font-weight: 500;
 }
 
@@ -350,7 +350,7 @@
   padding: 0.75rem 1rem;
   border: none;
   background-color: transparent;
-  color: black;
+  color: var(--calendar-text);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-top-right-radius: 0.75rem;
@@ -368,11 +368,11 @@
 
 /* Style actif */
 .my-calendar-sidebar .mobile-view-buttons button.active {
-  background-color: #3c4043;
+  background-color: var(--calendar-accent);
   color: white;
 }
 .my-calendar-sidebar .mobile-view-buttons button:hover {
-  background-color: #5f6368;
+  background-color: var(--calendar-hover);
 }
 
 .my-calendar-sidebar label {
@@ -414,7 +414,7 @@
     width: 75%;
     max-width: 75%;
     height: 100%;
-    background-color: white;
+    background-color: var(--calendar-bg);
     z-index: 1000;
     transition: left 0.3s ease;
     padding: 2rem 0 1rem 0;
@@ -427,8 +427,8 @@
   }
 
   .my-calendar-main {
-    padding: 0;
-    margin-top: 3rem;
+    padding-top: 0;
+    margin-top: 0;
   }
 
   .my-calendar-header {
@@ -550,4 +550,460 @@
     flex-grow: 1;
     height: unset !important;
   }
+}
+
+.my-calendar-hamburger.invisible {
+  visibility: hidden;
+}
+
+/* Cache les flèches uniquement en mode mobile + vue "liste" */
+@media (max-width: 900px) {
+  .my-calendar-header-mobile.no-arrows button:nth-child(2),
+  .my-calendar-header-mobile.no-arrows button:nth-child(4) {
+    display: none;
+  }
+
+  .my-calendar-header-mobile.no-arrows .my-calendar-current-month {
+    text-align: left;
+    padding-left: 0.25rem;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .my-calendar-header-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--calendar-text);
+    position: relative;
+  }
+
+  .my-calendar-header-mobile .my-calendar-hamburger {
+    font-size: 1.5rem;
+  }
+
+  .my-calendar-header-mobile .my-calendar-current-month {
+    flex-grow: 1;
+    text-align: center;
+    text-transform: capitalize;
+    font-weight: 600;
+  }
+
+  .my-calendar-header-mobile.no-arrows button.prev,
+  .my-calendar-header-mobile.no-arrows button.next {
+    visibility: hidden; /* garde l’espace mais cache visuellement */
+  }
+}
+
+.fc-event {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 900px) {
+  .my-calendar-event-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--calendar-bg);
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .my-calendar-event-overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .my-calendar-event-overlay-header button {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+  }
+
+  .my-calendar-event-overlay-content h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .my-calendar-event-overlay-content p {
+    margin: 0.4rem 0;
+    font-size: 1rem;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+/* Effet hover supprimé sur mobile */
+@media (hover: none) and (pointer: coarse) {
+  .fc .fc-daygrid-event:hover,
+  .fc .fc-timegrid-event:hover {
+    background: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .fc-event:hover {
+    background-color: inherit !important;
+  }
+}
+
+
+html, body {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.my-calendar-app {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+.my-calendar-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fc {
+  flex-grow: 1;
+  height: unset !important;
+}
+
+
+@media (min-width: 901px) {
+  .my-calendar-header-mobile {
+    margin-top: 1.5rem; /* ajuste ici la taille */
+  }
+}
+
+@media (min-width: 901px) {
+  .my-calendar-header-mobile {
+    margin-top: 1.5rem;
+    padding-top: 0.5rem;
+  }
+}
+
+/* Padding horizontal autour des boutons (navigation + switch) */
+.fc-header-toolbar {
+  padding: 0 1rem; /* ✅ ajoute du padding à gauche/droite uniquement */
+}
+
+/* Optionnel : ajouter un petit espace entre les groupes */
+.fc-header-toolbar > div {
+  margin-right: 0.5rem;
+}
+
+@media (min-width: 901px) {
+  .fc-header-toolbar {
+    padding: 0 1.5rem;
+  }
+}
+.fc .fc-daygrid-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  line-height: 1.2;
+}
+
+/* Supprime l'heure automatiquement injectée */
+.fc-event-time {
+  display: none !important;
+}
+
+/* Supprime aussi le point coloré de l'heure si tu veux */
+.fc-event-dot {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .fc .fc-daygrid-event {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+    padding: 0 2px;
+  }
+
+  .fc-event-time,
+  .fc-event-dot {
+    display: none !important;
+  }
+}
+
+/* Mobile : juste le titre */
+.custom-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  padding: 0 2px;
+}
+
+/* Desktop : heure + titre */
+.custom-event-pc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-event-pc .event-time {
+  font-weight: normal;
+  color: var(--calendar-text);
+}
+
+.custom-event-pc .event-title {
+  font-weight: bold;
+  color: var(--calendar-text);
+}
+
+/* Style commun à tous les événements */
+.fc .fc-daygrid-event,
+.fc .fc-timegrid-event {
+  background: none !important; /* on va le gérer nous-mêmes */
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Conteneur custom de l'événement */
+.fc-custom-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.2); /* fallback au cas où */
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Heure en normal */
+.fc-custom-time {
+  font-weight: normal;
+  opacity: 0.9;
+}
+
+/* Titre en gras */
+.fc-custom-title {
+  font-weight: bold;
+}
+
+/* Pour toutes les vues */
+.fc-event-inner {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: white;
+  background-color: currentColor; /* Fallback au cas où */
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  gap: 5px;
+}
+
+/* Heure normale */
+.fc-time-label {
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* Titre en gras */
+.fc-title {
+  font-weight: bold;
+}
+
+/* Mobile : juste le titre, sans l'heure */
+.fc-title-only {
+  font-weight: bold;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empêche les effets moches sur mobile */
+@media (hover: none) and (pointer: coarse) {
+  .fc-event:hover {
+    background: none !important;
+    box-shadow: none !important;
+  }
+}
+
+body {
+  overflow: hidden; /* par défaut, pas de scroll */
+}
+
+body.my-calendar-scroll-enabled {
+  overflow: auto !important; /* scroll activé uniquement si drawerOpen */
+}
+
+@media (max-width: 900px) {
+  .my-calendar-drawer {
+    width: 100vw;
+    height: calc(var(--vh, 1vh) * 100);
+    padding: 1.25rem;
+    border-radius: 0;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .my-calendar-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .my-calendar-form input,
+  .my-calendar-form select,
+  .my-calendar-form textarea {
+    font-size: 1rem;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .my-calendar-drawer-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .my-calendar-drawer h2 {
+    font-size: 1.25rem;
+  }
+
+  .my-calendar-close-btn {
+    align-self: flex-end;
+    font-size: 2rem;
+  }
+}
+.my-calendar-form input,
+.my-calendar-form select,
+.my-calendar-form textarea {
+  padding: 0.75rem 1rem; /* padding top-bottom et droite-gauche */
+  border-radius: 8px;
+  border: 1px solid var(--calendar-border);
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+.my-calendar-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.my-calendar-drawer-header h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.my-calendar-close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+@media (max-width: 900px) {
+  .my-calendar-drawer-header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .my-calendar-close-btn {
+    font-size: 2rem;
+  }
+}
+
+
+html.dark .my-calendar-app,
+body.dark .my-calendar-app {
+  --calendar-bg: #1e1e1e;
+  --calendar-text: #e0e0e0;
+  --calendar-border: #333;
+  --calendar-accent: #90caf9;
+  --calendar-hover: #64b5f6;
+  --calendar-overlay: rgba(255, 255, 255, 0.2);
+  --calendar-shadow: rgba(255, 255, 255, 0.1);
+  --calendar-drawer-shadow: rgba(255, 255, 255, 0.2);
+  --calendar-delete: #666;
+  --calendar-danger: #ef5350;
+}
+
+
+
+/* Override pour fond de jour dans la vue liste */
+.my-calendar-app.dark .fc-list-day-cushion.fc-cell-shaded {
+  background-color: #2a2a2a; /* ou var(--calendar-bg) ou une couleur + contrastée */
+  color: var(--calendar-text);
+}
+
+.my-calendar-app:not(.dark) .fc-list-day-cushion.fc-cell-shaded {
+  background-color: #f5f5f5; /* pour s’aligner avec dashboard */
+}
+
+.my-calendar-app.dark .fc-list-event td {
+  background-color: #1e1e1e;
+  color: var(--calendar-text);
+}
+
+/* Masquer uniquement les demi-heures (sans texte dans la colonne label) */
+.fc-timegrid-slot.fc-timegrid-slot-lane {
+  border-top: none !important;
+}
+
+/* Restaurer les lignes d'heure (avec un label visible) */
+.fc-timegrid-slot.fc-timegrid-slot-lane:nth-of-type(2n) {
+  border-top: 1px solid var(--calendar-border) !important;
+}
+
+html.dark .fc-list-day-cushion.fc-cell-shaded {
+  background-color: #2a2a2a;
+  color: var(--calendar-text);
+}
+
+html.dark .fc-list-event td {
+  background-color: #1e1e1e;
+  color: var(--calendar-text);
 }

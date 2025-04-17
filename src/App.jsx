@@ -34,6 +34,7 @@ function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
+    document.body.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
   return (
