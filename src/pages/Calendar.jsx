@@ -35,6 +35,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const calendarRef = useRef(null);
+  const [currentView, setCurrentView] = useState('dayGridMonth');
 
   useEffect(() => {
     const loadAll = async () => {
@@ -91,6 +92,16 @@ export default function Calendar() {
 
     return () => supabase.removeChannel(channel);
   }, [userId, calendars]);
+
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -187,11 +198,15 @@ export default function Calendar() {
     <div className="my-calendar-app">
       <Toaster position="top-right" />
 
-      <button className="my-calendar-hamburger" onClick={() => setShowMobileSidebar(true)}>
-        ☰
-      </button>
+      {showMobileSidebar && (
+        <div
+          className="my-calendar-sidebar-overlay"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+      )}
 
       <div className={`my-calendar-sidebar ${showMobileSidebar ? 'open' : ''}`}>
+
         <button className="my-calendar-close-menu" onClick={() => setShowMobileSidebar(false)}>×</button>
 
         <div className="my-calendar-create-wrapper">
@@ -209,7 +224,7 @@ export default function Calendar() {
           fixedWeekCount={false}
           dayMaxEventRows={1}
           selectable
-          datesSet={(arg) => setCurrentDate(arg.start)}
+          datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
           dateClick={(arg) => {
             setCurrentDate(arg.date);
             calendarRef.current?.getApi().gotoDate(arg.date);
@@ -218,12 +233,46 @@ export default function Calendar() {
       </div>
 
 
-        <div className="mobile-view-buttons">
-          <button onClick={() => calendarRef.current?.getApi().changeView('dayGridMonth')}>Mois</button>
-          <button onClick={() => calendarRef.current?.getApi().changeView('timeGridWeek')}>Semaine</button>
-          <button onClick={() => calendarRef.current?.getApi().changeView('timeGridDay')}>Jour</button>
-          <button onClick={() => calendarRef.current?.getApi().changeView('listWeek')}>Liste</button>
-        </div>
+      <div className="mobile-view-buttons">
+        <button
+          className={currentView === 'dayGridMonth' ? 'active' : ''}
+          onClick={() => {
+            setCurrentView('dayGridMonth');
+            calendarRef.current?.getApi().changeView('dayGridMonth');
+          }}
+        >
+          Mois
+        </button>
+        <button
+          className={currentView === 'timeGridWeek' ? 'active' : ''}
+          onClick={() => {
+            setCurrentView('timeGridWeek');
+            calendarRef.current?.getApi().changeView('timeGridWeek');
+          }}
+        >
+          Semaine
+        </button>
+        <button
+          className={currentView === 'timeGridDay' ? 'active' : ''}
+          onClick={() => {
+            setCurrentView('timeGridDay');
+            calendarRef.current?.getApi().changeView('timeGridDay');
+          }}
+        >
+          Jour
+        </button>
+        <button
+          className={currentView === 'listWeek' ? 'active' : ''}
+          onClick={() => {
+            setCurrentView('listWeek');
+            calendarRef.current?.getApi().changeView('listWeek');
+          }}
+        >
+          Liste
+        </button>
+      </div>
+
+
 
         <h3>Mes agendas</h3>
         {calendars.map(cal => (
@@ -244,9 +293,20 @@ export default function Calendar() {
       </div>
 
       <div className="my-calendar-main">
-        <div className="my-calendar-header">
-          <h1>Mon calendrier</h1>
+        <div className="my-calendar-header-mobile">
+          {!showMobileSidebar && (
+            <button className="my-calendar-hamburger" onClick={() => setShowMobileSidebar(true)}>
+              ☰
+            </button>
+          )}
+          <button onClick={() => calendarRef.current?.getApi().prev()}>←</button>
+            <div className="my-calendar-current-month">
+              {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+            </div>
+          <button onClick={() => calendarRef.current?.getApi().next()}>→</button>
         </div>
+
+
 
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
@@ -264,11 +324,16 @@ export default function Calendar() {
           eventResize={handleEventDrop}
           dateClick={handleDateClick}
           eventDidMount={handleTooltip}
-          height="auto"
-          headerToolbar={{
+          datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
+          height="calc(var(--vh, 1vh) * 100)"
+          headerToolbar={window.innerWidth > 900 ? {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+          } : {
+            left: '',
+            center: '',
+            right: ''
           }}
           buttonText={{
             today: 'Aujourd\'hui',
@@ -276,6 +341,9 @@ export default function Calendar() {
             week: 'Semaine',
             day: 'Jour',
             list: 'Liste'
+          }}
+          viewDidMount={(arg) => {
+            setCurrentView(arg.view.type);
           }}
         />
       </div>
