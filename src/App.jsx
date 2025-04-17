@@ -39,7 +39,7 @@ function App() {
   }, [darkMode]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/axel-crm/">
       <Routes>
         {/* Pages publiques */}
         <Route
