@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../helper/supabaseClient.js';
 
 const crmFields = [
@@ -37,21 +38,32 @@ const crmFields = [
   { label: 'Documents', value: 'documents' }
 ];
 
-export default function ColumnMapping({ headers, previewData, onMappingComplete }) {
+export default function ColumnMapping({ headers: propsHeaders, previewData: propsPreviewData, onMappingComplete }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const headers = propsHeaders || location.state?.headers;
+  const previewData = propsPreviewData || location.state?.parsedRows?.reduce((acc, row) => {
+    headers?.forEach(h => {
+      acc[h] = acc[h] || [];
+      acc[h].push(row[h]);
+    });
+    return acc;
+  }, {}) || {};
+
+  if (!headers || !previewData) {
+    navigate('/leads');
+    return null;
+  }
+
   const [mapping, setMapping] = useState(() => {
     const normalize = (str) =>
-      str
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // enlève les accents
-        .replace(/[^a-z0-9]/g, '');     // enlève les caractères spéciaux
-
+      str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
     const autoMap = (header) => {
       const normalizedHeader = normalize(header);
       const match = crmFields.find(f => normalize(f.label) === normalizedHeader);
       return match?.value || '';
     };
-
     return headers.reduce((acc, h) => {
       acc[h] = autoMap(h);
       return acc;
@@ -69,36 +81,101 @@ export default function ColumnMapping({ headers, previewData, onMappingComplete 
   const numProspects = previewData[headers[0]]?.length || 0;
 
   return (
-    <div className="mapping-container">
-      <h2>🧩 Données de mapping</h2>
-      <p style={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+    <div
+      className="mapping-container"
+      style={{
+        padding: '2rem',
+        maxWidth: '800px',
+        margin: '0 auto',
+        maxHeight: 'calc(100vh - 1rem)',
+        overflowY: 'auto',
+        paddingBottom: '5rem'
+      }}
+    >
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          marginBottom: '2rem',
+          padding: '0.6rem 1.2rem',
+          fontWeight: 'bold',
+          borderRadius: '8px',
+          border: 'none',
+          backgroundColor: '#111e23',
+          color: 'white',
+          cursor: 'pointer'
+        }}
+      >
+        ← Retour
+      </button>
+
+      <h2 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.5rem' }}>
+        🧹 Données de mapping
+      </h2>
+      <p style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: '2rem' }}>
         {numProspects} prospect{numProspects > 1 ? 's' : ''} détecté{numProspects > 1 ? 's' : ''}
       </p>
 
-      {headers.map(header => (
-        <div key={header} className="mapping-row">
-          <div className="mapping-col header"><strong>{header}</strong></div>
-          <div className="mapping-col data-preview">
-            {(previewData[header] || []).slice(0, 3).join(', ')}
-          </div>
-          <div className="mapping-col select">
-            <select
-              value={mapping[header] || ''}
-              onChange={(e) => handleChange(header, e.target.value)}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {headers.map(header => (
+            <div
+            key={header}
+            style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                borderBottom: '1px solid #333',
+                paddingBottom: '0.5rem'
+            }}
             >
-              {crmFields.map(field => (
+            <div style={{ flex: 1, fontWeight: 'bold' }}>{header}</div>
+            <div style={{ flex: 2, fontSize: '0.9rem', color: '#aaa' }}>
+                {(previewData[header] || []).slice(0, 3).join(', ')}
+            </div>
+            <select
+                value={mapping[header] || ''}
+                onChange={(e) => handleChange(header, e.target.value)}
+                style={{ flex: 1.2, padding: '0.4rem', borderRadius: '6px' }}
+            >
+                {crmFields.map(field => (
                 <option key={field.value || 'none'} value={field.value || ''}>
-                  {field.label}
+                    {field.label}
                 </option>
-              ))}
+                ))}
             </select>
-          </div>
+            </div>
+        ))}
         </div>
-      ))}
 
-      <button className="validate-mapping" onClick={handleSubmit}>
-        Valider le mapping
-      </button>
+
+      <div
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          backgroundColor: '#111e23',
+          padding: '1rem 0',
+          marginTop: '2rem',
+          textAlign: 'center',
+          zIndex: 10,
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.3)'
+        }}
+      >
+        <button
+          onClick={handleSubmit}
+          style={{
+            padding: '0.9rem 1.8rem',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            backgroundColor: '#4BB543',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          ✅ Valider le mapping
+        </button>
+      </div>
     </div>
   );
 }

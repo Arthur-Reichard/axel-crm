@@ -156,9 +156,12 @@ export default function Leads() {
       headers.forEach(h => {
         sample[h] = rawData.map(row => row[h]).slice(0, 3);
       });
-      setParsedRows(rawData);
-      setHeaders(headers);
-      setStep(2);
+      navigate('/mapping', {
+        state: {
+          headers,
+          parsedRows
+        }
+      });    
     };
 
     const reader = new FileReader();
@@ -238,10 +241,13 @@ export default function Leads() {
     if (!selectedLeads.length) return;
     if (!window.confirm(`Supprimer définitivement ${selectedLeads.length} prospect(s) ?`)) return;
 
-    const { error } = await supabase.from('leads').delete().in('id', selectedLeads);
+    const { data, error } = await supabase.from('leads').delete().in('id', selectedLeads);
+
     if (error) {
+      console.error('Erreur lors de la suppression :', error.message, error.details);
       alert('Erreur lors de la suppression : ' + error.message);
     } else {
+      console.log('Supprimés :', data);
       setLeads(leads.filter(lead => !selectedLeads.includes(lead.id)));
       setSelectedLeads([]);
       setSelectAll(false);
@@ -265,47 +271,67 @@ export default function Leads() {
         </div>
 
         {step === 2 ? (
-          <ColumnMapping headers={headers} previewData={parsedRows.reduce((acc, row) => {
-            headers.forEach(h => {
-              acc[h] = acc[h] || [];
-              acc[h].push(row[h]);
-            });
-            return acc;
-          }, {})} onMappingComplete={handleMappingComplete} />
+          <div className="mapping-fullpage">
+            <div className="leads-header">
+              <h1 className="leads-title">🧩 Données de mapping</h1>
+              <button className="btn-retour" onClick={() => setStep(1)}>← Retour</button>
+            </div>
+
+            <ColumnMapping
+              headers={headers}
+              previewData={parsedRows.reduce((acc, row) => {
+                headers.forEach(h => {
+                  acc[h] = acc[h] || [];
+                  acc[h].push(row[h]);
+                });
+                return acc;
+              }, {})}
+              onMappingComplete={handleMappingComplete}
+            />
+          </div>
         ) : (
-          <div className="table-wrapper">
-            <table className="lead-table">
-              <thead>
-                <tr>
-                  <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
-                  {selectedColumns.map((col) => (
-                    <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
-                      {col}
-                    </ResizableTH>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {leads.map((lead) => (
-                  <tr key={lead.id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.includes(lead.id)}
-                        onChange={() => toggleSelectLead(lead.id)}
-                      />
-                    </td>
+          <>
+            <div className="leads-header">
+              {selectedLeads.length > 0 && (
+                <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
+              )}
+            </div>
+
+            <div className="table-wrapper">
+              <table className="lead-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
                     {selectedColumns.map((col) => (
-                      <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                        {lead[columnFieldMap[col]]}
-                      </td>
+                      <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
+                        {col}
+                      </ResizableTH>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {leads.map((lead) => (
+                    <tr key={lead.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.includes(lead.id)}
+                          onChange={() => toggleSelectLead(lead.id)}
+                        />
+                      </td>
+                      {selectedColumns.map((col) => (
+                        <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                          {lead[columnFieldMap[col]]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
+
 
         {drawerOpen && (
           <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>

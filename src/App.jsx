@@ -17,6 +17,7 @@ import ParcMateriel from "./pages/ParcMateriel";
 import MaterielDetail from "./pages/MaterielDetail"; 
 import Factures from "./pages/Factures"; 
 import FactureDetail from "./pages/FactureDetail";
+import ColumnMapping from './pages/ColumnMapping';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -111,6 +112,9 @@ function App() {
             <Route
               path="factures/:id"
               element={<FactureDetail darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+            <Route 
+            path="/mapping" element={<ColumnMapping />} 
             />
           </Route>
         </Route>
