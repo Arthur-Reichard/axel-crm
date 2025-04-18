@@ -44,6 +44,9 @@ export default function Calendar({ darkMode }) {
   const [mobileEventOverlay, setMobileEventOverlay] = useState(null);
   const [quickPopup, setQuickPopup] = useState(null);
   const [quickEventPopup, setQuickEventPopup] = useState(null);
+  const [usersFromSameEntreprise, setUsersFromSameEntreprise] = useState([]);
+  const [invitationsRecues, setInvitationsRecues] = useState([]);
+
 
 
   function createElement(html) {
@@ -51,6 +54,22 @@ export default function Calendar({ darkMode }) {
     temp.innerHTML = html.trim();
     return temp.firstChild;
   }
+
+
+  const handleInvitationResponse = async (invitationId, statut) => {
+    const { error } = await supabase
+      .from('invitations_events')
+      .update({ statut })
+      .eq('id', invitationId);
+  
+    if (error) {
+      toast.error("Erreur mise à jour de l'invitation");
+    } else {
+      toast.success(`Invitation ${statut === 'accepte' ? 'acceptée' : 'refusée'} !`);
+      setInvitationsRecues(prev => prev.filter(inv => inv.id !== invitationId));
+    }
+  };
+  
   useEffect(() => {
     const loadAll = async () => {
       try {
@@ -60,6 +79,18 @@ export default function Calendar({ darkMode }) {
 
         const utilisateur = await getUtilisateur(user.id);
         let userCalendars = await getCalendars(utilisateur);
+
+        const { data: invitations, error: invitationsError } = await supabase
+          .from('invitations_events')
+          .select('id, event_id, statut, events (title)')
+          .eq('utilisateur_id', user.id)
+          .eq('statut', 'en_attente');
+
+        if (invitationsError) {
+          console.error("Erreur récupération invitations :", invitationsError);
+        } else {
+          setInvitationsRecues(invitations);
+        }
 
         if (userCalendars.length === 0) {
           const { data: created, error } = await supabase.from("calendars").insert([
@@ -83,6 +114,17 @@ export default function Calendar({ darkMode }) {
         setEvents(allEvents);
 
         setNewEvent(prev => ({ ...prev, calendar_id: userCalendars[0].id }));
+
+        if (utilisateur.entreprise_id) {
+          const { data: users, error: usersError } = await supabase
+            .from('utilisateurs')
+            .select('id, prenom, nom, email')
+            .eq('entreprise_id', utilisateur.entreprise_id)
+            .neq('id', user.id); // pour exclure l'utilisateur lui-même
+        
+          if (usersError) throw usersError;
+          setUsersFromSameEntreprise(users);
+        }
       } catch (err) {
         toast.error("Erreur : " + err.message);
       } finally {
@@ -113,6 +155,17 @@ export default function Calendar({ darkMode }) {
       const calendarIds = calendars.map((c) => c.id);
       const allEvents = await getEventsForCalendars(calendarIds);
       setEvents(allEvents);
+      const { data: invitations, error: invitationsError } = await supabase
+        .from('invitations_events')
+        .select('id, event_id, statut, events (title)')
+        .eq('utilisateur_id', user.id)
+        .eq('statut', 'en_attente');
+
+      if (invitationsError) {
+        console.error("Erreur récupération invitations :", invitationsError);
+      } else {
+        setInvitationsRecues(invitations);
+      }
     }).subscribe();
 
     return () => supabase.removeChannel(channel);
@@ -368,6 +421,23 @@ export default function Calendar({ darkMode }) {
             <span style={{ color: cal.color }}>{cal.name}</span>
           </label>
         ))}
+
+        {invitationsRecues.length > 0 && (
+          <div className="invitations-sidebar-section">
+            <h4>Invitations reçues</h4>
+            <ul className="invitation-list">
+              {invitationsRecues.map(invite => (
+                <li key={invite.id} className="invitation-item">
+                  <span>{invite.events?.title || 'Événement'}</span>
+                  <div className="invitation-actions">
+                    <button onClick={() => handleInvitationResponse(invite.id, 'accepte')}>✅</button>
+                    <button onClick={() => handleInvitationResponse(invite.id, 'refuse')}>❌</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="my-calendar-main">
@@ -394,26 +464,40 @@ export default function Calendar({ darkMode }) {
           selectable
           eventResizableFromStart
           events={displayedEvents}
-          eventClick={(info) => {
+          eventClick={async (info) => {
             const isMobile = window.innerWidth <= 900;
-            const event = events.find(e => e.id === info.event.id);
-            if (!event) return;
+            const clickedEvent = events.find(e => e.id === info.event.id);
+            if (!clickedEvent) return;
+          
+            // Debug avec log
+            const { data: invites, error } = await supabase
+              .from('invitations_events')
+              .select('id, statut, utilisateur:utilisateur_id (prenom, nom, email)')
+              .eq('event_id', clickedEvent.id);
+          
+            if (error) {
+              console.error("❌ Supabase error on invite fetch:", error);
+              toast.error("Erreur chargement des invités");
+              return;
+            }
+          
+            console.log("✅ Invités récupérés :", invites);
+          
+            const enrichedEvent = { ...clickedEvent, invites };
           
             if (isMobile && (currentView === 'timeGridWeek' || currentView === 'timeGridDay')) {
-              setMobileEventOverlay(event);
+              setMobileEventOverlay(enrichedEvent);
             } else {
               setQuickPopup(null);
-          
               setTimeout(() => {
                 setQuickEventPopup({
                   x: info.jsEvent.pageX,
                   y: info.jsEvent.pageY,
-                  event
+                  event: enrichedEvent
                 });
               }, 20);
             }
-          }}
-          
+          }}          
           eventDrop={handleEventDrop}
           eventResize={handleEventDrop}
           dateClick={(arg) => {
@@ -544,17 +628,13 @@ export default function Calendar({ darkMode }) {
       )}
 
       {(quickPopup || quickEventPopup) && (
-        <div
-          className="popup-overlay"
-          onClick={() => {
-            setQuickPopup(null);
-            setQuickEventPopup(null);
-          }}
-        />
+        <div className="popup-overlay" />
       )}
+
 
       {quickPopup && !quickPopup.event && (
         <QuickEventPopup
+          utilisateursEntreprise={usersFromSameEntreprise}
           x={quickPopup.x}
           y={quickPopup.y}
           date={quickPopup.date}
@@ -562,14 +642,35 @@ export default function Calendar({ darkMode }) {
           onClose={() => setQuickPopup(null)}
           onSave={async (data) => {
             try {
+              // 1. Créer l'événement principal
               const newEvt = await createEvent(data);
               setEvents(prev => [...prev, newEvt]);
-              toast.success("Événement ajouté !");
+          
+              // 2. Insérer les invitations
+              if (data.invites && data.invites.length > 0) {
+                const invitesToInsert = data.invites.map(uid => ({
+                  event_id: newEvt.id,
+                  utilisateur_id: uid,
+                  invite_par: userId,
+                  statut: 'en_attente'
+                }));
+          
+                const { error: inviteError } = await supabase
+                  .from('invitations_events')
+                  .insert(invitesToInsert);
+          
+                if (inviteError) {
+                  console.error('Erreur insert invitations:', inviteError);
+                  toast.error("Invitations non envoyées");
+                }
+              }
+          
+              toast.success("Événement + invitations envoyés !");
               setQuickPopup(null);
             } catch (err) {
               toast.error("Erreur : " + err.message);
             }
-          }}
+          }}          
           onMoreOptions={(evtData) => {
             setNewEvent({
               ...evtData,

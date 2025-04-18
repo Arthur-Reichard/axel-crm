@@ -118,14 +118,85 @@
   filter: brightness(0.95);
 }
 
-/* Optionnel : overlay pour pop-up flottant */
-.popup-overlay {
-  z-index: 998;
+/* === Liste des invités dans EventDetailsPopup === */
+.event-popup-invites {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--calendar-border);
 }
 
-.popup-label {
-  font-size: 0.75rem;
+.event-popup-invites h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--calendar-text);
+}
+
+.invite-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.invite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--calendar-border);
+}
+
+.invite-item:last-child {
+  border-bottom: none;
+}
+
+.invite-name {
   font-weight: 500;
-  color: #5f6368;
-  margin-bottom: 0.2rem;
+}
+
+.invite-status {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background-color: #e0e0e0;
+  color: #444;
+}
+
+.invite-status.accepted {
+  background-color: #d0f0d0;
+  color: #1b5e20;
+}
+
+.invite-status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.invite-status.refused {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Dark mode adaptation */
+html.dark .invite-status {
+  background-color: #444;
+  color: #eee;
+}
+
+html.dark .invite-status.accepted {
+  background-color: #2e7d32;
+  color: #d0f0d0;
+}
+
+html.dark .invite-status.pending {
+  background-color: #8d6e63;
+  color: #fff3cd;
+}
+
+html.dark .invite-status.refused {
+  background-color: #b71c1c;
+  color: #f8d7da;
 }

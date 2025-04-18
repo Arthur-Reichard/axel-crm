@@ -99,6 +99,27 @@ export default function EventDetailsPopup({ x, y, event, calendars, onClose, onU
           {event.lieu && <p>📍 {event.lieu}</p>}
           <p>🕒 {new Date(event.start_time).toLocaleString()}</p>
           {event.duration && <p>⏱ {event.duration} minutes</p>}
+          {event.invites && event.invites.length > 0 && (
+            <div style={{ marginTop: '1rem' }}>
+              <h4>👥 Participants</h4>
+              <ul style={{ paddingLeft: '1rem' }}>
+                {event.invites.map(invite => {
+                  const statut = invite.statut;
+                  const user = invite.utilisateurs;
+                  const label =
+                    statut === 'accepte' ? '✅ Accepté' :
+                    statut === 'refuse' ? '❌ Refusé' :
+                    '⏳ En attente';
+
+                  return (
+                    <li key={invite.id}>
+                      {invite.utilisateur?.prenom} {invite.utilisateur?.nom} ({invite.utilisateur?.email}) – <strong>{label}</strong>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           <div className="popup-actions">
             <button

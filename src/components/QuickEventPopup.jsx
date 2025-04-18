@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useClickAway } from 'ahooks';
 import './css/QuickEventPopup.css';
 
 const formatDate = (dateStr) => {
@@ -22,7 +21,11 @@ const formatRecurrence = (value) => {
   }
 };
 
-export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave, onMoreOptions }) {
+export default function QuickEventPopup({
+  x, y, date, calendars,
+  utilisateursEntreprise = [],
+  onClose, onSave, onMoreOptions
+}) {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -34,9 +37,21 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
   const [showTimeFields, setShowTimeFields] = useState(false);
   const [showDateFields, setShowDateFields] = useState(false);
   const [calendarId, setCalendarId] = useState('');
-
+  const [invites, setInvites] = useState([]);
   const popupRef = useRef(null);
-  useClickAway(() => onClose(), popupRef);
+  
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (popupRef.current && !popupRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (date) {
@@ -51,9 +66,7 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
 
   const padding = 50;
   const popupWidth = 500;
-  const popupHeight = 550;
-  
-  // Assurer que le popup reste à l'intérieur de l'écran
+  const popupHeight = 600;
   let adjustedX = Math.max(padding, Math.min(x, window.innerWidth - popupWidth - padding));
   let adjustedY = Math.max(padding, Math.min(y, window.innerHeight - popupHeight - padding))
 
@@ -62,7 +75,6 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
 
     const start = new Date(`${startDate}T${showTimeFields ? startTime || '00:00' : '00:00'}`);
     const end = new Date(`${endDate}T${showTimeFields ? endTime || startTime || '00:00' : '23:59'}`);
-
     const duration = Math.max(Math.floor((end - start) / 60000), 15);
 
     onSave({
@@ -73,7 +85,8 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
       description,
       recurrence,
       duration,
-      calendar_id: calendarId
+      calendar_id: calendarId,
+      invites
     });
 
     onClose();
@@ -88,7 +101,7 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} ref={popupRef}>
         <input
           type="text"
           placeholder="Ajouter un titre"
@@ -99,10 +112,7 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
 
         {!showDateFields ? (
           <div className="quick-popup-summary-row">
-            <div
-              className="quick-popup-summary"
-              onClick={() => setShowDateFields(true)}
-            >
+            <div className="quick-popup-summary" onClick={() => setShowDateFields(true)}>
               <div className="quick-popup-summary-header">
                 <span className="icon">🕒</span>
                 <div className="quick-popup-date-recurrence">
@@ -115,7 +125,6 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
                 </div>
               </div>
             </div>
-
             {!showTimeFields && (
               <button
                 type="button"
@@ -129,19 +138,9 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
         ) : (
           <>
             <div className="quick-popup-dates">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-              />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
               <span>→</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                required
-              />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
             </div>
 
             <select
@@ -159,17 +158,8 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
 
         {showTimeFields && (
           <>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            />
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
+            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
           </>
         )}
 
@@ -186,6 +176,22 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
           onChange={(e) => setDescription(e.target.value)}
         />
 
+        <label className="quick-popup-label">
+          Inviter des membres :
+          <select
+            multiple
+            value={invites}
+            onChange={(e) => setInvites(Array.from(e.target.selectedOptions, (o) => o.value))}
+            className="quick-popup-select"
+          >
+            {utilisateursEntreprise.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.prenom} {user.nom} ({user.email})
+              </option>
+            ))}
+          </select>
+        </label>
+
         <select
           value={calendarId}
           onChange={(e) => setCalendarId(e.target.value)}
@@ -193,9 +199,7 @@ export default function QuickEventPopup({ x, y, date, calendars, onClose, onSave
           required
         >
           {calendars.map((cal) => (
-            <option key={cal.id} value={cal.id}>
-              {cal.name}
-            </option>
+            <option key={cal.id} value={cal.id}>{cal.name}</option>
           ))}
         </select>
 
