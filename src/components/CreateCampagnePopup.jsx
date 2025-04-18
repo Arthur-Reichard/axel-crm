@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
-import './css/CreateCampagnePopup.css';
 import LiveLeadPreview from "./LiveLeadPreview";
+import "./css/CreateCampagnePopup.css";
 
 export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onCreated }) {
   const [nom, setNom] = useState("");
@@ -9,7 +9,8 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
   const [filtres, setFiltres] = useState([]);
   const [champs, setChamps] = useState([]);
   const [valeursPossibles, setValeursPossibles] = useState({});
-  const [leadsFiltres, setLeadsFiltres] = useState([]);
+  const [locked, setLocked] = useState(false);
+  const [previewFiltres, setPreviewFiltres] = useState([]);
 
   useEffect(() => {
     const champsUtiles = [
@@ -30,36 +31,12 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
         .select(champ)
         .eq("entreprise_id", entrepriseId);
 
-      const uniques = [...new Set(data.map(d => d[champ]).filter(Boolean))];
+      const uniques = [...new Set(data.map(d => d[champ]).flat().filter(Boolean))];
       setValeursPossibles(prev => ({ ...prev, [champ]: uniques }));
     });
   }, [entrepriseId]);
 
-  // 🔥 Filtrage des leads en direct
-  useEffect(() => {
-    const filtrerLeads = async () => {
-      let query = supabase.from("leads").select("*").eq("entreprise_id", entrepriseId);
-
-      filtres.forEach(({ champ, type, valeur }) => {
-        if (!champ || !valeur) return;
-
-        if (type === "contient") {
-          query = query.ilike(champ, `%${valeur}%`);
-        } else if (type === "ne_contient_pas") {
-          query = query.not.ilike(champ, `%${valeur}%`);
-        } else if (type === "egal") {
-          query = query.eq(champ, valeur);
-        }
-      });
-
-      const { data, error } = await query;
-      if (!error) setLeadsFiltres(data);
-    };
-
-    filtrerLeads();
-  }, [filtres, entrepriseId]); // 🔥
-
-  const ajouterFiltre = () => setFiltres([...filtres, { champ: "", type: "contient", valeur: "" }]);
+  const ajouterFiltre = () => setFiltres([...filtres, { champ: "", type: "contient", valeur: [] }]);
 
   const handleFiltreChange = (i, key, value) => {
     const updated = [...filtres];
@@ -67,7 +44,29 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
     setFiltres(updated);
   };
 
+  const ajouterTagValeur = (i, tag) => {
+    const updated = [...filtres];
+    if (!updated[i].valeur.includes(tag)) {
+      updated[i].valeur.push(tag);
+      setFiltres(updated);
+    }
+  };
+
+  const supprimerTagValeur = (i, tag) => {
+    if (locked) return;
+    const updated = [...filtres];
+    updated[i].valeur = updated[i].valeur.filter(val => val !== tag);
+    setFiltres(updated);
+  };
+
   const supprimerFiltre = (i) => setFiltres(filtres.filter((_, index) => index !== i));
+
+  const validerFiltres = () => {
+    setLocked(true);
+    setPreviewFiltres(filtres);
+  };
+
+  const modifierFiltres = () => setLocked(false);
 
   const creerCampagne = async () => {
     const { data, error } = await supabase.from("campagnes").insert([
@@ -92,48 +91,70 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
     <div className="popup">
       <div className="popup-content">
         <h2>Nouvelle campagne</h2>
-        <input value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom de la campagne" />
-        <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Description" />
+        <input
+          className="champ-texte"
+          value={nom}
+          onChange={e => setNom(e.target.value)}
+          placeholder="Nom de la campagne"
+        />
+        <textarea
+          className="champ-texte"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder="Description"
+        />
 
         <h4>Filtres</h4>
         {filtres.map((filtre, i) => (
           <div key={i} className="filtre-row">
-            <select value={filtre.champ} onChange={e => handleFiltreChange(i, "champ", e.target.value)}>
+            <select disabled={locked} value={filtre.champ} onChange={e => handleFiltreChange(i, "champ", e.target.value)}>
               <option value="">-- Champ --</option>
               {champs.map(c => (
                 <option key={c.champ} value={c.champ}>{c.label}</option>
               ))}
             </select>
 
-            <select value={filtre.type} onChange={e => handleFiltreChange(i, "type", e.target.value)}>
+            <select disabled={locked} value={filtre.type} onChange={e => handleFiltreChange(i, "type", e.target.value)}>
               <option value="contient">contient</option>
               <option value="ne_contient_pas">ne contient pas</option>
               <option value="egal">égal</option>
             </select>
 
-            {valeursPossibles[filtre.champ] && valeursPossibles[filtre.champ].length > 0 ? (
-              <select value={filtre.valeur} onChange={e => handleFiltreChange(i, "valeur", e.target.value)}>
-                <option value="">-- Valeur --</option>
-                {valeursPossibles[filtre.champ].map(val => (
-                  <option key={val} value={val}>{val}</option>
-                ))}
-              </select>
-            ) : (
-              <input value={filtre.valeur} onChange={e => handleFiltreChange(i, "valeur", e.target.value)} placeholder="Valeur" />
-            )}
+            <div className="tag-zone">
+              {filtre.valeur.map((val, idx) => (
+                <span className="tag" key={idx}>
+                  {val}
+                  {!locked && <button onClick={() => supprimerTagValeur(i, val)}>x</button>}
+                </span>
+              ))}
+              {!locked && (
+                <select onChange={e => ajouterTagValeur(i, e.target.value)}>
+                  <option value="">Ajouter un tag...</option>
+                  {(valeursPossibles[filtre.champ] || []).filter(v => !filtre.valeur.includes(v)).map(val => (
+                    <option key={val} value={val}>{val}</option>
+                  ))}
+                </select>
+              )}
+            </div>
 
-            <button type="button" onClick={() => supprimerFiltre(i)}>❌</button>
+            {!locked && <button onClick={() => supprimerFiltre(i)}>❌</button>}
           </div>
         ))}
 
-        <button type="button" onClick={ajouterFiltre}>+ Ajouter un filtre</button>
-
-        <h4>Résultats :</h4>
-        <LiveLeadPreview leads={leadsFiltres} />
+        {!locked ? (
+          <button className="btn-principal" onClick={validerFiltres}>✅ Valider les filtres</button>
+        ) : (
+          <button className="btn-secondaire" onClick={modifierFiltres}>✏️ Modifier les filtres</button>
+        )}
 
         <hr />
-        <button onClick={creerCampagne}>Créer</button>
-        <button onClick={onClose}>Annuler</button>
+
+        <LiveLeadPreview filtres={previewFiltres.length > 0 ? previewFiltres : filtres} entrepriseId={entrepriseId} />
+
+        <div className="footer">
+          <button onClick={creerCampagne}>Créer</button>
+          <button onClick={onClose}>Annuler</button>
+        </div>
       </div>
     </div>
   );
