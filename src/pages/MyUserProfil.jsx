@@ -186,8 +186,7 @@ function MonProfil({ darkMode, toggleMode }) {
 
         {entreprise && (
           <div className="entreprise-section">
-            <h2>Ma Boîte</h2>
-            <p><strong>Nom :</strong> {entreprise.nom}</p>
+            <h2>{entreprise.nom}</h2>
             <p><strong>Type :</strong> {entreprise.type}</p>
 
             {isAdmin && (
