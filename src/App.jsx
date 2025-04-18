@@ -10,7 +10,7 @@ import Wrapper from "./pages/Wrapper";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
-import Clients from "./pages/Clients";
+import Campagne from "./pages/Campagne";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import ParcMateriel from "./pages/ParcMateriel";
@@ -86,8 +86,8 @@ function App() {
               element={<Calendar darkMode={darkMode} toggleMode={toggleMode} />}
             />
             <Route
-              path="clients"
-              element={<Clients darkMode={darkMode} toggleMode={toggleMode} />}
+              path="campagne"
+              element={<Campagne darkMode={darkMode} toggleMode={toggleMode} />}
             />
             <Route
               path="leads"

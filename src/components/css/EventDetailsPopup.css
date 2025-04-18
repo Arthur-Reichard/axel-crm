@@ -180,7 +180,6 @@
   color: #721c24;
 }
 
-/* Dark mode adaptation */
 html.dark .invite-status {
   background-color: #444;
   color: #eee;

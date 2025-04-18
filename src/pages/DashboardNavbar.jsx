@@ -40,8 +40,8 @@ function DashboardNavbar({ darkMode, toggleMode }) {
         <ul className={`nav-links ${menuOpen ? "show" : ""}`}>
           <li><NavLink to="/dashboard" className="nav-link" onClick={handleLinkClick}>Dashboard</NavLink></li>
           <li><NavLink to="/leads" className="nav-link" onClick={handleLinkClick}>Leads</NavLink></li>
-          <li><NavLink to="/clients" className="nav-link" onClick={handleLinkClick}>Clients</NavLink></li>
-          <li><NavLink to="/stats" className="nav-link" onClick={handleLinkClick}>Statistiques</NavLink></li>
+          <li><NavLink to="/Campagne" className="nav-link" onClick={handleLinkClick}>Campagne</NavLink></li>
+          <li><NavLink to="" className="nav-link" onClick={handleLinkClick}>Statistiques</NavLink></li>
           <li><NavLink to="/calendar" className="nav-link" onClick={handleLinkClick}>Calendrier</NavLink></li>
           <li><NavLink to="/materiel" className="nav-link" onClick={handleLinkClick}>Parc Matériel</NavLink></li>
           <li><NavLink to="/factures" className="nav-link" onClick={handleLinkClick}>Factures</NavLink></li>

@@ -1,0 +1,70 @@
+/* === Campagne.css === */
+.campagne-page {
+    padding: 2rem;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .campagne-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .campagne-title {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  
+  .campagne-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .campagne-card,
+  .campagne-card-add {
+    width: 250px;
+    min-height: 100px;
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+  }
+  
+  .campagne-card {
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .campagne-card:hover {
+    transform: translateY(-3px);
+  }
+  
+  .campagne-card-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  
+  .campagne-card-description {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .campagne-card-add {
+    background-color: #f1f1f1;
+    border: 2px dashed #aaa;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    font-size: 2rem;
+    color: #666;
+    cursor: pointer;
+  }
+  
+  .campagne-card-add:hover {
+    background-color: #e4e4e4;
+  }
+  
+  .campagne-plus {
+    font-size: 2rem;
+  }
