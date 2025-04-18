@@ -7,75 +7,116 @@ import DashboardNavbar from "./DashboardNavbar";
 function MonProfil({ darkMode, toggleMode }) {
   const navigate = useNavigate();
   const [userId, setUserId] = useState(null);
+  const [entrepriseId, setEntrepriseId] = useState(null);
+  const [entreprise, setEntreprise] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     prenom: "",
     nom: "",
     birthdate: "",
     phone: "",
     email: "",
+    avatar_url: ""
   });
-
-  const [editMode, setEditMode] = useState({
-    prenom: false,
-    nom: false,
-    birthdate: false,
-    phone: false,
-  });
+  const [editMode, setEditMode] = useState({ prenom: false, nom: false, birthdate: false, phone: false });
+  const [newCode, setNewCode] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (!user || error) {
-        navigate("/login");
-        return;
-      }
-
+      if (!user || error) return navigate("/login");
       setUserId(user.id);
 
-      const { data: userData, error: userError } = await supabase
+      const { data: userData } = await supabase
         .from("utilisateurs")
-        .select("*")
+        .select("*, entreprises(*)")
         .eq("id", user.id)
         .single();
 
-      if (!userError && userData) {
+      if (userData) {
         setFormData({
           prenom: userData.prenom || "",
           nom: userData.nom || "",
           birthdate: userData.birthdate || "",
           phone: userData.phone || "",
-          email: user.email || "", // email pris depuis auth
+          email: user.email,
+          avatar_url: userData.avatar_url || ""
         });
+        setEntrepriseId(userData.entreprise_id);
+        setIsAdmin(userData.role === "admin");
+        setEntreprise(userData.entreprises);
+        if (userData.entreprise_id) fetchUsers(userData.entreprise_id);
       }
     };
-
     fetchUserData();
   }, [navigate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const fetchUsers = async (entId) => {
+    const { data } = await supabase
+      .from("utilisateurs")
+      .select("id, prenom, nom, email, role")
+      .eq("entreprise_id", entId);
+    setUsers(data);
   };
 
-  const toggleEdit = (field) => {
-    setEditMode((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
+  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const toggleEdit = (field) => setEditMode((prev) => ({ ...prev, [field]: !prev[field] }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { error } = await supabase.from("utilisateurs").upsert({ id: userId, ...formData });
+    if (error) alert("Erreur : " + error.message);
+    else alert("Profil mis à jour");
+  };
 
-    const { error } = await supabase
-      .from("utilisateurs")
-      .upsert({ id: userId, ...formData });
+  const handleRoleChange = async (id, role) => {
+    await supabase.from("utilisateurs").update({ role }).eq("id", id);
+    fetchUsers(entrepriseId);
+  };
 
-    if (error) {
-      console.error("Erreur Supabase :", error.message);
-      alert("Erreur lors de la sauvegarde : " + error.message);
-    } else {
-      alert("Profil mis à jour !");
-      setEditMode({ prenom: false, nom: false, birthdate: false, phone: false });
-    }
+  const handleDelete = async (id) => {
+    if (id === userId) return alert("Tu ne peux pas te supprimer toi-même !");
+    await supabase.from("utilisateurs").delete().eq("id", id);
+    fetchUsers(entrepriseId);
+  };
+
+  const generateInviteCode = async () => {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expire = new Date();
+    expire.setDate(expire.getDate() + 7);
+    const { data, error } = await supabase
+      .from("codes_invitation")
+      .insert({ code, entreprise_id: entrepriseId, expire_le: expire.toISOString(), utilise: false })
+      .select()
+      .single();
+    if (error) return alert("Erreur : " + error.message);
+    setNewCode(data.code);
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${userId}/avatar.${fileExt}`;
+
+
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+      upsert: true,
+      contentType: file.type, 
+    });
+    
+
+    if (uploadError) return alert("Erreur upload : " + uploadError.message);
+
+    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const publicUrl = publicUrlData.publicUrl;
+
+    await supabase.from("utilisateurs").update({ avatar_url: publicUrl }).eq("id", userId);
+    setFormData((prev) => ({
+      ...prev,
+      avatar_url: `${publicUrl}?t=${Date.now()}`,
+    }));
   };
 
   const renderField = (label, name, type = "text") => (
@@ -87,12 +128,7 @@ function MonProfil({ darkMode, toggleMode }) {
           <button type="button" onClick={() => toggleEdit(name)}>Modifier</button>
         </div>
       ) : (
-        <input
-          type={type}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-        />
+        <input type={type} name={name} value={formData[name]} onChange={handleChange} />
       )}
     </div>
   );
@@ -100,9 +136,33 @@ function MonProfil({ darkMode, toggleMode }) {
   return (
     <div className={`mon-profil-app ${darkMode ? "dark" : ""}`}>
       <DashboardNavbar darkMode={darkMode} toggleMode={toggleMode} />
+
       <div className="mon-profil-container">
         <h1>Mon Profil</h1>
         <form onSubmit={handleSubmit}>
+        <div className="profil-avatar">
+        {formData.avatar_url ? (
+          <img src={formData.avatar_url} alt="Avatar" className="avatar-img" />
+        ) : (
+          <div className="avatar-img" style={{
+            width: "60px",
+            height: "60px",
+            borderRadius: "50%",
+            backgroundColor: "#ccc",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "0.8rem",
+            color: "#fff"
+          }}>
+            ?
+          </div>
+        )}
+
+  <input type="file" accept="image/*" onChange={handleAvatarUpload} />
+</div>
+
+
           {renderField("Prénom", "prenom")}
           {renderField("Nom", "nom")}
           {renderField("Date de naissance", "birthdate", "date")}
@@ -115,6 +175,53 @@ function MonProfil({ darkMode, toggleMode }) {
 
           <button type="submit">Enregistrer</button>
         </form>
+
+        {entreprise && (
+          <div className="entreprise-section">
+            <h2>Ma Boîte</h2>
+            <p><strong>Nom :</strong> {entreprise.nom}</p>
+            <p><strong>Type :</strong> {entreprise.type}</p>
+
+            {isAdmin && (
+              <div>
+                <button onClick={generateInviteCode}>Générer un code d'invitation</button>
+                {newCode && <p>Code généré : <strong>{newCode}</strong></p>}
+              </div>
+            )}
+
+            <h3>Équipe</h3>
+            <table className="equipe-table">
+              <thead>
+                <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.prenom}</td>
+                    <td>{u.nom}</td>
+                    <td>{u.email}</td>
+                    <td>
+                      {isAdmin && u.id !== userId ? (
+                        <select value={u.role} onChange={(e) => handleRoleChange(u.id, e.target.value)}>
+                          <option value="membre">Membre</option>
+                          <option value="manager">Manager</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      ) : (
+                        u.role
+                      )}
+                    </td>
+                    <td>
+                      {isAdmin && u.id !== userId && (
+                        <button onClick={() => handleDelete(u.id)}>Supprimer</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

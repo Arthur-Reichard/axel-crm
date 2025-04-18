@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from '../helper/supabaseClient';
 import "../pages/css/dashboard.css";
 import DashboardNavbar from "./DashboardNavbar";
+import EntitySelector from "../components/EntitySelector";
+
 
 function Dashboard({ darkMode, toggleMode }) {
   const navigate = useNavigate();
@@ -83,45 +85,10 @@ function Dashboard({ darkMode, toggleMode }) {
   return (
     <div className={`dashboard ${darkMode ? "dark" : ""}`}>
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-box">
-            <h2>Bienvenue 👋</h2>
-            <p>Avant de continuer, choisis le type d'entité à créer :</p>
-
-            <div className="entity-type-selector">
-              <button onClick={() => setEntityType("entreprise")} className={entityType === "entreprise" ? "selected" : ""}>Entreprise</button>
-              <button onClick={() => setEntityType("association")} className={entityType === "association" ? "selected" : ""}>Association</button>
-              <button onClick={() => setEntityType("indépendant")} className={entityType === "indépendant" ? "selected" : ""}>Indépendant</button>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Nom de l'entité"
-              value={entityName}
-              onChange={(e) => setEntityName(e.target.value)}
-            />
-
-            {entityType === "entreprise" && (
-              <input
-                type="text"
-                placeholder="Numéro SIREN"
-                value={siren}
-                onChange={(e) => setSiren(e.target.value)}
-              />
-            )}
-
-            {entityType === "association" && (
-              <input
-                type="text"
-                placeholder="Numéro RNA"
-                value={rna}
-                onChange={(e) => setRna(e.target.value)}
-              />
-            )}
-
-            <button onClick={handleEntityCreation}>Créer et lier</button>
-          </div>
-        </div>
+          <EntitySelector
+          userId={userId}
+          onEntityLinked={() => setShowModal(false)}
+        />
       )}
 
       <main className={`dashboard-main ${showModal ? "blur" : ""}`}>

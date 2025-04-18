@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import logo from "../pages/Images/logoaxel.png";
 import { supabase } from "../helper/supabaseClient";
 import UserMenu from "./UserMenu";
+import "../pages/css/DashboardNavbar.css";
 
 function DashboardNavbar({ darkMode, toggleMode }) {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ function DashboardNavbar({ darkMode, toggleMode }) {
   };
 
   const handleLinkClick = () => {
-    setMenuOpen(false); // referme le menu mobile au clic sur un lien
+    setMenuOpen(false);
   };
 
   return (
@@ -31,6 +32,7 @@ function DashboardNavbar({ darkMode, toggleMode }) {
           <button className="burger-toggle" onClick={() => setMenuOpen(!menuOpen)}>
             ☰
           </button>
+
           <UserMenu darkMode={darkMode} toggleMode={toggleMode} />
         </div>
       </div>
@@ -43,9 +45,10 @@ function DashboardNavbar({ darkMode, toggleMode }) {
         <li><NavLink to="/calendar" className="nav-link" onClick={handleLinkClick}>Calendrier</NavLink></li>
         <li><NavLink to="/materiel" className="nav-link" onClick={handleLinkClick}>Parc Matériel</NavLink></li>
         <li><NavLink to="/factures" className="nav-link" onClick={handleLinkClick}>Factures</NavLink></li>
+        <li><NavLink to="/MyUserProfil" className="nav-link" onClick={handleLinkClick}>Mon Profil</NavLink></li>
       </ul>
     </nav>
-  );  
+  );
 }
 
 export default DashboardNavbar;

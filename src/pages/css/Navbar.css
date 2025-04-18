@@ -194,3 +194,25 @@
     margin-bottom: 0.5rem;
   }
 }
+.nav-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* ✅ Centre verticalement */
+  padding: 0.5rem 1rem;
+}
+
+.left-nav {
+  display: flex;
+  align-items: center;
+}
+
+.right-nav {
+  display: flex;
+  align-items: center; /* ✅ Très important pour aligner avatar + burger */
+  gap: 1rem;
+}
+
+.nav-logo {
+  height: 40px;
+  object-fit: contain;
+}

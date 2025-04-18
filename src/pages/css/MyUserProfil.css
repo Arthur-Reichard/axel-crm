@@ -185,3 +185,22 @@ form button[type="submit"]:hover {
     padding: 0.3rem 0.6rem;
   }
 }
+
+.profil-avatar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profil-avatar img.avatar-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0077ff;
+}
+
+.profil-avatar input[type="file"] {
+  flex: 1;
+}

@@ -178,3 +178,17 @@
 .modal-box input + input {
   margin-top: 0.5rem;
 }
+
+.avatar-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-left: 1rem;
+  border: 2px solid #0077ff;
+  transition: transform 0.2s;
+}
+
+.avatar-nav:hover {
+  transform: scale(1.05);
+}

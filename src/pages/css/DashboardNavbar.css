@@ -1,0 +1,135 @@
+/* === Barre de navigation === */
+.top-navbar {
+    background-color: #ED5F2D;
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s;
+    padding: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+  }
+  
+  /* Dark mode */
+  .dark.top-navbar {
+    background-color: #EA4D2A;
+    color: #f0f0f0;
+  }
+  
+  /* Conteneur principal */
+  .nav-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+  
+  /* Logo */
+  .nav-logo {
+    height: 48px;
+    object-fit: contain;
+  }
+  
+  /* Côtés gauche/droite */
+  .left-nav,
+  .right-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  /* Avatar */
+  .user-avatar-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+  
+  /* Burger */
+  .burger-toggle {
+    display: none;
+    font-size: 2rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  /* Menu des liens */
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 1.2rem;
+    margin: 0;
+    padding: 0.5rem 0 0 0;
+    flex-wrap: wrap;
+    transition: all 0.3s ease;
+  }
+  
+  /* Lien individuel */
+  .nav-link {
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    transition: background 0.3s;
+  }
+  
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .nav-link.active {
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* === Responsive Mobile === */
+  @media (max-width: 768px) {
+    .nav-wrapper {
+      flex-wrap: wrap;
+    }
+  
+    .left-nav,
+    .right-nav {
+      width: 100%;
+      justify-content: space-between;
+    }
+  
+    .burger-toggle {
+      display: block;
+    }
+  
+    .nav-links {
+      flex-direction: column;
+      width: 100%;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      gap: 0.75rem;
+    }
+  
+    .nav-links.show {
+      max-height: 500px;
+      opacity: 1;
+      pointer-events: auto;
+      margin-top: 0.5rem;
+    }
+  
+    .nav-link {
+      display: block;
+      width: 100%;
+      padding: 1rem 0;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  }
+  @media (max-width: 768px) {
+    .nav-logo {
+      display: none;
+    }
+  }  

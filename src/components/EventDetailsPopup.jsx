@@ -104,7 +104,7 @@ export default function EventDetailsPopup({ x, y, event, calendars, onClose, onU
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation(); // 👈 empêche le clickAway
+                e.stopPropagation();
                 setEditMode(true);
               }}
             >
