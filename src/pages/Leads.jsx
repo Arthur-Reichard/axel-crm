@@ -6,6 +6,7 @@ import ResizableTH from './ResizableTH';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ColumnMapping from './ColumnMapping';
+import FilterDrawer from '../components/FilterDrawer';
 
 const allColumns = [
   'Prénom', 'Nom', 'Email pro', 'Téléphone pro',
@@ -36,6 +37,45 @@ export default function Leads() {
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const navigate = useNavigate();
+  const [filters, setFilters] = useState({});
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [allLeads, setAllLeads] = useState([]);
+  const [filterList, setFilterList] = useState([]);
+  const availableFields = [
+    { label: "Nom", name: "nom" },
+    { label: "Prénom", name: "prenom" },
+    { label: "Email", name: "email_professionnel" },
+    { label: "Téléphone", name: "telephone_professionnel" },
+    { label: "Entreprise", name: "nom_entreprise" },
+    { label: "Description", name: "description", type: "textarea" },
+    { label: "Date de naissance", name: "date_naissance", type: "date" },
+    { label: "Poste contact", name: "poste_contact" },
+    { label: "Site web", name: "site_web" },
+    { label: "Rue entreprise", name: "adresse_entreprise_rue" },
+    { label: "Ville entreprise", name: "adresse_entreprise_ville" },
+    { label: "Code postal entreprise", name: "adresse_entreprise_cp" },
+    { label: "Pays entreprise", name: "adresse_entreprise_pays" },
+    { label: "SIRET", name: "numero_siret" },
+    { label: "TVA intracom", name: "numero_tva_intracom" },
+    { label: "Canal préféré", name: "canal_prefere" },
+    { label: "Langue", name: "langue" },
+    { label: "Origine contact", name: "origine_contact" },
+    { label: "Statut client", name: "statut_client" },
+    { label: "Date premier contact", name: "date_premier_contact", type: "date" },
+    { label: "Date dernier contact", name: "date_dernier_contact", type: "date" },
+    { label: "Fréquence contact", name: "frequence_contact" },
+    { label: "Produits achetés", name: "produits_achetes", type: "textarea" },
+    { label: "Montant total", name: "montant_total" },
+    { label: "Devis envoyés", name: "devis_envoyes" },
+    { label: "Statut paiement", name: "statut_paiement" },
+    { label: "Assigné à", name: "assigne_a" },
+    { label: "Niveau priorité", name: "niveau_priorite" },
+    { label: "Tags", name: "tags" },
+    { label: "Notes", name: "notes", type: "textarea" }
+  ];
+  const [itemsPerPage, setItemsPerPage] = useState(25); // valeurs : 10, 25, 50, 100
+  const [currentPage, setCurrentPage] = useState(1);
+  
 
   const [selectedColumns, setSelectedColumns] = useState(() => {
     const stored = JSON.parse(localStorage.getItem('selectedColumns'));
@@ -80,6 +120,7 @@ export default function Leads() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+        setAllLeads(data);
         setLeads(data);
       } catch (err) {
         console.error('Erreur lors du fetch des leads :', err);
@@ -88,6 +129,37 @@ export default function Leads() {
 
     fetchLeads();
   }, []);
+
+  const [paginatedLeads, setPaginatedLeads] = useState([]);
+
+  useEffect(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    setPaginatedLeads(leads.slice(start, end));
+  }, [leads, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    const applyFilters = () => {
+      return allLeads.filter(lead => {
+        return filterList.every(({ field, operator, value }) => {
+          const v = (lead[field.name] || '').toString().toLowerCase();
+          const s = (value || '').toLowerCase();
+  
+          switch (operator) {
+            case 'contains': return v.includes(s);
+            case 'not_contains': return !v.includes(s);
+            case 'equals': return v === s;
+            case 'not_equals': return v !== s;
+            case 'empty': return v === '';
+            case 'not_empty': return v !== '';
+            default: return true;
+          }
+        });
+      });
+    };
+  
+    setLeads(applyFilters());
+  }, [filterList, allLeads]);
 
   useEffect(() => {
     const wasUpdated = localStorage.getItem('leadUpdated');
@@ -257,9 +329,18 @@ export default function Leads() {
   {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
 
     <div className="leads-container">
-      <div className="leads-header">
-        <h1 className="leads-title">Tableau des Leads</h1>
-        <button className="add-lead-btn" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
+    <div className="leads-header">
+      <h1 className="leads-title">Tableau des Leads</h1>
+      <div style={{ display: 'flex', gap: '1rem' }}>
+      <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
+          <FilterDrawer
+            isOpen={filterDrawerOpen}
+            onClose={() => setFilterDrawerOpen(false)}
+            filters={filterList}
+            setFilters={setFilterList}
+            availableFields={availableFields}
+          />
+          <button className="add-lead-btn" type="button" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
         <label className="import-btn">
           Importer
           <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
@@ -268,8 +349,34 @@ export default function Leads() {
           <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
         )}
       </div>
+    </div>
 
       <div className="table-wrapper">
+            <tr className="pagination-info-row">
+        <td colSpan={selectedColumns.length + 1}>
+          <div className="pagination-inline">
+            <span>
+              <em>
+                Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –
+                {Math.min(currentPage * itemsPerPage, leads.length)} sur {leads.length} prospects
+              </em>
+            </span>
+
+            <div className="pagination-nav">
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>←</button>
+              <button disabled={currentPage * itemsPerPage >= leads.length} onClick={() => setCurrentPage(prev => prev + 1)}>→</button>
+              <select value={itemsPerPage} onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}>
+                {[10, 25, 50, 100].map(size => (
+                  <option key={size} value={size}>{size} / page</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </td>
+      </tr>
         <table className="lead-table">
           <thead>
             <tr>
@@ -282,7 +389,7 @@ export default function Leads() {
             </tr>
           </thead>
           <tbody>
-            {leads.map((lead) => (
+            {paginatedLeads.map((lead) => (
               <tr key={lead.id}>
                 <td>
                   <input
@@ -330,6 +437,7 @@ export default function Leads() {
               </div>
             </div>
           </div>
+          
         )}
       </div>
     </>
