@@ -38,9 +38,10 @@ function EntitySelector({ userId, onEntityLinked }) {
     }
 
     const { error: userUpdateError } = await supabase
-      .from("utilisateurs")
-      .update({ entreprise_id: newEntreprise.id })
-      .eq("id", userId);
+    .from("utilisateurs")
+    .update({ entreprise_id: newEntreprise.id, role: "admin" })
+    .eq("id", userId);
+  
 
     if (userUpdateError) {
       alert("Erreur lors de l'association de l'utilisateur : " + userUpdateError.message);
@@ -57,7 +58,7 @@ function EntitySelector({ userId, onEntityLinked }) {
   
     const { data: codeData, error: codeError } = await supabase
       .from("codes_invitation")
-      .select("entreprise_id, expire_le, utilisé")
+      .select("entreprise_id, expire_le, utilise")
       .eq("code", inviteCode)
       .single();
   
@@ -69,7 +70,7 @@ function EntitySelector({ userId, onEntityLinked }) {
     const now = new Date();
     const expireDate = new Date(codeData.expire_le);
   
-    if (codeData.utilisé) {
+    if (codeData.utilise) {
       alert("Ce code a déjà été utilisé.");
       return;
     }
@@ -80,9 +81,10 @@ function EntitySelector({ userId, onEntityLinked }) {
     }
   
     const { error: updateError } = await supabase
-      .from("utilisateurs")
-      .update({ entreprise_id: codeData.entreprise_id })
-      .eq("id", userId);
+    .from("utilisateurs")
+    .update({ entreprise_id: codeData.entreprise_id, code_utilise: inviteCode })
+    .eq("id", userId);
+  
   
     if (updateError) {
       alert("Erreur lors de la liaison avec l’entité : " + updateError.message);
@@ -92,7 +94,7 @@ function EntitySelector({ userId, onEntityLinked }) {
     // Marquer le code comme utilisé
     await supabase
       .from("codes_invitation")
-      .update({ utilisé: true })
+      .update({ utilise: true })
       .eq("code", inviteCode);
   
     onEntityLinked();

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from '../helper/supabaseClient';
+import { supabase } from "../helper/supabaseClient";
 import "../pages/css/MyUserProfil.css";
 import DashboardNavbar from "./DashboardNavbar";
 
@@ -21,6 +21,10 @@ function MonProfil({ darkMode, toggleMode }) {
   });
   const [editMode, setEditMode] = useState({ prenom: false, nom: false, birthdate: false, phone: false });
   const [newCode, setNewCode] = useState(null);
+
+  useEffect(() => {
+    console.log("Utilisateurs dans la même entreprise :", users);
+  }, [users]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -55,7 +59,7 @@ function MonProfil({ darkMode, toggleMode }) {
   const fetchUsers = async (entId) => {
     const { data } = await supabase
       .from("utilisateurs")
-      .select("id, prenom, nom, email, role")
+      .select("id, prenom, nom, email, role, code_utilise")
       .eq("entreprise_id", entId);
     setUsers(data);
   };
@@ -77,9 +81,16 @@ function MonProfil({ darkMode, toggleMode }) {
 
   const handleDelete = async (id) => {
     if (id === userId) return alert("Tu ne peux pas te supprimer toi-même !");
-    await supabase.from("utilisateurs").delete().eq("id", id);
+    await supabase
+      .from("utilisateurs")
+      .update({
+        entreprise_id: null,
+        code_utilise: null
+      })
+      .eq("id", id);
     fetchUsers(entrepriseId);
   };
+  
 
   const generateInviteCode = async () => {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -92,6 +103,7 @@ function MonProfil({ darkMode, toggleMode }) {
       .single();
     if (error) return alert("Erreur : " + error.message);
     setNewCode(data.code);
+    fetchUsers(entrepriseId); // utile si tu veux rafraîchir après une action
   };
 
   const handleAvatarUpload = async (e) => {
@@ -100,12 +112,10 @@ function MonProfil({ darkMode, toggleMode }) {
     const fileExt = file.name.split('.').pop();
     const filePath = `${userId}/avatar.${fileExt}`;
 
-
     const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
       upsert: true,
-      contentType: file.type, 
+      contentType: file.type,
     });
-    
 
     if (uploadError) return alert("Erreur upload : " + uploadError.message);
 
@@ -140,28 +150,26 @@ function MonProfil({ darkMode, toggleMode }) {
       <div className="mon-profil-container">
         <h1>Mon Profil</h1>
         <form onSubmit={handleSubmit}>
-        <div className="profil-avatar">
-        {formData.avatar_url ? (
-          <img src={formData.avatar_url} alt="Avatar" className="avatar-img" />
-        ) : (
-          <div className="avatar-img" style={{
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            backgroundColor: "#ccc",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "0.8rem",
-            color: "#fff"
-          }}>
-            ?
+          <div className="profil-avatar">
+            {formData.avatar_url ? (
+              <img src={formData.avatar_url} alt="Avatar" className="avatar-img" />
+            ) : (
+              <div className="avatar-img" style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                backgroundColor: "#ccc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "0.8rem",
+                color: "#fff"
+              }}>
+                ?
+              </div>
+            )}
+            <input type="file" accept="image/*" onChange={handleAvatarUpload} />
           </div>
-        )}
-
-  <input type="file" accept="image/*" onChange={handleAvatarUpload} />
-</div>
-
 
           {renderField("Prénom", "prenom")}
           {renderField("Nom", "nom")}
@@ -216,6 +224,23 @@ function MonProfil({ darkMode, toggleMode }) {
                         <button onClick={() => handleDelete(u.id)}>Supprimer</button>
                       )}
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <h3>Membres ayant utilisé un code d’invitation</h3>
+            <table className="equipe-table">
+              <thead>
+                <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Code</th><th>Rôle</th></tr>
+              </thead>
+              <tbody>
+                {users.filter(u => u.code_utilise).map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.prenom}</td>
+                    <td>{u.nom}</td>
+                    <td>{u.email}</td>
+                    <td>{u.code_utilise}</td>
+                    <td>{u.role}</td>
                   </tr>
                 ))}
               </tbody>

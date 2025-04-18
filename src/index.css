@@ -3,5 +3,8 @@
 body {
     font-family: 'Roboto', sans-serif;
   }
-  
+
+  body {
+    overflow-y: auto !important;
+  }
   
