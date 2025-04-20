@@ -1,0 +1,51 @@
+.filtre-manager {
+    margin: 1em 0;
+    padding: 1em;
+    background: #f5f7fa;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+  
+  .filtre-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .filtre-row {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+    margin-top: 0.5em;
+    flex-wrap: wrap;
+  }
+  
+  .filtre-row select {
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: white;
+  }
+  
+  .btn-add, .btn-delete, .btn-validate, .btn-edit {
+    padding: 0.3em 0.8em;
+    background-color: #007bff;
+    color: white;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .btn-add:hover,
+  .btn-delete:hover,
+  .btn-validate:hover,
+  .btn-edit:hover {
+    background-color: #0056b3;
+  }
+  
+  .filtre-actions {
+    margin-top: 1em;
+    text-align: right;
+  }
+  

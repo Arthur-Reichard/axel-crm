@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
 import LiveLeadPreview from "./LiveLeadPreview";
+import ShareWithMembers from "./ShareWithMembers";
+import FiltreManager from "./FiltreManager";
 import "./css/CreateCampagnePopup.css";
+import FilterGroupManager from "./FilterGroupManager";
 
 export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onCreated }) {
   const [nom, setNom] = useState("");
@@ -11,62 +14,76 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
   const [valeursPossibles, setValeursPossibles] = useState({});
   const [locked, setLocked] = useState(false);
   const [previewFiltres, setPreviewFiltres] = useState([]);
+  const [utilisateursPartages, setUtilisateursPartages] = useState([]);
+  const [groupesFiltres, setGroupesFiltres] = useState([]);
 
   useEffect(() => {
-    const champsUtiles = [
-      { champ: "adresse_entreprise_ville", label: "Ville" },
-      { champ: "email_professionnel", label: "Email pro" },
-      { champ: "statut_client", label: "Statut client" },
-      { champ: "canal_prefere", label: "Canal préféré" },
-      { champ: "origine_contact", label: "Origine contact" },
-      { champ: "poste_contact", label: "Poste contact" },
-      { champ: "nom_entreprise", label: "Nom entreprise" },
-      { champ: "tags", label: "Tags" }
-    ];
-    setChamps(champsUtiles);
+    const fetchChampsLeads = async () => {
+      const { data, error } = await supabase.rpc("get_leads_columns");
 
-    champsUtiles.forEach(async ({ champ }) => {
-      const { data } = await supabase
-        .from("leads")
-        .select(champ)
-        .eq("entreprise_id", entrepriseId);
+      if (!error && data) {
+        const champsUtiles = data
+          .filter(col => ["text", "character varying", "ARRAY", "jsonb"].includes(col.data_type))
+          .map(col => ({
+            champ: col.column_name,
+            label: col.column_name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())
+          }))
+          .filter(c => !["id", "user_id", "entreprise_id"].includes(c.champ));
 
-      const uniques = [...new Set(data.map(d => d[champ]).flat().filter(Boolean))];
-      setValeursPossibles(prev => ({ ...prev, [champ]: uniques }));
-    });
+        setChamps(champsUtiles);
+
+        for (const { champ } of champsUtiles) {
+          const { data: valeurs } = await supabase
+            .from("leads")
+            .select(champ)
+            .eq("entreprise_id", entrepriseId);
+
+          const uniques = [...new Set(valeurs.flatMap(d => {
+            const val = d[champ];
+            if (Array.isArray(val)) return val;
+            if (typeof val === "string") return [val];
+            return [];
+          }).filter(Boolean))];
+
+          setValeursPossibles(prev => ({ ...prev, [champ]: uniques }));
+        }
+      }
+    };
+
+    fetchChampsLeads();
   }, [entrepriseId]);
 
-  const ajouterFiltre = () => setFiltres([...filtres, { champ: "", type: "contient", valeur: [] }]);
+  useEffect(() => {
+    const fetchGroupesFiltres = async () => {
+      const { data, error } = await supabase
+        .from("groupes_filtres")
+        .select("id, nom, filtres")
+        .eq("entreprise_id", entrepriseId)
+        .eq("cree_par", userId);
+      if (!error) setGroupesFiltres(data);
+    };
+    fetchGroupesFiltres();
+  }, [entrepriseId, userId]);
 
-  const handleFiltreChange = (i, key, value) => {
-    const updated = [...filtres];
-    updated[i][key] = value;
-    setFiltres(updated);
+  const enregistrerGroupe = async () => {
+    const nomGroupe = prompt("Nom du groupe de filtres :");
+    if (!nomGroupe) return;
+    await supabase.from("groupes_filtres").insert({
+      nom: nomGroupe,
+      filtres,
+      entreprise_id: entrepriseId,
+      cree_par: userId
+    });
   };
 
-  const ajouterTagValeur = (i, tag) => {
-    const updated = [...filtres];
-    if (!updated[i].valeur.includes(tag)) {
-      updated[i].valeur.push(tag);
-      setFiltres(updated);
+  const appliquerGroupe = (id) => {
+    const groupe = groupesFiltres.find(g => g.id === id);
+    if (groupe) {
+      setFiltres(groupe.filtres);
+      setLocked(true);
+      setPreviewFiltres(groupe.filtres);
     }
   };
-
-  const supprimerTagValeur = (i, tag) => {
-    if (locked) return;
-    const updated = [...filtres];
-    updated[i].valeur = updated[i].valeur.filter(val => val !== tag);
-    setFiltres(updated);
-  };
-
-  const supprimerFiltre = (i) => setFiltres(filtres.filter((_, index) => index !== i));
-
-  const validerFiltres = () => {
-    setLocked(true);
-    setPreviewFiltres(filtres);
-  };
-
-  const modifierFiltres = () => setLocked(false);
 
   const creerCampagne = async () => {
     const { data, error } = await supabase.from("campagnes").insert([
@@ -79,7 +96,15 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
       }
     ]).select().single();
 
-    if (!error) {
+    if (!error && data?.id) {
+      await Promise.all(
+        utilisateursPartages.map(uid =>
+          supabase.from("campagnes_utilisateurs").insert({
+            campagne_id: data.id,
+            utilisateur_id: uid
+          })
+        )
+      );
       onCreated(data);
       onClose();
     } else {
@@ -104,50 +129,41 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
           placeholder="Description"
         />
 
-        <h4>Filtres</h4>
-        {filtres.map((filtre, i) => (
-          <div key={i} className="filtre-row">
-            <select disabled={locked} value={filtre.champ} onChange={e => handleFiltreChange(i, "champ", e.target.value)}>
-              <option value="">-- Champ --</option>
-              {champs.map(c => (
-                <option key={c.champ} value={c.champ}>{c.label}</option>
-              ))}
-            </select>
+        <ShareWithMembers
+          entrepriseId={entrepriseId}
+          userId={userId}
+          onSelect={setUtilisateursPartages}
+        />
 
-            <select disabled={locked} value={filtre.type} onChange={e => handleFiltreChange(i, "type", e.target.value)}>
-              <option value="contient">contient</option>
-              <option value="ne_contient_pas">ne contient pas</option>
-              <option value="egal">égal</option>
-            </select>
+        <FilterGroupManager
+          userId={userId}
+          entrepriseId={entrepriseId}
+          filtres={filtres}
+          onLoadFiltres={(f) => setFiltres(f)}
+        />
 
-            <div className="tag-zone">
-              {filtre.valeur.map((val, idx) => (
-                <span className="tag" key={idx}>
-                  {val}
-                  {!locked && <button onClick={() => supprimerTagValeur(i, val)}>x</button>}
-                </span>
-              ))}
-              {!locked && (
-                <select onChange={e => ajouterTagValeur(i, e.target.value)}>
-                  <option value="">Ajouter un tag...</option>
-                  {(valeursPossibles[filtre.champ] || []).filter(v => !filtre.valeur.includes(v)).map(val => (
-                    <option key={val} value={val}>{val}</option>
-                  ))}
-                </select>
-              )}
-            </div>
+        <FiltreManager
+          filtres={filtres}
+          locked={locked}
+          champs={champs}
+          valeursPossibles={valeursPossibles}
+          onAdd={() => setFiltres([...filtres, { champ: "", type: "contient", valeur: [] }])}
+          onChange={(i, key, val) => {
+            const updated = [...filtres];
+            updated[i][key] = val;
+            setFiltres(updated);
+          }}
+          onRemove={(i) => setFiltres(filtres.filter((_, idx) => idx !== i))}
+          onValidate={() => {
+            setLocked(true);
+            setPreviewFiltres(filtres);
+          }}
+          onEdit={() => setLocked(false)}
+        />
 
-            {!locked && <button onClick={() => supprimerFiltre(i)}>❌</button>}
-          </div>
-        ))}
-
-        {!locked ? (
-          <button className="btn-principal" onClick={validerFiltres}>✅ Valider les filtres</button>
-        ) : (
-          <button className="btn-secondaire" onClick={modifierFiltres}>✏️ Modifier les filtres</button>
+        {!locked && filtres.length > 0 && (
+          <button onClick={enregistrerGroupe}>💾 Enregistrer ce groupe de filtres</button>
         )}
-
-        <hr />
 
         <LiveLeadPreview filtres={previewFiltres.length > 0 ? previewFiltres : filtres} entrepriseId={entrepriseId} />
 

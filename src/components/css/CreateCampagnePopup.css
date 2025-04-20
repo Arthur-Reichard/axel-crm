@@ -1,107 +1,221 @@
+/* Empêche le scroll horizontal */
+body.popup-open {
+  overflow-x: hidden;
+}
+
 .popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-  }
-  
-  .popup-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    width: 80%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  .popup-content h2 {
-    text-align: center;
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .popup-content input,
-  .popup-content textarea,
-  .popup-content select {
-    width: 100%;
-    padding: 0.8rem;
-    margin-bottom: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-  }
-  
-  .popup-content textarea {
-    min-height: 100px;
-    resize: vertical;
-  }
-  
-  .filtre-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 1rem;
-    align-items: center;
-  }
-  
-  .filtre-row select,
-  .filtre-row input {
-    flex: 1;
-    min-width: 150px;
-  }
-  
-  .filtre-row button {
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-  }
-  
-  button[type="button"] {
-    background-color: #007bff;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-  
-  button[type="button"]:hover {
-    background-color: #0056b3;
-  }
-  
-  .popup-content hr {
-    margin: 2rem 0 1rem 0;
-  }
-  
-  .popup-content > button:last-of-type {
-    margin-left: 1rem;
-  }
-  
-  .popup-content > button {
-    margin-top: 1rem;
-  }
-  
-  h4 {
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .live-leads-preview {
-    margin-top: 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    max-height: 200px;
-    overflow-y: auto;
-    background-color: #fafafa;
-  }
-  
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* On aligne en haut */
+  padding: 60px 20px; /* pour éviter que le haut du popup colle au bord */
+  box-sizing: border-box;
+}
+
+.popup-content {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  font-family: "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+
+
+/* Inputs, textarea et select uniformisés */
+.champ-texte,
+.popup-content textarea,
+.popup-content select,
+.popup-content input[type="text"] {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+
+textarea.champ-texte {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Ligne d'un filtre */
+.filtre-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* Zone des tags de filtre */
+.tag-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Un tag */
+.tag {
+  background-color: #007bff;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Bouton x dans un tag */
+.tag button {
+  background: none;
+  border: none;
+  color: white;
+  margin-left: 6px;
+  cursor: pointer;
+}
+
+/* Pied du popup avec boutons */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Boutons principaux */
+.footer button,
+.btn-principal,
+.btn-secondaire {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.btn-principal {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-principal:hover {
+  background-color: #005dc1;
+}
+
+.btn-secondaire {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.btn-secondaire:hover {
+  background-color: #e0e0e0;
+}
+
+/* Liste des membres */
+.membre-suggestion {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.membre-suggestion:hover {
+  background-color: #f5f5f5;
+}
+
+/* Membre sélectionné */
+.selected-membre {
+  display: inline-flex;
+  align-items: center;
+  background-color: #d9f0ff;
+  padding: 6px 10px;
+  border-radius: 14px;
+  margin: 4px;
+  font-size: 14px;
+}
+
+.selected-membre button {
+  margin-left: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #007bff;
+}
+
+/* Liste de résultats sous le champ */
+.membre-suggestion-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  margin-top: -10px;
+  border-radius: 6px;
+  background: white;
+  position: absolute;
+  width: 100%;
+  z-index: 10;
+}
+
+/* Positionnement du champ de recherche */
+.search-membre-container {
+  position: relative;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section h4 {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-texte,
+.textarea-texte {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.textarea-texte {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Alignement de la zone de partage */
+.share-autocomplete {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.tag-added {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
