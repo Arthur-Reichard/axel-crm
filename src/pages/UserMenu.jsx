@@ -62,7 +62,7 @@ function UserMenu({ darkMode, toggleMode }) {
           <div className="user-email">{userEmail || "Utilisateur"}</div>
 
           <ul className="user-links">
-            <li><a href="/MyUserProfil">Mon profil</a></li>
+            <li><a href="/axel-crm/MyUserProfil">Mon profil</a></li>
             <li><a href="#">Mon offre</a></li>
             <li><a href="#">Paramètres</a></li>
             <li><a href="#">Empreinte carbone</a></li>

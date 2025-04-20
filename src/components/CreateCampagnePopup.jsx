@@ -135,13 +135,6 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
           onSelect={setUtilisateursPartages}
         />
 
-        <FilterGroupManager
-          userId={userId}
-          entrepriseId={entrepriseId}
-          filtres={filtres}
-          onLoadFiltres={(f) => setFiltres(f)}
-        />
-
         <FiltreManager
           filtres={filtres}
           locked={locked}

@@ -1,9 +1,12 @@
 // components/FiltreManager.jsx
-import React from "react";
+import React, { useRef } from "react";
 import TagInput from "./TagInput";
 import "./css/FiltreManager.css";
+import FilterGroupManager from "./FilterGroupManager";
 
 export default function FiltreManager({
+  userId,
+  entrepriseId,
   filtres,
   locked,
   champs,
@@ -14,6 +17,7 @@ export default function FiltreManager({
   onValidate,
   onEdit
 }) {
+  const tagRefs = useRef([]);
   const renderRésumé = () => {
     return (
       <div className="resume-filtres">
@@ -33,7 +37,25 @@ export default function FiltreManager({
 
   return (
     <div className="filtre-manager">
-      <h4>Filtres</h4>
+      <div className="filtre-header">
+        <h4>Filtres</h4>
+        {!locked && (
+          <button className="btn-add" onClick={onAdd}>Ajouter un filtre</button>
+        )}
+      </div>
+
+      <FilterGroupManager
+        userId={userId}
+        entrepriseId={entrepriseId}
+        filtres={filtres}
+        onLoadFiltres={(f) => {
+          onEdit();
+          onValidate();
+          f.forEach((filtre, i) => onChange(i, "champ", filtre.champ));
+        }}
+        mode={locked ? "view" : "edit"}
+        hasFilters={filtres.length > 0}
+      />
 
       {locked ? (
         renderRésumé()
@@ -60,21 +82,30 @@ export default function FiltreManager({
                 <option value="egal">égal</option>
               </select>
 
-              <TagInput
-                tags={filtre.valeur || []}
-                setTags={(tags) => onChange(i, "valeur", tags)}
-                placeholder="Valeurs..."
-                suggestions={valeursPossibles[filtre.champ] || []}
-              />
+              <div className="tag-input-wrapper">
+                <TagInput
+                  tags={filtre.valeur || []}
+                  setTags={(tags) => onChange(i, "valeur", tags)}
+                  placeholder="Valeurs..."
+                  suggestions={valeursPossibles[filtre.champ] || []}
+                />
+              </div>
 
-              <button onClick={() => onRemove(i)} className="btn-delete">❌</button>
+              <button onClick={() => onRemove(i)} className="btn-delete">supprimer</button>
             </div>
           ))}
 
           <div className="filtre-actions">
-            <button className="btn-add" onClick={onAdd}>➕ Ajouter un filtre</button>
             {filtres.length > 0 && (
-              <button className="btn-validate" onClick={onValidate}>✅ Valider les filtres</button>
+              <button
+              className="btn-validate"
+              onClick={() => {
+                tagRefs.current.forEach(ref => ref?.flushInput?.());
+                onValidate();
+              }}
+            >
+              Valider les filtres
+            </button>
             )}
           </div>
         </>

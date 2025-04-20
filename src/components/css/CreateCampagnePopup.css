@@ -18,11 +18,12 @@ body.popup-open {
 }
 
 .popup-content {
+  width: 70vw;
+  max-width: 1100px;
+  min-width: 600px;
   background: white;
   padding: 30px;
   border-radius: 16px;
-  max-width: 800px;
-  width: 100%;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   font-family: "Segoe UI", sans-serif;
   box-sizing: border-box;
@@ -48,15 +49,6 @@ body.popup-open {
 textarea.champ-texte {
   min-height: 120px;
   resize: vertical;
-}
-
-/* Ligne d'un filtre */
-.filtre-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 15px;
 }
 
 /* Zone des tags de filtre */

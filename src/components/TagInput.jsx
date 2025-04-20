@@ -1,17 +1,25 @@
-// components/TagInput.jsx
-import React, { useState } from "react";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
 import "./css/TagInput.css";
 
-export default function TagInput({ tags, setTags, placeholder = "Ajouter un tag..." }) {
+const TagInput = forwardRef(({ tags, setTags, placeholder = "Ajouter un tag...", suggestions = [] }, ref) => {
   const [input, setInput] = useState("");
+
+  const addInputAsTag = () => {
+    const trimmed = input.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+      setInput("");
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    flushInput: () => addInputAsTag()
+  }));
 
   const handleKeyDown = (e) => {
     if ((e.key === "Enter" || e.key === ",") && input.trim() !== "") {
       e.preventDefault();
-      if (!tags.includes(input.trim())) {
-        setTags([...tags, input.trim()]);
-      }
-      setInput("");
+      addInputAsTag();
     }
   };
 
@@ -20,20 +28,24 @@ export default function TagInput({ tags, setTags, placeholder = "Ajouter un tag.
   };
 
   return (
-    <div className="tag-input-container">
-      {tags.map((tag, index) => (
-        <span className="tag" key={index}>
-          {tag}
-          <button onClick={() => removeTag(index)}>x</button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-      />
+    <div className="tag-input-wrapper">
+      <div className="tag-input-container">
+        {tags.map((tag, index) => (
+          <span className="tag" key={index}>
+            {tag}
+            <button onClick={() => removeTag(index)}>x</button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+        />
+      </div>
     </div>
   );
-}
+});
+
+export default TagInput;
