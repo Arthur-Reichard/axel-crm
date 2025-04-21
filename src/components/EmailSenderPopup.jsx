@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
 import "./css/EmailSenderPopup.css";
+import { applyFiltersToQuery } from "./utils/applyFiltersToQuery";
 
 export default function EmailSenderPopup({ campagne, onClose, userId, entrepriseId }) {
   const [objet, setObjet] = useState("");
@@ -20,20 +21,34 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
     { label: "Ville", value: "adresse_entreprise_ville" },
   ];
 
+  let query = supabase.from("leads").select("id, email_professionnel, prenom, nom, poste_contact, adresse_entreprise_ville")
+    .eq("entreprise_id", entrepriseId);
+  query = applyFiltersToQuery(query, campagne.filtres || []);
+
   useEffect(() => {
     const fetchLeads = async () => {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("id, email_professionnel, prenom, nom, poste_contact, adresse_entreprise_ville")
-        .eq("entreprise_id", entrepriseId);
-
-      if (!error && data) {
-        setLeads(data.filter((l) => l.email_professionnel));
+      try {
+        let query = supabase
+          .from("leads")
+          .select("id, email_professionnel, prenom, nom, poste_contact, adresse_entreprise_ville")
+          .eq("entreprise_id", entrepriseId);
+  
+        query = applyFiltersToQuery(query, campagne.filtres || []);
+  
+        const { data, error } = await query;
+        if (!error && data) {
+          setLeads(data.filter((l) => l.email_professionnel));
+        } else {
+          console.error("Erreur récupération leads filtrés :", error);
+        }
+      } catch (err) {
+        console.error("Erreur lors du fetch des leads filtrés :", err);
       }
     };
-
+  
     fetchLeads();
-  }, [entrepriseId]);
+  }, [campagne.filtres, entrepriseId]);
+   
 
   useEffect(() => {
     if (editorRef.current && messageHtml) {
@@ -100,6 +115,10 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
     return container.textContent;
   };
 
+  const personnaliserMessage = (texte, lead) => {
+    return texte.replace(/{{(\w+?)}}/g, (_, champ) => lead[champ] || "");
+  };
+
   const genererApercu = () => {
     if (previewTexte) {
       setPreviewTexte(null);
@@ -117,31 +136,48 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
   const envoyerEmails = async () => {
     setEnvoiEnCours(true);
     const resultatsEnvois = [];
-    const messageFinal = convertirHtmlEnTexte();
+    const messageBrut = convertirHtmlEnTexte();
 
     for (const lead of leads) {
       await new Promise((res) => setTimeout(res, 300));
-
-      const { error } = await supabase.from("emails_envoyes").insert({
+    
+      const messagePourLead = personnaliserMessage(messageBrut, lead);
+    
+      const response = await fetch("http://localhost:8000/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: lead.email_professionnel,
+          subject: objet,
+          html: messagePourLead,
+        }),
+      });
+    
+      const result = await response.json();
+      if (result.status !== "ok") {
+        console.error("Erreur envoi mail côté serveur :", result.detail);
+      }
+    
+      const { error: insertError } = await supabase.from("emails_envoyes").insert({
         campagne_id: campagne.id,
         lead_id: lead.id,
         email_envoye_a: lead.email_professionnel,
         objet,
-        message: messageFinal,
+        message: messagePourLead,
         statut_envoi: "envoyé",
         envoye_par: userId,
         entreprise_id: entrepriseId,
       });
-
+      
       resultatsEnvois.push({
         email: lead.email_professionnel,
-        statut: error ? "Échec" : "Envoyé",
-      });
-    }
-
+        statut: insertError ? "Échec" : "Envoyé",
+      });      
+    }    
+  
     setResultats(resultatsEnvois);
     setEnvoiEnCours(false);
-  };
+  };  
 
   return (
     <div className="popup">
@@ -164,7 +200,7 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
               <option key={champ.value} value={champ.value}>{champ.label}</option>
             ))}
           </select>
-          <button className="btn-ajouter" onClick={insererChamp}>+ Ajouter</button>
+          <button className="btn-ajouter" onClick={insererChamp}>Ajouter</button>
         </div>
 
         <div
