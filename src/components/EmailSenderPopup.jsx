@@ -9,6 +9,7 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
   const [leads, setLeads] = useState([]);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [resultats, setResultats] = useState([]);
+  const [previewTexte, setPreviewTexte] = useState(null);
   const editorRef = useRef(null);
 
   const champsDynamiqueDisponibles = [
@@ -23,7 +24,7 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
     const fetchLeads = async () => {
       const { data, error } = await supabase
         .from("leads")
-        .select("id, email_professionnel")
+        .select("id, email_professionnel, prenom, nom, poste_contact, adresse_entreprise_ville")
         .eq("entreprise_id", entrepriseId);
 
       if (!error && data) {
@@ -99,6 +100,20 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
     return container.textContent;
   };
 
+  const genererApercu = () => {
+    if (previewTexte) {
+      setPreviewTexte(null);
+      return;
+    }
+
+    const texteBrut = convertirHtmlEnTexte();
+    if (!leads.length) return;
+    const lead = leads[0];
+
+    const texteAvecDonnees = texteBrut.replace(/{{(\w+?)}}/g, (_, champ) => lead[champ] || "");
+    setPreviewTexte(texteAvecDonnees);
+  };
+
   const envoyerEmails = async () => {
     setEnvoiEnCours(true);
     const resultatsEnvois = [];
@@ -120,7 +135,7 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
 
       resultatsEnvois.push({
         email: lead.email_professionnel,
-        statut: error ? "❌ Échec" : "✅ Envoyé",
+        statut: error ? "Échec" : "Envoyé",
       });
     }
 
@@ -160,6 +175,17 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
           contentEditable
           onInput={() => setMessageHtml(editorRef.current.innerHTML)}
         ></div>
+
+        <button className="btn-ajouter" onClick={genererApercu}>
+          {previewTexte ? "Fermer l'aperçu" : "Aperçu du message"}
+        </button>
+
+        {previewTexte && (
+          <div className="email-leads-preview">
+            <h4>Aperçu du message :</h4>
+            <pre>{previewTexte}</pre>
+          </div>
+        )}
 
         <div className="email-leads-preview">
           <h4>Leads ciblés ({leads.length}) :</h4>
