@@ -47,18 +47,16 @@ body.popup-open {
 }
 
 textarea.champ-texte {
-  min-height: 120px;
+  min-height: 90px;
   resize: vertical;
 }
 
-/* Zone des tags de filtre */
 .tag-zone {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-/* Pied du popup avec boutons */
 .footer {
   display: flex;
   justify-content: flex-end;
@@ -66,7 +64,6 @@ textarea.champ-texte {
   margin-top: 20px;
 }
 
-/* Boutons principaux */
 .footer button,
 .btn-principal,
 .btn-secondaire {

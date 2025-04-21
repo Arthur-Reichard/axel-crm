@@ -1,0 +1,36 @@
+.email-leads-preview {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    background: #f9f9f9;
+  }
+  
+  .resultats-envois {
+    margin-top: 15px;
+    background-color: #e6f7ff;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  .inserer-champ {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .btn-ajouter {
+    background-color: #dff0ff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .btn-ajouter:hover {
+    background-color: #c0e6ff;
+  }
+    

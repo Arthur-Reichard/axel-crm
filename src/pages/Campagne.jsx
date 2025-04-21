@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
 import CreateCampagnePopup from "../components/CreateCampagnePopup";
 import "./css/Campagne.css";
+import EmailSenderPopup from "../components/EmailSenderPopup";
 
 
 export default function Campagne({ darkMode }) {
@@ -10,6 +11,7 @@ export default function Campagne({ darkMode }) {
   const [userId, setUserId] = useState(null);
   const [entrepriseId, setEntrepriseId] = useState(null);
   const [campagneEnCours, setCampagneEnCours] = useState(null);
+  const [campagneEmailing, setCampagneEmailing] = useState(null);
 
   const supprimerCampagne = async (id) => {
     const confirmation = window.confirm("Supprimer cette campagne ?");
@@ -58,16 +60,21 @@ export default function Campagne({ darkMode }) {
       </div>
 
       <div className="campagne-grid">
-        {campagnes.map((campagne) => (
-        <div key={campagne.id} className="campagne-card">
-        <div className="campagne-card-header">
-          <h3 onClick={() => setCampagneEnCours(campagne)}>{campagne.nom}</h3>
-          <button className="btn-delete-campagne" onClick={() => supprimerCampagne(campagne.id)}>supprimer</button>
+      {campagnes.map((campagne) => (
+        <div key={campagne.id} className="campagne-card" onClick={() => setCampagneEnCours(campagne)}>
+          <h3>{campagne.nom}</h3>
+          <p>{campagne.description}</p>
+          <button
+            className="btn-email"
+            onClick={(e) => {
+              e.stopPropagation(); // évite d’ouvrir la popup d'édition
+              setCampagneEmailing(campagne);
+            }}
+          >
+            📧 Emailing
+          </button>
         </div>
-        <p>{campagne.description}</p>
-      </div>
-
-        ))}
+      ))}
 
         <div className="campagne-card-add" onClick={() => setShowPopup(true)}>
           <span className="campagne-plus">+</span>
@@ -83,11 +90,23 @@ export default function Campagne({ darkMode }) {
             setCampagneEnCours(null);
           }}
           onCreated={(nouvelleOuModifiee) => {
-            setCampagnes(prev => {
-              const autres = prev.filter(c => c.id !== nouvelleOuModifiee.id);
-              return [nouvelleOuModifiee, ...autres];
-            });
-          }}
+            if (nouvelleOuModifiee.deleted) {
+              setCampagnes(prev => prev.filter(c => c.id !== nouvelleOuModifiee.id));
+            } else {
+              setCampagnes(prev => {
+                const autres = prev.filter(c => c.id !== nouvelleOuModifiee.id);
+                return [nouvelleOuModifiee, ...autres];
+              });
+            }
+          }}          
+        />
+      )}
+      {campagneEmailing && (
+        <EmailSenderPopup
+          campagne={campagneEmailing}
+          onClose={() => setCampagneEmailing(null)}
+          userId={userId}
+          entrepriseId={entrepriseId}
         />
       )}
     </div>

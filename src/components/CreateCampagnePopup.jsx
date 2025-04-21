@@ -9,7 +9,7 @@ import FilterGroupManager from "./FilterGroupManager";
 export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onCreated, campagneInitiale = null }) {;
   const [champs, setChamps] = useState([]);
   const [valeursPossibles, setValeursPossibles] = useState({});
-  const [locked, setLocked] = useState(false);
+  const [locked, setLocked] = useState(campagneInitiale ? true : false);
   const [utilisateursPartages, setUtilisateursPartages] = useState([]);
   const [groupesFiltres, setGroupesFiltres] = useState([]);
   const [nom, setNom] = useState(campagneInitiale?.nom || "");
@@ -31,6 +31,24 @@ useEffect(() => {
   };
   localStorage.setItem(draftKey, JSON.stringify(draft));
 }, [nom, description, filtres, previewFiltres, utilisateursPartages]);
+
+useEffect(() => {
+  const fetchUtilisateursPartages = async () => {
+    if (!campagneInitiale?.id) return;
+
+    const { data, error } = await supabase
+      .from("campagnes_utilisateurs")
+      .select("utilisateur_id")
+      .eq("campagne_id", campagneInitiale.id);
+
+    if (!error && data) {
+      const ids = data.map(d => d.utilisateur_id);
+      setUtilisateursPartages(ids);
+    }
+  };
+
+  fetchUtilisateursPartages();
+}, [campagneInitiale]);
 
 
 useEffect(() => {
@@ -119,9 +137,8 @@ useEffect(() => {
   };
 
   const creerCampagne = async () => {
-
     if (campagneInitiale) {
-      // Update existante
+      // MODIFICATION
       const { data, error } = await supabase
         .from("campagnes")
         .update({
@@ -132,8 +149,23 @@ useEffect(() => {
         .eq("id", campagneInitiale.id)
         .select()
         .single();
-    
+  
       if (!error && data) {
+        // UPDATE des partages
+        await supabase
+          .from("campagnes_utilisateurs")
+          .delete()
+          .eq("campagne_id", campagneInitiale.id);
+  
+        await Promise.all(
+          utilisateursPartages.map(uid =>
+            supabase.from("campagnes_utilisateurs").insert({
+              campagne_id: campagneInitiale.id,
+              utilisateur_id: uid
+            })
+          )
+        );
+  
         onCreated(data);
         onClose();
         localStorage.removeItem(draftKey);
@@ -141,7 +173,7 @@ useEffect(() => {
         console.error("Erreur modification campagne", error);
       }
     } else {
-      // Création
+      // CRÉATION
       const { data, error } = await supabase
         .from("campagnes")
         .insert([{
@@ -153,8 +185,9 @@ useEffect(() => {
         }])
         .select()
         .single();
-    
+  
       if (!error && data?.id) {
+        // INSERT des partages
         await Promise.all(
           utilisateursPartages.map(uid =>
             supabase.from("campagnes_utilisateurs").insert({
@@ -163,6 +196,7 @@ useEffect(() => {
             })
           )
         );
+  
         onCreated(data);
         onClose();
         localStorage.removeItem(draftKey);
@@ -170,33 +204,7 @@ useEffect(() => {
         console.error("Erreur création campagne", error);
       }
     }
-    
-
-    const { data, error } = await supabase.from("campagnes").insert([
-      {
-        nom,
-        description,
-        filtres,
-        cree_par: userId,
-        entreprise_id: entrepriseId
-      }
-    ]).select().single();
-
-    if (!error && data?.id) {
-      await Promise.all(
-        utilisateursPartages.map(uid =>
-          supabase.from("campagnes_utilisateurs").insert({
-            campagne_id: data.id,
-            utilisateur_id: uid
-          })
-        )
-      );
-      onCreated(data);
-      onClose();
-    } else {
-      console.error("Erreur création campagne", error);
-    }
-  };
+  };  
 
   return (
     <div className="popup">
@@ -218,6 +226,7 @@ useEffect(() => {
         <ShareWithMembers
           entrepriseId={entrepriseId}
           userId={userId}
+          value={utilisateursPartages}
           onSelect={setUtilisateursPartages}
         />
 
@@ -243,23 +252,34 @@ useEffect(() => {
         <LiveLeadPreview filtres={previewFiltres.length > 0 ? previewFiltres : filtres} entrepriseId={entrepriseId} />
 
         <div className="footer">
-          <button onClick={creerCampagne}>Créer</button>
-          <button onClick={onClose}>Annuler</button>
-          <button
-            onClick={() => {
-              localStorage.removeItem(draftKey);
-              setNom("");
-              setDescription("");
-              setFiltres([]);
-              setPreviewFiltres([]);
-              setUtilisateursPartages([]);
-              setLocked(false);
-            }}
-            className="btn-secondaire"
-          >
-            Réinitialiser le brouillon
-          </button>
+          {campagneInitiale && (
+            <button
+              className="btn-secondaire"
+              onClick={async () => {
+                const confirmDelete = window.confirm("Supprimer cette campagne ?");
+                if (!confirmDelete) return;
 
+                const { error } = await supabase
+                  .from("campagnes")
+                  .delete()
+                  .eq("id", campagneInitiale.id);
+
+                if (!error) {
+                  onCreated({ id: campagneInitiale.id, deleted: true }); // on informe le parent
+                  onClose();
+                } else {
+                  alert("Erreur lors de la suppression");
+                }
+              }}
+            >
+              Supprimer la campagne
+            </button>
+          )}
+
+          <button onClick={creerCampagne} className="btn-principal">
+            {campagneInitiale ? "Enregistrer" : "Créer"}
+          </button>
+          <button onClick={onClose} className="btn-secondaire">Annuler</button>
         </div>
       </div>
     </div>

@@ -68,3 +68,18 @@
   .campagne-plus {
     font-size: 2rem;
   }
+
+  .btn-email {
+    margin-top: 8px;
+    background-color: #e0f3ff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .btn-email:hover {
+    background-color: #b3e0ff;
+  }
+  
