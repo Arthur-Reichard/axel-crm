@@ -33,4 +33,42 @@
   .btn-ajouter:hover {
     background-color: #c0e6ff;
   }
-    
+  
+  .message-editor {
+    direction: ltr;
+    unicode-bidi: plaintext;
+    text-align: left;
+    min-height: 150px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background: #fff;
+    border-radius: 6px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  
+  
+  .token-dynamique {
+    display: inline-block;
+    background-color: #e0e7ff;
+    color: #1e3a8a;
+    border: 1px solid #c7d2fe;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+
+
+  .token-dynamique .close-btn {
+    margin-left: 8px;
+    border: none;
+    color: #1e3a8a;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.85rem;
+    background-color: transparent;
+  }
+      

@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
 import "./css/EmailSenderPopup.css";
 
 export default function EmailSenderPopup({ campagne, onClose, userId, entrepriseId }) {
   const [objet, setObjet] = useState("");
-  const [message, setMessage] = useState("");
+  const [messageHtml, setMessageHtml] = useState("");
+  const [champSelectionne, setChampSelectionne] = useState("");
   const [leads, setLeads] = useState([]);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [resultats, setResultats] = useState([]);
-  const [champSelectionne, setChampSelectionne] = useState("");
+  const editorRef = useRef(null);
 
   const champsDynamiqueDisponibles = [
     { label: "Prénom", value: "prenom" },
@@ -33,28 +34,75 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
     fetchLeads();
   }, [entrepriseId]);
 
+  useEffect(() => {
+    if (editorRef.current && messageHtml) {
+      editorRef.current.innerHTML = messageHtml;
+    }
+  }, []);
+
   const insererChamp = () => {
     if (!champSelectionne) return;
-    const insertion = `{{${champSelectionne}}}`;
-    const textarea = document.getElementById("message-editor");
-    if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
-    const newMessage = message.slice(0, start) + insertion + message.slice(end);
-    setMessage(newMessage);
+    const span = document.createElement("span");
+    span.className = "token-dynamique";
+    span.contentEditable = "false";
+    span.dataset.champ = champSelectionne;
+    span.innerHTML = `${champSelectionne} <button class="close-btn" onclick="this.parentElement.remove()">×</button>`;
 
-    // Replace le curseur à la bonne position
+    const space = document.createTextNode("\u00A0");
+    const fakeCaret = document.createElement("span");
+    fakeCaret.textContent = "\u200B";
+    fakeCaret.id = "caret-position";
+
+    if (range && editor.contains(selection.anchorNode)) {
+      range.deleteContents();
+      range.insertNode(span);
+      range.setStartAfter(span);
+      range.insertNode(space);
+      range.setStartAfter(space);
+      range.insertNode(fakeCaret);
+    } else {
+      editor.appendChild(span);
+      editor.appendChild(space);
+      editor.appendChild(fakeCaret);
+    }
+
     setTimeout(() => {
-      textarea.focus();
-      textarea.selectionStart = textarea.selectionEnd = start + insertion.length;
+      const caret = document.getElementById("caret-position");
+      if (caret) {
+        const newRange = document.createRange();
+        newRange.setStartAfter(caret);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+        caret.remove();
+      }
     }, 0);
+
+    setMessageHtml(editor.innerHTML);
+  };
+
+  const convertirHtmlEnTexte = () => {
+    const container = document.createElement("div");
+    container.innerHTML = editorRef.current.innerHTML;
+
+    container.querySelectorAll(".token-dynamique").forEach((el) => {
+      const champ = el.dataset.champ;
+      const placeholder = document.createTextNode(`{{${champ}}}`);
+      el.replaceWith(placeholder);
+    });
+
+    return container.textContent;
   };
 
   const envoyerEmails = async () => {
     setEnvoiEnCours(true);
     const resultatsEnvois = [];
+    const messageFinal = convertirHtmlEnTexte();
 
     for (const lead of leads) {
       await new Promise((res) => setTimeout(res, 300));
@@ -64,7 +112,7 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
         lead_id: lead.id,
         email_envoye_a: lead.email_professionnel,
         objet,
-        message,
+        message: messageFinal,
         statut_envoi: "envoyé",
         envoye_par: userId,
         entreprise_id: entrepriseId,
@@ -93,34 +141,26 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
           onChange={(e) => setObjet(e.target.value)}
         />
 
-        {/* Champ dynamique */}
         <div className="inserer-champ">
-          <label>Insérer un champ dynamique : </label>
-          <select
-            value={champSelectionne}
-            onChange={(e) => setChampSelectionne(e.target.value)}
-          >
+          <label>Insérer un champ dynamique :</label>
+          <select value={champSelectionne} onChange={(e) => setChampSelectionne(e.target.value)}>
             <option value="">-- choisir --</option>
             {champsDynamiqueDisponibles.map((champ) => (
-              <option key={champ.value} value={champ.value}>
-                {champ.label}
-              </option>
+              <option key={champ.value} value={champ.value}>{champ.label}</option>
             ))}
           </select>
           <button className="btn-ajouter" onClick={insererChamp}>+ Ajouter</button>
         </div>
 
-        {/* Zone d'édition */}
-        <textarea
+        <div
           id="message-editor"
-          className="champ-texte"
-          placeholder="Contenu du message"
-          rows={6}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
+          ref={editorRef}
+          dir="ltr"
+          className="champ-texte message-editor"
+          contentEditable
+          onInput={() => setMessageHtml(editorRef.current.innerHTML)}
+        ></div>
 
-        {/* Aperçu des leads */}
         <div className="email-leads-preview">
           <h4>Leads ciblés ({leads.length}) :</h4>
           <ul>
@@ -130,14 +170,11 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
           </ul>
         </div>
 
-        {/* Résultat après envoi */}
         {resultats.length > 0 && (
           <div className="resultats-envois">
             <h4>Résultats :</h4>
             {resultats.map((r, i) => (
-              <div key={i}>
-                {r.email} - {r.statut}
-              </div>
+              <div key={i}>{r.email} - {r.statut}</div>
             ))}
           </div>
         )}
@@ -147,7 +184,7 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
           <button
             onClick={envoyerEmails}
             className="btn-principal"
-            disabled={envoiEnCours || !objet || !message}
+            disabled={envoiEnCours || !objet || !messageHtml}
           >
             {envoiEnCours ? "Envoi en cours..." : "Envoyer"}
           </button>
