@@ -30,7 +30,7 @@ export default function FiltreManager({
             </div>
           );
         })}
-        <button className="btn-edit" onClick={onEdit}>✏️ Modifier les filtres</button>
+        <button className="btn-edit" onClick={onEdit}>Modifier les filtres</button>
       </div>
     );
   };
@@ -82,14 +82,12 @@ export default function FiltreManager({
                 <option value="egal">égal</option>
               </select>
 
-              <div className="tag-input-wrapper">
                 <TagInput
                   tags={filtre.valeur || []}
                   setTags={(tags) => onChange(i, "valeur", tags)}
                   placeholder="Valeurs..."
                   suggestions={valeursPossibles[filtre.champ] || []}
                 />
-              </div>
 
               <button onClick={() => onRemove(i)} className="btn-delete">supprimer</button>
             </div>

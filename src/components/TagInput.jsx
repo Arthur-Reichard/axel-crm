@@ -33,7 +33,7 @@ const TagInput = forwardRef(({ tags, setTags, placeholder = "Ajouter un tag...",
         {tags.map((tag, index) => (
           <span className="tag" key={index}>
             {tag}
-            <button onClick={() => removeTag(index)}>x</button>
+            <button className="btn-sup" onClick={() => removeTag(index)}>x</button>
           </span>
         ))}
         <input

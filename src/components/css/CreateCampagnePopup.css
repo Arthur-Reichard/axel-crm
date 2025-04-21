@@ -58,26 +58,6 @@ textarea.champ-texte {
   gap: 6px;
 }
 
-/* Un tag */
-.tag {
-  background-color: #007bff;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 16px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-}
-
-/* Bouton x dans un tag */
-.tag button {
-  background: none;
-  border: none;
-  color: white;
-  margin-left: 6px;
-  cursor: pointer;
-}
-
 /* Pied du popup avec boutons */
 .footer {
   display: flex;

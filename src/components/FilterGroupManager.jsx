@@ -9,74 +9,109 @@ export default function FilterGroupManager({ userId, entrepriseId, filtres, onLo
 
 
   const fetchGroupes = async () => {
-    if (!userId || !entrepriseId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const authId = user?.id;
+  
+    if (!authId) return;
+  
+    const { data: utilisateur } = await supabase
+      .from("utilisateurs")
+      .select("entreprise_id")
+      .eq("id", authId)
+      .single();
+  
+    if (!utilisateur) return;
+  
+    const entrepriseAuth = utilisateur.entreprise_id;
+  
     const { data, error } = await supabase
       .from("groupes_filtres")
       .select("id, nom, filtres")
-      .or(`cree_par.eq.${userId},entreprise_id.eq.${entrepriseId}`);
+      .or(`cree_par.eq.${authId},entreprise_id.eq.${entrepriseAuth}`);
+  
     if (!error) setGroupes(data);
   };
   
 
-  useEffect(() => {
-    if (!userId || !entrepriseId) return;
-    fetchGroupes();
-  }, [userId, entrepriseId]);
-  
-
   const sauvegarderGroupe = async () => {
     if (!nomNouveauGroupe.trim()) return;
-
+  
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      alert("Utilisateur non connecté");
+      return;
+    }
+  
+    const authId = user.id;
+  
+    const { data: utilisateur, error: utilisateurError } = await supabase
+      .from("utilisateurs")
+      .select("entreprise_id")
+      .eq("id", authId)
+      .single();
+  
+    if (utilisateurError || !utilisateur) {
+      alert("Impossible de récupérer votre entreprise");
+      return;
+    }
+  
+    const entrepriseAuth = utilisateur.entreprise_id;
+  
     const { error } = await supabase.from("groupes_filtres").insert({
       nom: nomNouveauGroupe.trim(),
       filtres,
-      entreprise_id: entrepriseId,
-      cree_par: userId
+      entreprise_id: entrepriseAuth,
+      cree_par: authId
     });
-
+  
     if (!error) {
       setNomNouveauGroupe("");
-      setMessage("Groupe enregistré ✅");
+      alert("Groupe de filtres enregistré !");
       fetchGroupes();
-      setTimeout(() => setMessage(""), 3000);
+    } else {
+      alert("Erreur lors de la sauvegarde : " + error.message);
     }
-  };
-
+  };  
+  
   const appliquerGroupe = (groupe) => {
     onLoadFiltres(groupe.filtres);
     setMessage(`Filtre "${groupe.nom}" appliqué`);
     setTimeout(() => setMessage(""), 3000);
   };
-  if (!hasFilters) return null;
+  
   return (
     <div className="groupe-filtres-wrapper">
-      {/* menu déroulant en haut */}
-      <select
-        onChange={(e) => {
-          const selected = groupes.find((g) => g.id === e.target.value);
-          if (selected) appliquerGroupe(selected);
-        }}
-      >
-        <option value="">-- Charger un groupe de filtres --</option>
-        {groupes.map((groupe) => (
-          <option key={groupe.id} value={groupe.id}>{groupe.nom}</option>
-        ))}
-      </select>
-
-      {/* message temporaire */}
+      {/* Affiche le select SEULEMENT si on a des groupes */}
+      {groupes.length > 0 && (
+        <select
+          onChange={(e) => {
+            const selected = groupes.find((g) => g.id === e.target.value);
+            if (selected) appliquerGroupe(selected);
+          }}
+        >
+          <option value="">-- Charger un groupe de filtres --</option>
+          {groupes.map((groupe) => (
+            <option key={groupe.id} value={groupe.id}>{groupe.nom}</option>
+          ))}
+        </select>
+      )}
+  
+      {/* Message de confirmation */}
       {message && <div className="groupe-message">{message}</div>}
-
-      {/* bouton de sauvegarde déplacé en bas */}
-      {mode === "edit" && (
+  
+      {/* Affiche sauvegarde SEULEMENT en mode edit ET si des filtres sont définis */}
+      {mode === "edit" && filtres.length > 0 && (
         <div className="nouveau-groupe">
           <input
+            className="new-g-input"
             placeholder="Nom du groupe"
             value={nomNouveauGroupe}
             onChange={(e) => setNomNouveauGroupe(e.target.value)}
           />
-          <button onClick={sauvegarderGroupe}>Sauvegarder</button>
+          <button className= "btn-save" onClick={sauvegarderGroupe}>Sauvegarder</button>
         </div>
       )}
     </div>
   );
+   
 }

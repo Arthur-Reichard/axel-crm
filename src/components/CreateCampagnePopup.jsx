@@ -6,16 +6,49 @@ import FiltreManager from "./FiltreManager";
 import "./css/CreateCampagnePopup.css";
 import FilterGroupManager from "./FilterGroupManager";
 
-export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onCreated }) {
-  const [nom, setNom] = useState("");
-  const [description, setDescription] = useState("");
-  const [filtres, setFiltres] = useState([]);
+export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onCreated, campagneInitiale = null }) {;
   const [champs, setChamps] = useState([]);
   const [valeursPossibles, setValeursPossibles] = useState({});
   const [locked, setLocked] = useState(false);
-  const [previewFiltres, setPreviewFiltres] = useState([]);
   const [utilisateursPartages, setUtilisateursPartages] = useState([]);
   const [groupesFiltres, setGroupesFiltres] = useState([]);
+  const [nom, setNom] = useState(campagneInitiale?.nom || "");
+  const [description, setDescription] = useState(campagneInitiale?.description || "");
+  const [filtres, setFiltres] = useState(campagneInitiale?.filtres || []);
+  const [previewFiltres, setPreviewFiltres] = useState(campagneInitiale?.filtres || []);
+
+
+const draftKey = `campagne-draft-${userId}-${entrepriseId}`;
+
+// Sauvegarde auto dès que les champs importants changent
+useEffect(() => {
+  const draft = {
+    nom,
+    description,
+    filtres,
+    previewFiltres,
+    utilisateursPartages
+  };
+  localStorage.setItem(draftKey, JSON.stringify(draft));
+}, [nom, description, filtres, previewFiltres, utilisateursPartages]);
+
+
+useEffect(() => {
+  const savedDraft = localStorage.getItem(draftKey);
+  if (savedDraft) {
+    try {
+      const parsed = JSON.parse(savedDraft);
+      setNom(parsed.nom || "");
+      setDescription(parsed.description || "");
+      setFiltres(parsed.filtres || []);
+      setPreviewFiltres(parsed.previewFiltres || []);
+      setUtilisateursPartages(parsed.utilisateursPartages || []);
+    } catch (e) {
+      console.warn("Brouillon corrompu ou vide.");
+    }
+  }
+}, [draftKey]);
+
 
   useEffect(() => {
     const fetchChampsLeads = async () => {
@@ -86,6 +119,59 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
   };
 
   const creerCampagne = async () => {
+
+    if (campagneInitiale) {
+      // Update existante
+      const { data, error } = await supabase
+        .from("campagnes")
+        .update({
+          nom,
+          description,
+          filtres
+        })
+        .eq("id", campagneInitiale.id)
+        .select()
+        .single();
+    
+      if (!error && data) {
+        onCreated(data);
+        onClose();
+        localStorage.removeItem(draftKey);
+      } else {
+        console.error("Erreur modification campagne", error);
+      }
+    } else {
+      // Création
+      const { data, error } = await supabase
+        .from("campagnes")
+        .insert([{
+          nom,
+          description,
+          filtres,
+          cree_par: userId,
+          entreprise_id: entrepriseId
+        }])
+        .select()
+        .single();
+    
+      if (!error && data?.id) {
+        await Promise.all(
+          utilisateursPartages.map(uid =>
+            supabase.from("campagnes_utilisateurs").insert({
+              campagne_id: data.id,
+              utilisateur_id: uid
+            })
+          )
+        );
+        onCreated(data);
+        onClose();
+        localStorage.removeItem(draftKey);
+      } else {
+        console.error("Erreur création campagne", error);
+      }
+    }
+    
+
     const { data, error } = await supabase.from("campagnes").insert([
       {
         nom,
@@ -154,15 +240,26 @@ export default function CreateCampagnePopup({ userId, entrepriseId, onClose, onC
           onEdit={() => setLocked(false)}
         />
 
-        {!locked && filtres.length > 0 && (
-          <button onClick={enregistrerGroupe}>💾 Enregistrer ce groupe de filtres</button>
-        )}
-
         <LiveLeadPreview filtres={previewFiltres.length > 0 ? previewFiltres : filtres} entrepriseId={entrepriseId} />
 
         <div className="footer">
           <button onClick={creerCampagne}>Créer</button>
           <button onClick={onClose}>Annuler</button>
+          <button
+            onClick={() => {
+              localStorage.removeItem(draftKey);
+              setNom("");
+              setDescription("");
+              setFiltres([]);
+              setPreviewFiltres([]);
+              setUtilisateursPartages([]);
+              setLocked(false);
+            }}
+            className="btn-secondaire"
+          >
+            Réinitialiser le brouillon
+          </button>
+
         </div>
       </div>
     </div>

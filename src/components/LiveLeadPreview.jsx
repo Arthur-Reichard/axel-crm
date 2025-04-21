@@ -10,27 +10,42 @@ export default function LiveLeadPreview({ filtres, entrepriseId }) {
     const fetchLeads = async () => {
       try {
         let query = supabase.from("leads").select("*").eq("entreprise_id", entrepriseId);
-
+    
+        const allOrConditions = [];
+    
         for (const filtre of filtres) {
           if (!filtre.champ || !filtre.type || !filtre.valeur || filtre.valeur.length === 0) continue;
-
-          const orConditions = filtre.valeur.map(val => {
-            let champ = filtre.champ;
-            let value = val;
-
+    
+          const conditions = filtre.valeur.map(val => {
+            const champ = filtre.champ;
+            const value = val;
+    
             if (filtre.type === "contient") {
               return `${champ}.ilike.%${value}%`;
             } else if (filtre.type === "ne_contient_pas") {
+              // On gère les "NOT" plus bas
               return `not.${champ}.ilike.%${value}%`;
             } else if (filtre.type === "egal") {
               return `${champ}.eq.${value}`;
             }
             return "";
           }).filter(Boolean);
-
-          if (orConditions.length > 0) {
-            query = query.or(`(${orConditions.join(",")})`);
+    
+          // Ajoute les conditions de ce filtre
+          if (conditions.length > 0) {
+            if (filtre.type === "ne_contient_pas") {
+              // les NOT doivent être appliqués avec AND (pas dans un OR global)
+              for (const condition of conditions) {
+                query = query.not(condition);
+              }
+            } else {
+              allOrConditions.push(...conditions);
+            }
           }
+        }
+    
+        if (allOrConditions.length > 0) {
+          query = query.or(allOrConditions.join(","));
         }
 
         const { data, error } = await query;
@@ -42,7 +57,7 @@ export default function LiveLeadPreview({ filtres, entrepriseId }) {
       } catch (err) {
         console.error("Erreur:", err);
       }
-    };
+    };    
 
     fetchLeads();
   }, [filtres, entrepriseId]);

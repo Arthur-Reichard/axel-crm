@@ -1,0 +1,22 @@
+.btn-save {
+    background-color: #f0f0f0;
+    color: #333;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    height: fit-content;
+    flex: 0 0 auto;
+    font-family: "Segoe UI", sans-serif;
+}
+
+.new-g-input {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 11px;
+    width: auto;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+    margin-right: 10px;
+}
