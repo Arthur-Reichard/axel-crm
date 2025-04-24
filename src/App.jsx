@@ -18,6 +18,9 @@ import MaterielDetail from "./pages/MaterielDetail";
 import Factures from "./pages/Factures"; 
 import FactureDetail from "./pages/FactureDetail";
 import ColumnMapping from './pages/ColumnMapping';
+import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import OAuthCallbackOutlook from "./pages/OAuthCallbackOutlook";
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -62,6 +65,13 @@ function App() {
           path="/MyUserProfil"
           element={<MyUserProfil darkMode={darkMode} toggleMode={toggleMode} />}
         />
+
+        <Route
+          path="/oauth/callback"
+          element={<OAuthCallbackPage />}
+        />
+
+        <Route path="/oauth/callback/outlook" element={<OAuthCallbackOutlook />} />
 
         {/* Routes protégées dans le layout */}
         <Route

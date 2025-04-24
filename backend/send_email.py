@@ -11,18 +11,18 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 FROM_EMAIL = os.getenv("FROM_EMAIL")
 
-async def envoyer_email(to, subject, html):
+async def envoyer_email(to, subject, html, host, port, user, password):
     msg = EmailMessage()
-    msg["From"] = FROM_EMAIL
+    msg["From"] = user
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(html, subtype="html")
 
     await aiosmtplib.send(
         msg,
-        hostname=SMTP_HOST,
-        port=SMTP_PORT,
+        hostname=host,
+        port=port,
         start_tls=True,
-        username=SMTP_USER,
-        password=SMTP_PASS,
+        username=user,
+        password=password,
     )

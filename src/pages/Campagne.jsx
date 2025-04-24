@@ -3,6 +3,8 @@ import { supabase } from "../helper/supabaseClient";
 import CreateCampagnePopup from "../components/CreateCampagnePopup";
 import "./css/Campagne.css";
 import EmailSenderPopup from "../components/EmailSenderPopup";
+import EmailConnectionPopup from "../components/EmailConnectionPopup";
+import { FiSettings } from "react-icons/fi";
 
 
 export default function Campagne({ darkMode }) {
@@ -12,6 +14,9 @@ export default function Campagne({ darkMode }) {
   const [entrepriseId, setEntrepriseId] = useState(null);
   const [campagneEnCours, setCampagneEnCours] = useState(null);
   const [campagneEmailing, setCampagneEmailing] = useState(null);
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [comptesConnectes, setComptesConnectes] = useState([]);
+
 
   const supprimerCampagne = async (id) => {
     const confirmation = window.confirm("Supprimer cette campagne ?");
@@ -57,6 +62,9 @@ export default function Campagne({ darkMode }) {
     <div className={`campagne-page ${darkMode ? "dark" : ""}`}>
       <div className="campagne-header">
         <h1 className="campagne-title">Campagne</h1>
+        <button className="btn-settings" onClick={() => setShowEmailSettings(true)}>
+          <FiSettings size={22} />
+        </button>
       </div>
 
       <div className="campagne-grid">
@@ -67,11 +75,15 @@ export default function Campagne({ darkMode }) {
           <button
             className="btn-email"
             onClick={(e) => {
-              e.stopPropagation(); // évite d’ouvrir la popup d'édition
+              e.stopPropagation();
+              if (comptesConnectes.length === 0) {
+                setShowEmailSettings(true);
+                return;
+              }
               setCampagneEmailing(campagne);
             }}
           >
-            📧 Emailing
+          Emailing
           </button>
         </div>
       ))}
@@ -109,6 +121,9 @@ export default function Campagne({ darkMode }) {
           entrepriseId={entrepriseId}
         />
       )}
-    </div>
+      {showEmailSettings && (
+        <EmailConnectionPopup utilisateurId={userId} onClose={() => setShowEmailSettings(false)} />
+      )}
+    </div>   
   );
 }
