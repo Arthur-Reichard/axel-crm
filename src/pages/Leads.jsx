@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../pages/css/Leads.css';
 import { supabase } from '../helper/supabaseClient';
@@ -75,6 +75,39 @@ export default function Leads() {
   ];
   const [itemsPerPage, setItemsPerPage] = useState(25); // valeurs : 10, 25, 50, 100
   const [currentPage, setCurrentPage] = useState(1);
+  const exportData = (format) => {
+    if (!allLeads.length) {
+      alert("Aucun lead à exporter !");
+      return;
+    }
+  
+    const exportFields = availableFields.map(field => field.name);
+  
+    const exportRows = allLeads.map(lead => {
+      const row = {};
+      exportFields.forEach(field => {
+        row[field] = lead[field] ?? '';
+      });
+      return row;
+    });
+  
+    if (format === 'csv') {
+      const csv = Papa.unparse(exportRows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'prospects.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else if (format === 'excel') {
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Prospects");
+      XLSX.writeFile(workbook, "prospects.xlsx");
+    }
+  };
   
 
   const [selectedColumns, setSelectedColumns] = useState(() => {
@@ -93,6 +126,8 @@ export default function Leads() {
     notes: '',
     assigne_a: ''
   });
+
+
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -169,7 +204,26 @@ export default function Leads() {
       setTimeout(() => setShowToast(false), 3000);
     }
   }, []);
-
+  
+  useEffect(() => {
+    const fetchUpdatedLeads = async () => {
+      if (!entrepriseId) return;
+      
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('entreprise_id', entrepriseId)
+        .order('created_at', { ascending: false });
+  
+      if (!error) {
+        setAllLeads(data);
+        setLeads(data);
+      }
+    };
+  
+    fetchUpdatedLeads();
+  }, [entrepriseId]);
+  
   const handleResize = (key, width) => {
     setColWidths((prev) => ({ ...prev, [key]: width }));
   };
@@ -324,6 +378,21 @@ export default function Leads() {
     }
   };
 
+  const exportButtonRef = useRef(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportButtonRef.current && !exportButtonRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
   return (
     <>
   {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
@@ -349,7 +418,18 @@ export default function Leads() {
           <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
         )}
       </div>
-    </div>
+      </div>
+      <div className="export-btn-wrapper" ref={exportButtonRef}>
+        <button className="import-btn" onClick={() => setShowExportMenu(prev => !prev)}>
+          Exporter ▼
+        </button>
+        {showExportMenu && (
+          <div className="export-menu">
+            <button onClick={() => { exportData('csv'); setShowExportMenu(false); }}>Exporter en CSV</button>
+            <button onClick={() => { exportData('excel'); setShowExportMenu(false); }}>Exporter en Excel</button>
+          </div>
+        )}
+      </div>
 
       <div className="table-wrapper">
             <tr className="pagination-info-row">

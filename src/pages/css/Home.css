@@ -1,170 +1,294 @@
-/* Base */
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* Import Police */
+@import url('https://fonts.googleapis.com/css2?family=General+Sans:wght@400;600;700&display=swap');
 
-body {
+/* Reset et Base */
+* {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
 }
 
-.dark {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
+html, body {
+  height: 100%;
+  font-family: 'General Sans', sans-serif;
+  background: #fefefe;
+  color: #111;
+  overflow-x: hidden;
 }
 
-.home {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#E53935, #FF7043);
+  border-radius: 10px;
 }
 
-/* Mode Button */
-.mode-button {
-  background: none;
-  border: 2px solid currentColor;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
+/* Animations générales */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(80px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ------------------------ HERO ------------------------ */
+.hero-section {
+  text-align: center;
+  padding: 8rem 2rem 6rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo {
+  width: 200px;
+  margin: 0 auto 2rem;
+  animation: spin 30s linear infinite;
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 15px #E53935);
+}
+
+.logo-floating {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  margin-top: 60px;
+  animation: spin 10s linear infinite;
+  z-index: 40; 
+  transition: transform 0.4s ease, filter 0.4s ease, z-index 0.4s ease;
   cursor: pointer;
-  border-radius: 8px;
-  transition: background 0.3s, color 0.3s;
-  color: inherit;
-  width: fit-content;
+  opacity: 0.8;
 }
 
-.mode-button:hover {
-  background: rgba(0, 0, 0, 0.05);
+.logo-floating:hover {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 20px #E53935);
 }
 
-.dark .mode-button {
-  color: #f0f0f0;
-  border-color: #f0f0f0;
+.logo-visible {
+  z-index: 200;
+  opacity: 1;
 }
 
-.dark .mode-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* Main */
-.main-content {
-  flex-grow: 1;
+.hero-section h1 {
+  font-size: 4rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #E53935, #FF7043, #FFB74D);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 6s ease infinite, fadeInUp 1s ease forwards;
+}
+
+.hero-section h2 {
+  margin-top: 1.2rem;
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #8E0E18;
+  animation: fadeInUp 1.4s ease forwards;
+}
+
+.hero-section p {
+  margin-top: 1.5rem;
+  font-size: 1.2rem;
+  opacity: 0.85;
+  animation: fadeInUp 1.7s ease forwards;
+}
+
+.hero-buttons {
+  margin-top: 3rem;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding: 2rem;
+  gap: 2rem;
+}
+
+/* --------------------- BOUTONS --------------------- */
+.btn-primary, .btn-secondary, .btn-primary-big {
+  padding: 1rem 2.5rem;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #E53935, #FF7043);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(229, 57, 53, 0.7);
+}
+
+.btn-secondary {
+  border: 2px solid #E53935;
+  color: #E53935;
+}
+
+.btn-secondary:hover {
+  background: #E53935;
+  color: white;
+  transform: scale(1.08);
+}
+
+.btn-primary-big {
+  margin-top: 2rem;
+  background: linear-gradient(90deg, #E53935, #FF7043);
+  color: white;
+  font-size: 1.4rem;
+  padding: 1.2rem 3rem;
+}
+
+.btn-primary-big:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(229, 57, 53, 0.8);
+}
+
+/* ------------------ SECTIONS ------------------- */
+section {
+  padding: 6rem 2rem;
   text-align: center;
 }
 
-h2 {
-  margin-bottom: 1rem;
-  font-size: 2rem;
+/* POURQUOI SECTION */
+.pourquoi-section {
+  background: #fff0f0;
 }
 
-/* Login Form */
-.login-form {
+.pourquoi-section h3 {
+  font-size: 2.8rem;
+  margin-bottom: 3rem;
+}
+
+.comparatifs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.bloc {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  width: 280px;
+  transition: all 0.4s ease;
+}
+
+.bloc:hover {
+  transform: scale(1.05);
+  background: #ffe0e0;
+}
+
+/* FONCTIONNEMENT SECTION */
+.fonctionnement-section {
+  background: #fefefe;
+}
+
+.timeline {
+  margin-top: 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-  max-width: 400px;
-  box-sizing: border-box;
+  gap: 2rem;
 }
 
-.login-form input {
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  transition: border-color 0.3s;
-  width: 100%;
+.step {
+  font-size: 1.5rem;
+  background: #fff0f0;
+  padding: 1.5rem;
+  border-radius: 16px;
+  transition: all 0.4s ease;
 }
 
-.login-form input:focus {
-  border-color: #0077ff;
-  outline: none;
+.step:hover {
+  transform: translateX(10px) scale(1.02);
 }
 
-.login-form button {
-  padding: 0.75rem;
-  font-size: 1rem;
-  background-color: #0077ff;
+/* CTA INTERMEDIAIRE */
+.cta-intermediaire {
+  background: linear-gradient(90deg, #E53935, #FF7043, #FFB74D);
   color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s;
-  width: 100%;
 }
 
-.login-form button:hover {
-  background-color: #005fd1;
+.cta-intermediaire h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
 }
 
-/* Error */
-.error-message {
-  color: #d8000c;
-  background-color: #ffd2d2;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
+/* VISION SECTION */
+.vision-section {
+  background: #fff0f0;
 }
 
-/* Register redirect */
-.register-redirect {
-  margin-top: 1.5rem;
-  font-size: 0.95rem;
+.vision-section h3 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.register-redirect a {
-  color: #0077ff;
-  text-decoration: none;
-  margin-left: 0.25rem;
+.vision-section ul {
+  list-style: none;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  font-size: 1.2rem;
 }
 
-.register-redirect a:hover {
-  text-decoration: underline;
+.vision-section li {
+  transition: all 0.4s ease;
 }
 
-/* Responsive breakpoints */
-
-/* Tablette */
-@media (max-width: 1024px) {
-  .main-content {
-    padding: 2rem 1rem;
-  }
+.vision-section li:hover {
+  transform: scale(1.05);
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 2rem 1rem;
-  }
-
-  .login-form {
-    max-width: 100%;
-  }
+/* FINAL CTA */
+.cta-final {
+  background: linear-gradient(90deg, #E53935, #FF7043, #FFB74D);
+  color: white;
 }
 
-/* Très petit mobile */
-@media (max-width: 480px) {
-  .mode-button {
-    width: 100%;
-    text-align: center;
-  }
+.cta-final h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
 
-  .login-form input,
-  .login-form button {
-    font-size: 0.95rem;
-    padding: 0.6rem;
-  }
-
-  h2 {
-    font-size: 1.6rem;
-  }
+/* ------------------ HIGHLIGHT ------------------ */
+.highlight {
+  background: linear-gradient(90deg, #E53935, #FF7043);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
 }
