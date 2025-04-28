@@ -92,7 +92,7 @@ function Dashboard({ darkMode, toggleMode }) {
       )}
 
       <main className={`dashboard-main ${showModal ? "blur" : ""}`}>
-        <h1>Bienvenue sur Axel</h1>
+        <h1>Bienvenue sur votre CRM</h1>
         <p>Voici ton tableau de bord personnel. Suis tes leads, tes stats, et reste focus.</p>
 
         <div className="card-grid">
