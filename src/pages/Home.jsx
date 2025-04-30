@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef  } from "react";
 import { Link } from "react-router-dom";
 import "./css/Home.css";
 import Navbar from "./Navbar";
@@ -14,7 +14,8 @@ import SectionFinalCTA from "./SectionFinalCTA";
 
 function Home() {
   const [darkMode, setDarkMode] = useState(false);
-  const [scrolled, setScrolled] = useState(false); // ➔ pour savoir si on a scrollé
+  const [scrolled, setScrolled] = useState(false); 
+  const topRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,9 +25,8 @@ function Home() {
         setScrolled(false);
       }
     };
-
+  
     window.addEventListener("scroll", handleScroll);
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -52,13 +52,16 @@ function Home() {
   return (
     <div className={darkMode ? "app dark" : "app"}>
       <Navbar darkMode={darkMode} toggleMode={toggleMode} />
-      <div className="home">
-        {/* ➔ ici on utilise la classe selon scroll */}
-        <img
-          src={logo}
-          alt="Logo Axel"
-          className={scrolled ? "logo-floating logo-visible" : "logo-floating"}
-        />
+      <div className="home" ref={topRef}> {/* 🔥 ajout du ref ici */}
+        <button
+          onClick={() => {
+            topRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className={scrolled ? "logo-button logo-visible" : "logo-button"}
+        >
+          <img src={logo} alt="Logo Axel" />
+        </button>
+
         <main className="main-content">
           <SectionHero />
           <SectionPourquoi />

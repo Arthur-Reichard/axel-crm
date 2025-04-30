@@ -14,7 +14,15 @@ html, body {
   font-family: 'General Sans', sans-serif;
   background: #fefefe;
   color: #111;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, span, div, section, a, li {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Scrollbar */
@@ -75,12 +83,10 @@ html, body {
   right: 30px;
   width: 80px;
   height: 80px;
-  margin-top: 60px;
   animation: spin 10s linear infinite;
-  z-index: 40; 
+  z-index: 200 !important;
+  pointer-events: auto;
   transition: transform 0.4s ease, filter 0.4s ease, z-index 0.4s ease;
-  cursor: pointer;
-  opacity: 0.8;
 }
 
 .logo-floating:hover {
@@ -184,6 +190,8 @@ section {
 /* POURQUOI SECTION */
 .pourquoi-section {
   background: #fff0f0;
+  overflow: hidden;
+  position: relative;
 }
 
 .pourquoi-section h3 {
@@ -292,3 +300,169 @@ section {
   -webkit-text-fill-color: transparent;
   font-weight: bold;
 }
+
+.carousel {
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 2rem;
+  padding-left: 1rem;
+  scroll-padding-left: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.carousel::-webkit-scrollbar {
+  height: 8px;
+}
+.carousel::-webkit-scrollbar-thumb {
+  background: #e53935;
+  border-radius: 10px;
+}
+
+.carousel-card {
+  flex: 0 0 300px;
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  scroll-snap-align: start;
+  transition: transform 0.4s ease;
+}
+
+.carousel-card:hover {
+  transform: scale(1.05);
+  background: #ffe0e0;
+}
+
+.carousel.auto {
+  display: flex;
+  gap: 2.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 2rem 1rem;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 1rem;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.carousel.auto::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  margin: 0 auto;
+  padding: 4rem 0;
+}
+
+.carousel-wrapper::before,
+.carousel-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 80px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(to right, #fff0f0, transparent);
+}
+
+.carousel-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #fff0f0, transparent);
+}
+
+
+.carousel-wrapper::after {
+  right: 0;
+  transform: rotateY(180deg); 
+}
+
+.carousel-loop {
+  display: flex;
+  width: max-content;
+  animation: scrollCarousel 30s linear infinite;
+  gap: 2rem;
+  padding: 0 2rem;
+}
+
+@keyframes scrollCarousel {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.carousel-card.spherical {
+  flex: 0 0 300px;
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow:
+    0 25px 40px rgba(0, 0, 0, 0.08),
+    0 5px 10px rgba(229, 57, 53, 0.05);
+  transform: perspective(1000px) rotateY(-4deg);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.carousel-card.spherical:hover {
+  transform: perspective(1000px) rotateY(0deg) scale(1.03);
+  box-shadow:
+    0 40px 70px rgba(0, 0, 0, 0.15),
+    0 0 30px rgba(229, 57, 53, 0.1);
+}
+
+.carousel-card .before {
+  font-weight: 600;
+  color: #e53935;
+  margin-bottom: 0.6rem;
+  font-size: 1.1rem;
+}
+
+.carousel-card .after {
+  font-size: 1rem;
+  color: #333;
+  opacity: 0.9;
+}
+
+body::-webkit-scrollbar {
+  height: 0px;
+}
+
+body {
+  overflow-x: hidden !important;
+}
+
+.logo-button {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  z-index: 200;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  animation: spin 10s linear infinite;
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+.logo-button:hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 12px #e53935);
+}
+
+.logo-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none; /* évite de bloquer le clic sur l'image */
+}
+
