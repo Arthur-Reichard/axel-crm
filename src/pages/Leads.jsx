@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ColumnMapping from './ColumnMapping';
 import FilterDrawer from '../components/FilterDrawer';
+import { FiSettings } from 'react-icons/fi';
 
 const allColumns = [
   'Prénom', 'Nom', 'Email pro', 'Téléphone pro',
@@ -48,7 +49,6 @@ export default function Leads() {
     { label: "Téléphone", name: "telephone_professionnel" },
     { label: "Entreprise", name: "nom_entreprise" },
     { label: "Description", name: "description", type: "textarea" },
-    { label: "Date de naissance", name: "date_naissance", type: "date" },
     { label: "Poste contact", name: "poste_contact" },
     { label: "Site web", name: "site_web" },
     { label: "Rue entreprise", name: "adresse_entreprise_rue" },
@@ -56,23 +56,19 @@ export default function Leads() {
     { label: "Code postal entreprise", name: "adresse_entreprise_cp" },
     { label: "Pays entreprise", name: "adresse_entreprise_pays" },
     { label: "SIRET", name: "numero_siret" },
-    { label: "TVA intracom", name: "numero_tva_intracom" },
     { label: "Canal préféré", name: "canal_prefere" },
     { label: "Langue", name: "langue" },
     { label: "Origine contact", name: "origine_contact" },
     { label: "Statut client", name: "statut_client" },
     { label: "Date premier contact", name: "date_premier_contact", type: "date" },
     { label: "Date dernier contact", name: "date_dernier_contact", type: "date" },
-    { label: "Fréquence contact", name: "frequence_contact" },
-    { label: "Produits achetés", name: "produits_achetes", type: "textarea" },
-    { label: "Montant total", name: "montant_total" },
     { label: "Devis envoyés", name: "devis_envoyes" },
     { label: "Statut paiement", name: "statut_paiement" },
     { label: "Assigné à", name: "assigne_a" },
     { label: "Niveau priorité", name: "niveau_priorite" },
-    { label: "Tags", name: "tags" },
     { label: "Notes", name: "notes", type: "textarea" }
   ];
+
   const [itemsPerPage, setItemsPerPage] = useState(25); // valeurs : 10, 25, 50, 100
   const [currentPage, setCurrentPage] = useState(1);
   const exportData = (format) => {
@@ -127,7 +123,15 @@ export default function Leads() {
     assigne_a: ''
   });
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [customFields, setCustomFields] = useState([]);
+  const [newField, setNewField] = useState({ nom_affichage: '', type: 'text' });
 
+  const allFields = [...availableFields, ...customFields.map(f => ({
+    label: f.nom_affichage,
+    name: f.nom_champ,
+    type: f.type
+  }))];
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -147,6 +151,13 @@ export default function Leads() {
 
         const entreprise_id = utilisateurs[0].entreprise_id;
         setEntrepriseId(entreprise_id);
+
+        const { data: custom, error: customErr } = await supabase
+          .from('champs_personnalises')
+          .select('*')
+          .eq('entreprise_id', entreprise_id);
+
+        if (!customErr) setCustomFields(custom);
 
         const { data, error } = await supabase
           .from('leads')
@@ -270,6 +281,22 @@ export default function Leads() {
     });
     setCustomSource('');
     setDrawerOpen(false);
+  };
+
+  const handleDeleteCustomField = async (id) => {
+    if (!window.confirm("Supprimer ce champ personnalisé ?")) return;
+  
+    const { error } = await supabase
+      .from('champs_personnalises')
+      .delete()
+      .eq('id', id);
+  
+    if (!error) {
+      setCustomFields(prev => prev.filter(f => f.id !== id));
+    } else {
+      alert("Erreur lors de la suppression");
+      console.error(error);
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -399,7 +426,9 @@ export default function Leads() {
 
     <div className="leads-container">
     <div className="leads-header">
-      <h1 className="leads-title">Tableau des Leads</h1>
+    <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
+      <FiSettings size={20} />
+    </button>
       <div style={{ display: 'flex', gap: '1rem' }}>
       <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
           <FilterDrawer
@@ -518,6 +547,65 @@ export default function Leads() {
             </div>
           </div>
           
+        )}
+
+        {settingsOpen && (
+          <div className="drawer-overlay" onClick={() => setSettingsOpen(false)}>
+            <div className="drawer" onClick={(e) => e.stopPropagation()}>
+              <h2 style={{ marginBottom: '1rem' }}>Champs personnalisés</h2>
+
+              <div style={{ marginBottom: '2rem' }}>
+                {customFields.length === 0 ? (
+                  <p>Aucun champ personnalisé pour l’instant.</p>
+                ) : (
+                  <ul className="custom-field-list">
+                    {customFields.map(field => (
+                      <li className="custom-field-item" key={field.id}>
+                        <span>{field.nom_affichage}<small> ({field.type})</small></span>
+                        <button onClick={() => handleDeleteCustomField(field.id)}>✕</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <input
+                type="text"
+                placeholder="Nom du champ"
+                value={newField.nom_affichage}
+                onChange={e => setNewField({ ...newField, nom_affichage: e.target.value })}
+              />
+              <select
+                value={newField.type}
+                onChange={e => setNewField({ ...newField, type: e.target.value })}
+                style={{ marginBottom: '1.5rem' }}
+              >
+                <option value="text">Texte</option>
+                <option value="textarea">Texte long</option>
+                <option value="date">Date</option>
+              </select>
+
+              <div className="drawer-buttons">
+                <button onClick={async () => {
+                  if (!entrepriseId || !newField.nom_affichage) return;
+                  const nom_champ = 'champ_' + Date.now();
+                  const { data, error } = await supabase.from('champs_personnalises').insert([{
+                    entreprise_id: entrepriseId,
+                    nom_affichage: newField.nom_affichage,
+                    nom_champ,
+                    type: newField.type
+                  }]).select();
+                  if (!error) {
+                    setCustomFields([...customFields, ...data]);
+                    setNewField({ nom_affichage: '', type: 'text' });
+                  }
+                }}>
+                  Ajouter
+                </button>
+                <button className="cancel-btn" onClick={() => setSettingsOpen(false)}>Fermer</button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </>

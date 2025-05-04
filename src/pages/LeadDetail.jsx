@@ -9,15 +9,15 @@ export default function LeadDetail() {
   const navigate = useNavigate();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [customFields, setCustomFields] = useState([]);
 
-  const allFields = [
+  const availableFields = [
     { label: "Nom", name: "nom" },
     { label: "Prénom", name: "prenom" },
     { label: "Email", name: "email_professionnel" },
     { label: "Téléphone", name: "telephone_professionnel" },
     { label: "Entreprise", name: "nom_entreprise" },
     { label: "Description", name: "description", type: "textarea" },
-    { label: "Date de naissance", name: "date_naissance", type: "date" },
     { label: "Poste contact", name: "poste_contact" },
     { label: "Site web", name: "site_web" },
     { label: "Rue entreprise", name: "adresse_entreprise_rue" },
@@ -25,42 +25,59 @@ export default function LeadDetail() {
     { label: "Code postal entreprise", name: "adresse_entreprise_cp" },
     { label: "Pays entreprise", name: "adresse_entreprise_pays" },
     { label: "SIRET", name: "numero_siret" },
-    { label: "TVA intracom", name: "numero_tva_intracom" },
     { label: "Canal préféré", name: "canal_prefere" },
     { label: "Langue", name: "langue" },
     { label: "Origine contact", name: "origine_contact" },
     { label: "Statut client", name: "statut_client" },
     { label: "Date premier contact", name: "date_premier_contact", type: "date" },
     { label: "Date dernier contact", name: "date_dernier_contact", type: "date" },
-    { label: "Fréquence contact", name: "frequence_contact" },
-    { label: "Produits achetés", name: "produits_achetes", type: "textarea" },
-    { label: "Montant total", name: "montant_total" },
     { label: "Devis envoyés", name: "devis_envoyes" },
     { label: "Statut paiement", name: "statut_paiement" },
     { label: "Assigné à", name: "assigne_a" },
     { label: "Niveau priorité", name: "niveau_priorite" },
-    { label: "Tags", name: "tags" },
     { label: "Notes", name: "notes", type: "textarea" }
   ];
 
+  const allFields = [...availableFields, ...customFields.map(f => ({
+    label: f.nom_affichage,
+    name: f.nom_champ,
+    type: f.type
+  }))];
+
   useEffect(() => {
-    const fetchLead = async () => {
-      const { data, error } = await supabase
+    const fetchLeadAndFields = async () => {
+      const { data: leadData, error: leadErr } = await supabase
         .from('leads')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error("Erreur chargement lead :", error);
+      if (leadErr || !leadData) {
+        console.error("Erreur chargement lead :", leadErr);
         return;
       }
 
-      setLead(data);
+      const { data: userData, error: userErr } = await supabase
+        .from('utilisateurs')
+        .select('entreprise_id')
+        .eq('id', leadData.user_id);
+
+      if (userErr || !userData?.[0]) return;
+
+      const { data: custom, error: customErr } = await supabase
+        .from('champs_personnalises')
+        .select('*')
+        .eq('entreprise_id', userData[0].entreprise_id);
+
+      if (!customErr && custom) {
+        setCustomFields(custom);
+      }
+
+      setLead(leadData);
       setLoading(false);
     };
 
-    fetchLead();
+    fetchLeadAndFields();
   }, [id]);
 
   const handleChange = (e) => {
@@ -75,19 +92,18 @@ export default function LeadDetail() {
       .from('leads')
       .update(lead)
       .eq('id', id);
-  
+
     if (error) {
       alert("Erreur lors de la mise à jour : " + error.message);
-      console.error(error);
     } else {
-      localStorage.setItem('leadUpdated', 'true'); 
+      localStorage.setItem('leadUpdated', 'true');
       navigate('/leads');
     }
   };
 
   const handleDelete = async () => {
-    const confirmDelete = window.confirm("Supprimer définitivement ce prospect ?");
-    if (!confirmDelete) return;
+    const confirm = window.confirm("Supprimer définitivement ce prospect ?");
+    if (!confirm) return;
 
     const { error } = await supabase.from('leads').delete().eq('id', id);
     if (error) {
