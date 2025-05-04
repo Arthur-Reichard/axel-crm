@@ -600,3 +600,82 @@ body {
 .export-btn-wrapper:hover .export-menu {
   display: block;
 }
+
+/* ===================== */
+/* CUSTOM FIELD DRAWER   */
+/* ===================== */
+
+.custom-field-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.custom-field-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f8f8f8;
+  font-size: 0.95rem;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.custom-field-item span {
+  font-weight: 500;
+}
+
+.custom-field-item small {
+  font-size: 0.8rem;
+  color: #777;
+  margin-left: 0.5rem;
+}
+
+.custom-field-item button {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #d32f2f;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.custom-field-item button:hover {
+  transform: scale(1.2);
+}
+
+.drawer select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background-color: white;
+  color: #111;
+}
+
+/* ========== DARK MODE ========== */
+
+.dark .custom-field-item {
+  background-color: #1e1e1e;
+  border-color: #444;
+  color: #f2f2f2;
+}
+
+.dark .custom-field-item small {
+  color: #aaa;
+}
+
+.dark .drawer select {
+  background-color: #1e1e1e;
+  border-color: #444;
+  color: #f2f2f2;
+}
