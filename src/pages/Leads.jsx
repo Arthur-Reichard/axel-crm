@@ -7,11 +7,12 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ColumnMapping from './ColumnMapping';
 import FilterDrawer from '../components/FilterDrawer';
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
+import { useMemo } from 'react';
 
 const allColumns = [
   'Prénom', 'Nom', 'Email pro', 'Téléphone pro',
-  'Entreprise', 'Statut', 'Assigné à', 'Notes'
+  'Entreprise', 'Statut', 'Assigné à'
 ];
 
 const columnFieldMap = {
@@ -31,25 +32,7 @@ const columnFieldMap = {
 };
 
 export default function Leads() {
-  const [entreprisesOnly, setEntreprisesOnly] = useState([]);
-  const [selectedClientType, setSelectedClientType] = useState('tous'); // 'tous' | 'individuel' | 'entreprise'
-  const [leads, setLeads] = useState([]);
-  const [entrepriseId, setEntrepriseId] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [customSource, setCustomSource] = useState('');
-  const [colWidths, setColWidths] = useState({});
-  const [showToast, setShowToast] = useState(false);
-  const [step, setStep] = useState(1);
-  const [parsedRows, setParsedRows] = useState([]);
-  const [headers, setHeaders] = useState([]);
-  const [selectedLeads, setSelectedLeads] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
-  const navigate = useNavigate();
-  const [filters, setFilters] = useState({});
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [allLeads, setAllLeads] = useState([]);
-  const [filterList, setFilterList] = useState([]);
-  const availableFields = [
+  const [availableFields, setAvailableFields] = useState([
     { label: "Nom", name: "nom" },
     { label: "Prénom", name: "prenom" },
     { label: "Email", name: "email_professionnel" },
@@ -74,7 +57,78 @@ export default function Leads() {
     { label: "Assigné à", name: "assigne_a" },
     { label: "Niveau priorité", name: "niveau_priorite" },
     { label: "Notes", name: "notes", type: "textarea" }
-  ];
+  ]);
+  const [customFields, setCustomFields] = useState([]);
+  const [visibleFields, setVisibleFields] = useState([]);
+
+  const fullFieldList = useMemo(() => {
+    const standardFields = availableFields.map(f => ({
+      id: 'standard-' + f.name,
+      nom_affichage: f.label,
+      nom_champ: f.name,
+      type: f.type || 'text',
+      standard: true
+    }));
+    return [...standardFields, ...customFields];
+  }, [availableFields, customFields]);
+
+  const toggleVisibility = async (fieldName) => {
+    const isVisible = visibleFields.includes(fieldName);
+  
+    const { error } = await supabase
+      .from('champs_visibles')
+      .upsert({
+        entreprise_id: entrepriseId,
+        nom_champ: fieldName,
+        visible: !isVisible
+      }, { onConflict: ['entreprise_id', 'nom_champ'] });         
+  
+    if (error) {
+      console.error('Erreur mise à jour visibilité :', error);
+      return;
+    }
+  
+    const { data: visibles, error: fetchErr } = await supabase
+      .from('champs_visibles')
+      .select('nom_champ')
+      .eq('entreprise_id', entrepriseId)
+      .eq('visible', true);
+  
+    if (!fetchErr) {
+      setVisibleFields(visibles.map(v => v.nom_champ));
+    }
+  };
+  
+
+  const navigate = useNavigate();
+  const allFieldsRef = useRef([]);
+
+  const [selectedClientType, setSelectedClientType] = useState('individuel');
+  const [leads, setLeads] = useState([]);
+  const [allLeads, setAllLeads] = useState([]);
+  const [entrepriseId, setEntrepriseId] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [selectedLeads, setSelectedLeads] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [customSource, setCustomSource] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [entreprisesOnly, setEntreprisesOnly] = useState([]);
+  const [colWidths, setColWidths] = useState({});
+  const [step, setStep] = useState(1);
+  const [parsedRows, setParsedRows] = useState([]);
+
+  useEffect(() => {
+    const savedType = localStorage.getItem('lastClientType');
+    if (savedType === 'individuel' || savedType === 'entreprise') {
+      setSelectedClientType(savedType);
+    }
+  }, []);
+  
+  useEffect(() => {
+    localStorage.setItem('lastClientType', selectedClientType);
+  }, [selectedClientType]);
+  
 
   const [itemsPerPage, setItemsPerPage] = useState(25); // valeurs : 10, 25, 50, 100
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,7 +137,7 @@ export default function Leads() {
       alert("Aucun lead à exporter !");
       return;
     }
-  
+
     const exportFields = availableFields.map(field => field.name);
   
     const exportRows = allLeads.map(lead => {
@@ -130,13 +184,13 @@ export default function Leads() {
     assigne_a: '',
     type_client: 'individuel',
     client_entreprise_id: '',
-    siren: '' // 👈 AJOUT
+    siren: ''
   });
   
   const [entreprisesClients, setEntreprisesClients] = useState([])
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [customFields, setCustomFields] = useState([]);
+  const [filterList, setFilterList] = useState([]);
   const [newField, setNewField] = useState({ nom_affichage: '', type: 'text' });
 
   const allFields = [...availableFields, ...customFields.map(f => ({
@@ -144,6 +198,8 @@ export default function Leads() {
     name: f.nom_champ,
     type: f.type
   }))];
+
+  allFieldsRef.current = allFields;
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -182,13 +238,6 @@ export default function Leads() {
           .eq('entreprise_id', entreprise_id)
           .order('created_at', { ascending: false });
   
-        if (error) {
-          console.error("❌ Erreur fetch leads :", error);
-        } else {
-          console.log("✅ Leads récupérés :", data);
-          setAllLeads(data);
-          setLeads(data);
-        }
       } catch (err) {
         console.error("Erreur fetchLeads :", err);
       }
@@ -245,6 +294,28 @@ export default function Leads() {
   
     setLeads(applyFilters());
   }, [filterList, allLeads, selectedClientType]);
+
+  useEffect(() => {
+    const fetchVisibility = async () => {
+      if (!entrepriseId) return;
+  
+      const { data: visibles, error } = await supabase
+        .from('champs_visibles')
+        .select('nom_champ')
+        .eq('entreprise_id', entrepriseId)
+        .eq('visible', true);
+  
+      if (error) {
+        console.error("Erreur chargement champs_visibles :", error);
+        return;
+      }
+  
+      const visibleNames = visibles.map(v => v.nom_champ);
+      setVisibleFields(visibleNames);
+    };
+  
+    fetchVisibility();
+  }, [entrepriseId, customFields]);  
 
   useEffect(() => {
     const wasUpdated = localStorage.getItem('leadUpdated');
@@ -432,7 +503,6 @@ export default function Leads() {
   
 
   const handleMappingComplete = async (mapping) => {
-    console.log('parsedRows:', parsedRows.length);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user || !entrepriseId) return;
 
@@ -488,7 +558,6 @@ export default function Leads() {
       console.error('Erreur lors de la suppression :', error.message, error.details);
       alert('Erreur lors de la suppression : ' + error.message);
     } else {
-      console.log('Supprimés :', data);
       setLeads(leads.filter(lead => !selectedLeads.includes(lead.id)));
       setSelectedLeads([]);
       setSelectAll(false);
@@ -519,11 +588,7 @@ export default function Leads() {
 
     <div className="leads-container">
     <div className="leads-header">
-    <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
-      <FiSettings size={20} />
-    </button>
-      <div style={{ display: 'flex', gap: '1rem' }}>
-      <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
+      <div>
           <FilterDrawer
             isOpen={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}
@@ -531,41 +596,56 @@ export default function Leads() {
             setFilters={setFilterList}
             availableFields={availableFields}
           />
-          <button className="add-lead-btn" type="button" onClick={() => setDrawerOpen(true)}>Ajouter un prospect</button>
-        <label className="import-btn">
-          Importer
-          <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
-        </label>
         {selectedLeads.length > 0 && (
           <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
         )}
       </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '1rem', alignItems: 'center', marginTop: '1rem' }}>
-  <label><strong>Afficher :</strong></label>
-  <select
-    value={selectedClientType}
-    onChange={(e) => {
-      setSelectedClientType(e.target.value);
-      setCurrentPage(1); // pour revenir à la première page
-    }}
-    style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc' }}
-  >
-    <option value="tous">Tous les prospects</option>
-    <option value="individuel">Clients individuels</option>
-    <option value="entreprise">Clients entreprises</option>
-  </select>
-</div>
-      <div className="export-btn-wrapper" ref={exportButtonRef}>
-        <button className="import-btn" onClick={() => setShowExportMenu(prev => !prev)}>
-          Exporter ▼
-        </button>
-        {showExportMenu && (
-          <div className="export-menu">
-            <button onClick={() => { exportData('csv'); setShowExportMenu(false); }}>Exporter en CSV</button>
-            <button onClick={() => { exportData('excel'); setShowExportMenu(false); }}>Exporter en Excel</button>
+      <div className="top-toolbar">
+        <div className="left-toolbar">
+          <div className="view-toggle">
+            <button
+              className={selectedClientType === 'individuel' ? 'active' : ''}
+              onClick={() => {
+                setSelectedClientType('individuel');
+                setCurrentPage(1);
+              }}
+            >
+              Individuels
+            </button>
+            <button
+              className={selectedClientType === 'entreprise' ? 'active' : ''}
+              onClick={() => {
+                setSelectedClientType('entreprise');
+                setCurrentPage(1);
+              }}
+            >
+              Entreprises
+            </button>
           </div>
-        )}
+          <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
+        </div>
+
+        <div className="right-toolbar">
+        <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
+          <FiSettings size={20} />
+        </button>
+          <label className="import-btn">
+            Importer
+            <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
+          </label>
+          <div className="export-btn-wrapper" ref={exportButtonRef}>
+            <button className="export-btn" onClick={() => setShowExportMenu(prev => !prev)}>
+              Exporter ▼
+            </button>
+            {showExportMenu && (
+              <div className="export-menu">
+                <button onClick={() => { exportData('csv'); setShowExportMenu(false); }}>Exporter en CSV</button>
+                <button onClick={() => { exportData('excel'); setShowExportMenu(false); }}>Exporter en Excel</button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="table-wrapper">
@@ -582,14 +662,18 @@ export default function Leads() {
     </thead>
     <tbody>
     {selectedClientType === 'entreprise'
-  ? entreprisesOnly.slice(start, end).map(ent => (
-      <tr key={ent.id}>
-        <td></td>
-        <td colSpan={selectedColumns.length}>
-          <strong>{ent.nom}</strong>
-        </td>
-      </tr>
-    ))
+      ? entreprisesOnly.slice(start, end).map(ent => (
+          <tr
+            key={ent.id}
+            onClick={() => navigate(`/entreprises-clients/${ent.id}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            <td></td>
+            <td colSpan={selectedColumns.length}>
+              <strong>{ent.nom}</strong>
+            </td>
+          </tr>
+        ))
   : paginatedLeads.map(lead => (
       <tr key={lead.id}>
         <td>
@@ -614,10 +698,19 @@ export default function Leads() {
         <td colSpan={selectedColumns.length + 1}>
           <div className="pagination-inline">
             <span>
-              <em>
-                Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –{' '}
-                {Math.min(currentPage * itemsPerPage, leads.length)} sur {leads.length} prospects
-              </em>
+            <em>
+              {selectedClientType === 'entreprise' ? (
+                <>
+                  Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, entreprisesOnly.length)} –{' '}
+                  {Math.min(currentPage * itemsPerPage, entreprisesOnly.length)} sur {entreprisesOnly.length} entreprises
+                </>
+              ) : (
+                <>
+                  Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –{' '}
+                  {Math.min(currentPage * itemsPerPage, leads.length)} sur {leads.length} prospects
+                </>
+              )}
+            </em>
             </span>
 
             <div className="pagination-nav">
@@ -637,6 +730,7 @@ export default function Leads() {
       </tr>
     </tfoot>
   </table>
+  <button className="add-prospect-fab" type="button" onClick={() => setDrawerOpen(true)}>+</button>
 </div>
 
 
@@ -676,7 +770,7 @@ export default function Leads() {
 
               <select name="source" value={formData.source} onChange={handleInputChange}>
                 <option value="">-- Source --</option>
-                <option value="bouche-à-bouche">Bouche-à-bouche</option>
+                <option value="bouche-à-bouche">Bouche à oreille</option>
                 <option value="appel entrant">Appel entrant</option>
                 <option value="autre">Autre (personnalisée)</option>
               </select>
@@ -732,24 +826,58 @@ export default function Leads() {
               </select>
 
               <div className="drawer-buttons">
-                <button onClick={async () => {
+                <button onClick={async () => {                 
                   if (!entrepriseId || !newField.nom_affichage) return;
                   const nom_champ = 'champ_' + Date.now();
-                  const { data, error } = await supabase.from('champs_personnalises').insert([{
-                    entreprise_id: entrepriseId,
-                    nom_affichage: newField.nom_affichage,
-                    nom_champ,
-                    type: newField.type
-                  }]).select();
-                  if (!error) {
-                    setCustomFields([...customFields, ...data]);
+
+                  const { data, error } = await supabase
+                    .from('champs_personnalises')
+                    .insert([{
+                      entreprise_id: entrepriseId,
+                      nom_affichage: newField.nom_affichage,
+                      nom_champ,
+                      type: newField.type
+                    }])
+                    .select();
+                  
+                  if (!error && data && data.length > 0) {
+                    const nouveauChamp = data[0];
+                  
+                    // ⬇️ On ajoute aussi sa visibilité par défaut
+                    const { error: visErr } = await supabase.from('champs_visibles').insert([{
+                      entreprise_id: entrepriseId,
+                      nom_champ: nouveauChamp.nom_champ,
+                      visible: true
+                    }]);                  
+                  
+                    if (visErr) {
+                      console.error("Erreur insertion champs_visibles :", visErr.message);
+                    }
+                  
+                    setCustomFields([...customFields, nouveauChamp]);
                     setNewField({ nom_affichage: '', type: 'text' });
-                  }
+                  }                                              
                 }}>
                   Ajouter
                 </button>
                 <button className="cancel-btn" onClick={() => setSettingsOpen(false)}>Fermer</button>
               </div>
+
+              {fullFieldList.map(field => (
+  <li key={field.nom_champ} className="custom-field-item">
+    <span>{field.nom_affichage}</span>
+    
+    {/* Bouton œil pour (dé)masquer */}
+    <button onClick={() => toggleVisibility(field.nom_champ)}>
+      {visibleFields.includes(field.nom_champ) ? <FiEye /> : <FiEyeOff />}
+    </button>
+
+    {/* Supprimer seulement si ce n'est pas un champ standard */}
+    {!field.standard && (
+      <button onClick={() => handleDeleteCustomField(field.id)}>✕</button>
+    )}
+  </li>
+))}
             </div>
           </div>
         )}

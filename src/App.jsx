@@ -21,6 +21,7 @@ import FactureDetail from "./pages/FactureDetail";
 import ColumnMapping from './pages/ColumnMapping';
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import OAuthCallbackOutlook from "./pages/OAuthCallbackOutlook";
+import EntrepriseClientDetails from "./pages/EntrepriseClientDetails";
 
 
 function App() {
@@ -115,6 +116,12 @@ function App() {
               path="leads/:id"
               element={<LeadDetail darkMode={darkMode} toggleMode={toggleMode} />}
             />
+
+            <Route
+              path="/entreprises-clients/:id" 
+              element={<EntrepriseClientDetails />}
+            />
+
             <Route
               path="materiel"
               element={<ParcMateriel darkMode={darkMode} toggleMode={toggleMode} />}

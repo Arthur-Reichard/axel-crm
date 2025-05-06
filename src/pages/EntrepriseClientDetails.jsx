@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
@@ -7,11 +7,9 @@ import '../pages/css/LeadDetail.css';
 export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
   const [customFields, setCustomFields] = useState([]);
-  const [visibleFields, setVisibleFields] = useState([]);
 
   const availableFields = [
     { label: "Nom", name: "nom" },
@@ -40,29 +38,11 @@ export default function LeadDetail() {
     { label: "Notes", name: "notes", type: "textarea" }
   ];
 
-  const allFields = useMemo(() => [
-    ...availableFields,
-    ...customFields.map(f => ({
-      label: f.nom_affichage,
-      name: f.nom_champ,
-      type: f.type
-    }))
-  ], [customFields]);
-
-  useEffect(() => {
-    const savedVisible = JSON.parse(localStorage.getItem('visibleLeadFields') || '[]');
-    setVisibleFields(savedVisible);
-  }, []);
-
-  useEffect(() => {
-    const syncVisibility = () => {
-      const updated = JSON.parse(localStorage.getItem('visibleLeadFields') || '[]');
-      setVisibleFields(updated);
-    };
-  
-    window.addEventListener('storage', syncVisibility);
-    return () => window.removeEventListener('storage', syncVisibility);
-  }, []);  
+  const allFields = [...availableFields, ...customFields.map(f => ({
+    label: f.nom_affichage,
+    name: f.nom_champ,
+    type: f.type
+  }))];
 
   useEffect(() => {
     const fetchLeadAndFields = async () => {
@@ -80,27 +60,20 @@ export default function LeadDetail() {
       const { data: userData, error: userErr } = await supabase
         .from('utilisateurs')
         .select('entreprise_id')
-        .eq('id', leadData.user_id)
-        .single();
+        .eq('id', leadData.user_id);
 
-      if (userErr || !userData) return;
+      if (userErr || !userData?.[0]) return;
 
       const { data: custom, error: customErr } = await supabase
         .from('champs_personnalises')
         .select('*')
-        .eq('entreprise_id', userData.entreprise_id);
+        .eq('entreprise_id', userData[0].entreprise_id);
 
       if (!customErr && custom) {
         setCustomFields(custom);
-        // attendre une frame pour que React mette à jour les champs avant d’afficher
-        setTimeout(() => setLead(leadData), 0);
-      } else {
-        setLead(leadData);
       }
 
-      const savedVisible = JSON.parse(localStorage.getItem('visibleLeadFields') || '[]');
-      setVisibleFields(savedVisible);
-
+      setLead(leadData);
       setLoading(false);
     };
 
@@ -129,7 +102,8 @@ export default function LeadDetail() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Supprimer définitivement ce prospect ?")) return;
+    const confirm = window.confirm("Supprimer définitivement ce prospect ?");
+    if (!confirm) return;
 
     const { error } = await supabase.from('leads').delete().eq('id', id);
     if (error) {
@@ -139,9 +113,7 @@ export default function LeadDetail() {
     }
   };
 
-  if (loading || !lead || allFields.length === 0) {
-    return <p style={{ padding: '2rem' }}>Chargement...</p>;
-  }
+  if (loading || !lead) return <p style={{ padding: '2rem' }}>Chargement...</p>;
 
   return (
     <div className="lead-detail-page">
@@ -151,18 +123,31 @@ export default function LeadDetail() {
       </div>
 
       <div className="lead-detail-grid">
-        {allFields
-          .filter(field => visibleFields.includes(field.name))
-          .map(({ label, name, type = "text" }) => (
-            <div className="lead-field" key={name} style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}>
-              <label htmlFor={name}>{label}</label>
-              {type === "textarea" ? (
-                <textarea id={name} name={name} value={lead[name] || ''} onChange={handleChange} />
-              ) : (
-                <input id={name} type={type} name={name} value={lead[name] || ''} onChange={handleChange} />
-              )}
-            </div>
-          ))}
+        {allFields.map(({ label, name, type = "text" }) => (
+          <div
+            className="lead-field"
+            key={name}
+            style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
+          >
+            <label htmlFor={name}>{label}</label>
+            {type === "textarea" ? (
+              <textarea
+                id={name}
+                name={name}
+                value={lead[name] || ''}
+                onChange={handleChange}
+              />
+            ) : (
+              <input
+                id={name}
+                type={type}
+                name={name}
+                value={lead[name] || ''}
+                onChange={handleChange}
+              />
+            )}
+          </div>
+        ))}
 
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
           <label>Date d'ajout</label>
@@ -175,8 +160,8 @@ export default function LeadDetail() {
       </div>
 
       <div className="lead-detail-buttons">
-        <button onClick={handleSave}>Enregistrer</button>
-        <button className="delete-btn" onClick={handleDelete}>Supprimer</button>
+        <button onClick={handleSave}>💾 Enregistrer</button>
+        <button className="delete-btn" onClick={handleDelete}>🗑️ Supprimer</button>
       </div>
     </div>
   );
