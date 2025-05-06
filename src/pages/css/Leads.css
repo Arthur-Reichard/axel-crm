@@ -110,16 +110,18 @@ body {
 }
 
 .lead-table button {
-  background: none;
+  background: #007bff;
   border: none;
   cursor: pointer;
   font-size: 1.2rem;
-  color: #d32f2f;
+  color: white;
   transition: transform 0.2s ease;
 }
 
 .lead-table button:hover {
   transform: scale(1.1);
+  color: white;
+  background-color: #007bff;
 }
 
 .table-wrapper {
@@ -200,31 +202,28 @@ body {
 
 .drawer-buttons {
   margin-top: 2rem;
-  padding-bottom: 2rem;
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
   background: inherit;
   position: sticky;
   bottom: 0;
+  margin-bottom: 2rem;
 }
 
 .drawer-buttons button {
   padding: 0.75rem 1.25rem;
-  border: none;
   border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
+  border-color: #333;
 }
 
 .drawer-buttons .cancel-btn {
-  background: #eee;
   color: #333;
 }
 
 .drawer-buttons button:first-child {
   background: #111e23;
-  color: white;
 }
 
 /* ===================== */
@@ -289,6 +288,7 @@ body {
   background-color: #1e1e1e !important;
   color: #f2f2f2 !important;
   border-color: #444 !important;
+  margin: 0;
 }
 
 .dark .lead-field label,
@@ -350,7 +350,6 @@ body {
 
 .dark .drawer-buttons .cancel-btn {
   background-color: #2a2a2a;
-  color: #ccc;
 }
 
 .dark .draggable-item {
@@ -478,32 +477,37 @@ body {
 }
 
 
-.import-btn {
-  background-color: #fc602c;
-  color: white;
-  font-weight: 600;
-  padding: 0.6rem 1.4rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  margin-right: 1rem;   
-  margin-top: 0.3rem;    
+/* === Boutons Importer / Exporter === */
+.import-export {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1rem;
 }
 
-.import-btn:hover {
-  background-color: #e15524;
+/* === Menu déroulant export === */
+.export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  z-index: 9999; /* ← augmente ici */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.filter-btn {
-  background: #007bff;
-  color: white;
-  padding: 8px 12px;
+.export-menu button {
+  padding: 0.5rem 1rem;
+  width: 100%;
+  background: white;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
-  margin-right: 1rem;
-  z-index: 2;
+  text-align: left;
+}
+
+.export-menu button:hover {
+  background-color: #f1f1f1;
 }
 
 .pagination-info-row {
@@ -548,59 +552,6 @@ body {
   border: 1px solid #ccc;
 }
 
-.export-btn-wrapper {
-  position: relative;
-  display: inline-block;
-  margin-left: 1rem;
-}
-
-.export-btn {
-  background-color: #5c6ac4;
-  color: white;
-  font-weight: 600;
-  padding: 0.6rem 1.4rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  margin-top: 0.3rem;
-}
-
-.export-btn:hover {
-  background-color: #4852a8;
-}
-
-.export-menu {
-  display: none;
-  position: absolute;
-  background-color: white;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
-  border-radius: 8px;
-  margin-top: 0.5rem;
-  overflow: hidden;
-  z-index: 10;
-}
-
-.export-menu button {
-  background: none;
-  border: none;
-  color: #333;
-  padding: 0.8rem 1.2rem;
-  width: 100%;
-  text-align: left;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.export-menu button:hover {
-  background-color: #f5f5f5;
-}
-
-.export-btn-wrapper:hover .export-menu {
-  display: block;
-}
-
 /* ===================== */
 /* CUSTOM FIELD DRAWER   */
 /* ===================== */
@@ -608,7 +559,7 @@ body {
 .custom-field-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 0 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -678,4 +629,218 @@ body {
   background-color: #1e1e1e;
   border-color: #444;
   color: #f2f2f2;
+}
+
+.view-toggle {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.view-toggle button:last-child {
+  border-right: 1px solid #ccc;
+}
+
+/* === Bouton paramètres (⚙) === */
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.top-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0 1rem 0 1rem;
+}
+
+.left-toolbar {
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.right-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+}
+
+.view-toggle button,
+.filter-btn,
+.import-btn,
+.export-btn-wrapper .import-btn {
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  background-color: #f4f4f4;
+  color: #111;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 42px;
+}
+
+.view-toggle button.active,
+.filter-btn.active,
+.import-btn.active,
+.export-btn-wrapper .import-btn.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.view-toggle button:hover,
+.filter-btn:hover,
+.import-btn:hover,
+.export-btn-wrapper .import-btn:hover {
+border-color: #007bff;
+color: #007bff;
+}
+
+.export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.export-menu button {
+  padding: 0.5rem 1rem;
+  width: 100%;
+  background: white;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.export-menu button:hover {
+  background-color: #f1f1f1;
+}
+
+.dark .view-toggle button,
+.dark .filter-btn,
+.dark .import-btn,
+.dark .export-btn-wrapper .import-btn {
+  background-color: #2a2a2a;
+  border-color: #555;
+  color: #f2f2f2;
+}
+
+.dark .view-toggle button.active,
+.dark .filter-btn.active,
+.dark .import-btn.active,
+.dark .export-btn-wrapper .import-btn.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.dark .view-toggle button:hover,
+.dark .filter-btn:hover,
+.dark .import-btn:hover,
+.dark .export-btn-wrapper .import-btn:hover {
+  background-color: #3a3a3a;
+}
+
+/* Menu déroulant en mode sombre */
+.dark .export-menu {
+  background-color: #1e1e1e;
+  border-color: #555;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+.dark .export-menu button {
+  background-color: #1e1e1e;
+  color: #f2f2f2;
+}
+
+.dark .export-menu button:hover {
+  background-color: #2a2a2a;
+}
+
+/* Désactive le hover sur les boutons déjà actifs */
+.view-toggle button.active:hover,
+.filter-btn.active:hover,
+.import-btn.active:hover,
+.export-btn-wrapper .import-btn.active:hover {
+  background-color: #007bff; /* même couleur que active */
+  color: white;
+  cursor: default;
+}
+
+
+.dark .view-toggle button.active:hover,
+.dark .filter-btn.active:hover,
+.dark .import-btn.active:hover,
+.dark .export-btn-wrapper .import-btn.active:hover {
+  background-color: #007bff;
+  color: white;
+  cursor: default;
+}
+
+.add-prospect-fab {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
+  font-size: 2.4rem;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 100;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.add-prospect-fab:hover {
+  transform: scale(1.3);
+}
+
+.dark .add-prospect-fab {
+  background-color: #f2f2f2;
+  color: #111e23;
+}
+
+.dark .add-prospect-fab:hover {
+  background-color: #ddd;
+}
+
+.export-btn-wrapper .export-btn:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.export-btn {
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  background-color: #f4f4f4;
+  color: #111;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 42px;
+}
+
+.dark .export-menu {
+  z-index: 9999;
+}
+
+.export-btn-wrapper {
+  position: relative; /* ← indispensable */
+  height: 42px;
 }
