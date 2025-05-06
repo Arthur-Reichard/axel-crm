@@ -9,6 +9,7 @@ import ColumnMapping from './ColumnMapping';
 import FilterDrawer from '../components/FilterDrawer';
 import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useMemo } from 'react';
+import ColumnSettingsDrawer from '../components/ColumnSettingsDrawer';
 
 const allColumns = [
   'Prénom', 'Nom', 'Email pro', 'Téléphone pro',
@@ -117,6 +118,8 @@ export default function Leads() {
   const [colWidths, setColWidths] = useState({});
   const [step, setStep] = useState(1);
   const [parsedRows, setParsedRows] = useState([]);
+  const [columnPreferences, setColumnPreferences] = useState([]);
+  const [utilisateurId, setUtilisateurId] = useState(null);
 
   useEffect(() => {
     const savedType = localStorage.getItem('lastClientType');
@@ -124,7 +127,7 @@ export default function Leads() {
       setSelectedClientType(savedType);
     }
   }, []);
-  
+
   useEffect(() => {
     localStorage.setItem('lastClientType', selectedClientType);
   }, [selectedClientType]);
@@ -168,9 +171,12 @@ export default function Leads() {
   
 
   const [selectedColumns, setSelectedColumns] = useState(() => {
-    const stored = JSON.parse(localStorage.getItem('selectedColumns'));
-    return Array.isArray(stored) ? stored.filter(col => allColumns.includes(col)) : allColumns;
+    const stored = JSON.parse(localStorage.getItem('selectedLeadColumns'));
+    return Array.isArray(stored)
+      ? stored
+      : fullFieldList.map(f => f.nom_champ);
   });
+  
 
   const [formData, setFormData] = useState({
     prenom: '',
@@ -203,43 +209,74 @@ export default function Leads() {
 
   useEffect(() => {
     const fetchLeads = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw userError;
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) return;
+      setUtilisateurId(user.id);
   
-        const { data: utilisateurs, error: userInfoError } = await supabase
-          .from('utilisateurs')
-          .select('entreprise_id')
-          .eq('id', user.id);
+      // 🔁 Récupération ou création des préférences de colonnes
+      const { data: colonnes, error: errColonnes } = await supabase
+        .from('colonnes_leads')
+        .select('*')
+        .eq('utilisateur_id', user.id)
+        .order('ordre', { ascending: true });
   
-        if (userInfoError || !utilisateurs || utilisateurs.length === 0) {
-          console.error("Aucun utilisateur trouvé");
-          return;
+      if (!errColonnes && colonnes.length > 0) {
+        setColumnPreferences(colonnes);
+        setSelectedColumns(colonnes.filter(c => c.visible).map(c => c.nom_champ));
+      } else {
+        const initial = fullFieldList.map((field, index) => ({
+          utilisateur_id: user.id,
+          nom_champ: field.nom_champ,
+          ordre: index,
+          visible: true
+        }));
+        const { error: insertErr } = await supabase
+          .from('colonnes_leads')
+          .insert(initial);
+  
+        if (!insertErr) {
+          setColumnPreferences(initial);
+          setSelectedColumns(initial.map(c => c.nom_champ));
         }
+      }
   
-        const entreprise_id = utilisateurs[0].entreprise_id;
-        setEntrepriseId(entreprise_id);
-        await fetchEntreprisesClients(entreprise_id);
+      // 👤 Récupération entreprise utilisateur
+      const { data: utilisateurs, error: userInfoError } = await supabase
+        .from('utilisateurs')
+        .select('entreprise_id')
+        .eq('id', user.id);
   
-        const { data: custom, error: customErr } = await supabase
-          .from('champs_personnalises')
-          .select('*')
-          .eq('entreprise_id', entreprise_id);
+      if (userInfoError || !utilisateurs || utilisateurs.length === 0) {
+        console.error("Aucun utilisateur trouvé");
+        return;
+      }
   
-        if (!customErr) setCustomFields(custom);
+      const entreprise_id = utilisateurs[0].entreprise_id;
+      setEntrepriseId(entreprise_id);
+      await fetchEntreprisesClients(entreprise_id);
   
-        const { data, error } = await supabase
-          .from('leads')
-          .select(`
-            id, prenom, nom, type_client, nom_entreprise, statut_client, assigne_a,
-            email_professionnel, telephone_professionnel, source, notes,
-            entreprises_clients(id, nom)
-          `)
-          .eq('entreprise_id', entreprise_id)
-          .order('created_at', { ascending: false });
+      // 🧩 Champs personnalisés
+      const { data: custom, error: customErr } = await supabase
+        .from('champs_personnalises')
+        .select('*')
+        .eq('entreprise_id', entreprise_id);
   
-      } catch (err) {
-        console.error("Erreur fetchLeads :", err);
+      if (!customErr) setCustomFields(custom);
+  
+      // 👥 Récupération des leads
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id, prenom, nom, type_client, nom_entreprise, statut_client, assigne_a,
+          email_professionnel, telephone_professionnel, source, notes,
+          entreprises_clients(id, nom)
+        `)
+        .eq('entreprise_id', entreprise_id)
+        .order('created_at', { ascending: false });
+  
+      if (!error && data) {
+        setAllLeads(data);
+        setLeads(data);
       }
     };
   
@@ -248,10 +285,11 @@ export default function Leads() {
         .from('entreprises_clients')
         .select('id, nom')
         .eq('entreprise_id', entrepriseId);
-      
-      if (!error) 
-      setEntreprisesClients(data);
-      setEntreprisesOnly(data);
+  
+      if (!error) {
+        setEntreprisesClients(data);
+        setEntreprisesOnly(data);
+      }
     };
   
     fetchLeads();
@@ -627,9 +665,19 @@ export default function Leads() {
         </div>
 
         <div className="right-toolbar">
-        <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
-          <FiSettings size={20} />
-        </button>
+          <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
+            <FiSettings size={20} />
+          </button>
+
+          <ColumnSettingsDrawer
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            fields={fullFieldList}
+            preferences={columnPreferences}
+            setPreferences={setColumnPreferences}
+            utilisateurId={utilisateurId}
+            supabase={supabase}
+          />
           <label className="import-btn">
             Importer
             <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
@@ -650,16 +698,22 @@ export default function Leads() {
 
       <div className="table-wrapper">
   <table className="lead-table">
-    <thead>
-      <tr>
-        <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
-        {selectedColumns.map((col) => (
-          <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
-            {col}
+  <thead>
+  <tr>
+    <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
+    {columnPreferences
+      .filter(col => col.visible)
+      .map(col => {
+        const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
+        return (
+          <ResizableTH key={col.nom_champ} columnKey={col.nom_champ} width={colWidths[col.nom_champ]} onResize={handleResize}>
+            {field?.nom_affichage || col.nom_champ}
           </ResizableTH>
-        ))}
-      </tr>
-    </thead>
+        );
+      })}
+  </tr>
+</thead>
+
     <tbody>
     {selectedClientType === 'entreprise'
       ? entreprisesOnly.slice(start, end).map(ent => (
@@ -668,8 +722,7 @@ export default function Leads() {
             onClick={() => navigate(`/entreprises-clients/${ent.id}`)}
             style={{ cursor: 'pointer' }}
           >
-            <td></td>
-            <td colSpan={selectedColumns.length}>
+            <td colSpan={columnPreferences.filter(c => c.visible).length}>
               <strong>{ent.nom}</strong>
             </td>
           </tr>
@@ -683,15 +736,20 @@ export default function Leads() {
             onChange={() => toggleSelectLead(lead.id)}
           />
         </td>
-        {selectedColumns.map((col) => (
-          <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-            {typeof columnFieldMap[col] === 'function'
-              ? columnFieldMap[col](lead)
-              : lead[columnFieldMap[col]]}
-          </td>
-        ))}
+        {columnPreferences
+          .filter(col => col.visible)
+          .map(col => {
+            const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
+            return (
+              <td key={col.nom_champ} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                {typeof columnFieldMap[field?.nom_affichage] === 'function'
+                  ? columnFieldMap[field.nom_affichage](lead)
+                  : lead[field?.nom_champ || col.nom_champ]}
+              </td>
+            );
+          })}
       </tr>
-))}
+    ))}
     </tbody>
     <tfoot>
       <tr className="pagination-info-row">
@@ -732,8 +790,6 @@ export default function Leads() {
   </table>
   <button className="add-prospect-fab" type="button" onClick={() => setDrawerOpen(true)}>+</button>
 </div>
-
-
 
         {drawerOpen && (
           <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
@@ -872,7 +928,6 @@ export default function Leads() {
       {visibleFields.includes(field.nom_champ) ? <FiEye /> : <FiEyeOff />}
     </button>
 
-    {/* Supprimer seulement si ce n'est pas un champ standard */}
     {!field.standard && (
       <button onClick={() => handleDeleteCustomField(field.id)}>✕</button>
     )}
@@ -882,6 +937,15 @@ export default function Leads() {
           </div>
         )}
       </div>
+      <ColumnSettingsDrawer
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        fields={fullFieldList}
+        preferences={columnPreferences}
+        setPreferences={setColumnPreferences}
+        utilisateurId={utilisateurId}
+        supabase={supabase}
+      />
     </>
   );
 }

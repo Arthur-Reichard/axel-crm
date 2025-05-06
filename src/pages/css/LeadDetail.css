@@ -93,3 +93,28 @@
     }
   }
   
+  .settings-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .icon-btn:hover svg {
+    color: #444;
+  }
+  
+  .return-btn {
+    background: #f0f0f0;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  .return-btn:hover {
+    background: #e2e2e2;
+  }
+  

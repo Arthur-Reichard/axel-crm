@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
+import { FiEye, FiEyeOff, FiSettings } from 'react-icons/fi';
 
 export default function LeadDetail() {
   const { id } = useParams();
@@ -12,6 +13,7 @@ export default function LeadDetail() {
   const [loading, setLoading] = useState(true);
   const [customFields, setCustomFields] = useState([]);
   const [visibleFields, setVisibleFields] = useState([]);
+  const [fieldSettingsOpen, setFieldSettingsOpen] = useState(false);
 
   const availableFields = [
     { label: "Nom", name: "nom" },
@@ -50,21 +52,6 @@ export default function LeadDetail() {
   ], [customFields]);
 
   useEffect(() => {
-    const savedVisible = JSON.parse(localStorage.getItem('visibleLeadFields') || '[]');
-    setVisibleFields(savedVisible);
-  }, []);
-
-  useEffect(() => {
-    const syncVisibility = () => {
-      const updated = JSON.parse(localStorage.getItem('visibleLeadFields') || '[]');
-      setVisibleFields(updated);
-    };
-  
-    window.addEventListener('storage', syncVisibility);
-    return () => window.removeEventListener('storage', syncVisibility);
-  }, []);  
-
-  useEffect(() => {
     const fetchLeadAndFields = async () => {
       const { data: leadData, error: leadErr } = await supabase
         .from('leads')
@@ -85,22 +72,34 @@ export default function LeadDetail() {
 
       if (userErr || !userData) return;
 
-      const { data: custom, error: customErr } = await supabase
-        .from('champs_personnalises')
-        .select('*')
-        .eq('entreprise_id', userData.entreprise_id);
+      const entrepriseId = userData.entreprise_id;
 
-      if (!customErr && custom) {
-        setCustomFields(custom);
-        // attendre une frame pour que React mette à jour les champs avant d’afficher
-        setTimeout(() => setLead(leadData), 0);
+      const [{ data: customFieldsData, error: customErr }, { data: visibles, error: visibleErr }] = await Promise.all([
+        supabase
+          .from('champs_personnalises')
+          .select('*')
+          .eq('entreprise_id', entrepriseId),
+
+        supabase
+          .from('champs_visibles')
+          .select('nom_champ')
+          .eq('entreprise_id', entrepriseId)
+          .eq('visible', true)
+      ]);
+
+      if (customErr) {
+        console.error("Erreur chargement champs personnalisés :", customErr);
       } else {
-        setLead(leadData);
+        setCustomFields(customFieldsData);
       }
 
-      const savedVisible = JSON.parse(localStorage.getItem('visibleLeadFields') || '[]');
-      setVisibleFields(savedVisible);
+      if (visibleErr) {
+        console.error("Erreur chargement champs visibles :", visibleErr);
+      } else {
+        setVisibleFields(visibles.map(v => v.nom_champ));
+      }
 
+      setLead(leadData);
       setLoading(false);
     };
 
@@ -146,8 +145,17 @@ export default function LeadDetail() {
   return (
     <div className="lead-detail-page">
       <div className="lead-detail-header">
-        <h1>Fiche du Prospect</h1>
-        <button onClick={() => navigate('/leads')}>← Retour</button>
+      <h1>Fiche du Prospect</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <button onClick={() => navigate('/leads')} className="return-btn">← Retour</button>
+      <button
+        onClick={() => setFieldSettingsOpen(true)}
+        className="settings-btn"
+        title="Gérer les champs visibles"
+      >
+        <FiSettings size={22} />
+      </button>
+    </div>
       </div>
 
       <div className="lead-detail-grid">
@@ -178,6 +186,55 @@ export default function LeadDetail() {
         <button onClick={handleSave}>Enregistrer</button>
         <button className="delete-btn" onClick={handleDelete}>Supprimer</button>
       </div>
+      {fieldSettingsOpen && (
+  <div className="drawer-overlay" onClick={() => setFieldSettingsOpen(false)}>
+    <div className="drawer" onClick={(e) => e.stopPropagation()}>
+      <h2>Champs visibles dans cette fiche</h2>
+      <ul className="custom-field-list">
+        {allFields.map(field => (
+          <li key={field.name} className="custom-field-item">
+            <span>{field.label}</span>
+            <button
+              onClick={async () => {
+                const isVisible = visibleFields.includes(field.name);
+                const entrepriseId = lead.entreprise_id;
+
+                const { error } = await supabase
+                  .from('champs_visibles')
+                  .upsert({
+                    entreprise_id: entrepriseId,
+                    nom_champ: field.name,
+                    visible: !isVisible
+                  }, { onConflict: ['entreprise_id', 'nom_champ'] });
+
+                if (error) {
+                  console.error("Erreur modification visibilité :", error.message);
+                  return;
+                }
+
+                const { data: visibles, error: fetchErr } = await supabase
+                  .from('champs_visibles')
+                  .select('nom_champ')
+                  .eq('entreprise_id', entrepriseId)
+                  .eq('visible', true);
+
+                if (!fetchErr) {
+                  setVisibleFields(visibles.map(v => v.nom_champ));
+                }
+              }}
+            >
+              {visibleFields.includes(field.name) ? <FiEye /> : <FiEyeOff />}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="drawer-buttons">
+        <button className="cancel-btn" onClick={() => setFieldSettingsOpen(false)}>Fermer</button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

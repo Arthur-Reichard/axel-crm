@@ -844,3 +844,19 @@ color: #007bff;
   position: relative; /* ← indispensable */
   height: 42px;
 }
+
+.lead-table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.lead-table th, .lead-table td {
+  padding: 12px 16px;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
