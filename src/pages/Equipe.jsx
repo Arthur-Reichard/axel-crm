@@ -19,20 +19,13 @@ const columnFieldMap = {
   'Nom': 'nom',
   'Email pro': 'email_professionnel',
   'Téléphone pro': 'telephone_professionnel',
-  'Entreprise': (lead) => {
-    if (lead.type_client === 'entreprise' && lead.entreprises_clients) {
-      return lead.entreprises_clients.nom;
-    }
-    return lead.nom_entreprise;
-  },
+  'Entreprise': 'nom_entreprise',
   'Statut': 'statut_client',
   'Assigné à': 'assigne_a',
   'Notes': 'notes'
 };
 
 export default function Leads() {
-  const [entreprisesOnly, setEntreprisesOnly] = useState([]);
-  const [selectedClientType, setSelectedClientType] = useState('tous'); // 'tous' | 'individuel' | 'entreprise'
   const [leads, setLeads] = useState([]);
   const [entrepriseId, setEntrepriseId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -127,13 +120,8 @@ export default function Leads() {
     statut_client: '',
     source: '',
     notes: '',
-    assigne_a: '',
-    type_client: 'individuel',
-    client_entreprise_id: '',
-    siren: '' // 👈 AJOUT
+    assigne_a: ''
   });
-  
-  const [entreprisesClients, setEntreprisesClients] = useState([])
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [customFields, setCustomFields] = useState([]);
@@ -150,63 +138,43 @@ export default function Leads() {
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) throw userError;
-  
+
         const { data: utilisateurs, error: userInfoError } = await supabase
           .from('utilisateurs')
           .select('entreprise_id')
           .eq('id', user.id);
-  
+
         if (userInfoError || !utilisateurs || utilisateurs.length === 0) {
           console.error("Aucun utilisateur trouvé");
           return;
         }
-  
+
         const entreprise_id = utilisateurs[0].entreprise_id;
         setEntrepriseId(entreprise_id);
-        await fetchEntreprisesClients(entreprise_id);
-  
+
         const { data: custom, error: customErr } = await supabase
           .from('champs_personnalises')
           .select('*')
           .eq('entreprise_id', entreprise_id);
-  
+
         if (!customErr) setCustomFields(custom);
-  
+
         const { data, error } = await supabase
           .from('leads')
-          .select(`
-            id, prenom, nom, type_client, nom_entreprise, statut_client, assigne_a,
-            email_professionnel, telephone_professionnel, source, notes,
-            entreprises_clients(id, nom)
-          `)
+          .select('*')
           .eq('entreprise_id', entreprise_id)
           .order('created_at', { ascending: false });
-  
-        if (error) {
-          console.error("❌ Erreur fetch leads :", error);
-        } else {
-          console.log("✅ Leads récupérés :", data);
-          setAllLeads(data);
-          setLeads(data);
-        }
+
+        if (error) throw error;
+        setAllLeads(data);
+        setLeads(data);
       } catch (err) {
-        console.error("Erreur fetchLeads :", err);
+        console.error('Erreur lors du fetch des leads :', err);
       }
     };
-  
-    const fetchEntreprisesClients = async (entrepriseId) => {
-      const { data, error } = await supabase
-        .from('entreprises_clients')
-        .select('id, nom')
-        .eq('entreprise_id', entrepriseId);
-      
-      if (!error) 
-      setEntreprisesClients(data);
-      setEntreprisesOnly(data);
-    };
-  
+
     fetchLeads();
-  }, []);  
+  }, []);
 
   const [paginatedLeads, setPaginatedLeads] = useState([]);
 
@@ -218,14 +186,7 @@ export default function Leads() {
 
   useEffect(() => {
     const applyFilters = () => {
-      return allLeads
-      .filter(lead => {
-        const type = (lead.type_client || '').toLowerCase();
-        if (selectedClientType === 'individuel') return type === 'individuel';
-        if (selectedClientType === 'entreprise') return type === 'entreprise';
-        return true;
-      })      
-        .filter(lead => {
+      return allLeads.filter(lead => {
         return filterList.every(({ field, operator, value }) => {
           const v = (lead[field.name] || '').toString().toLowerCase();
           const s = (value || '').toLowerCase();
@@ -244,7 +205,7 @@ export default function Leads() {
     };
   
     setLeads(applyFilters());
-  }, [filterList, allLeads, selectedClientType]);
+  }, [filterList, allLeads]);
 
   useEffect(() => {
     const wasUpdated = localStorage.getItem('leadUpdated');
@@ -284,48 +245,10 @@ export default function Leads() {
 
   const handleAddLead = async () => {
     if (!entrepriseId) return;
-  
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return;
-  
-    if (formData.type_client === 'entreprise') {
-      // 👉 Crée uniquement l'entreprise dans entreprises_clients
-      const { data: entrepriseCreee, error: errEntreprise } = await supabase
-        .from('entreprises_clients')
-        .insert([{
-          nom: formData.nom_entreprise,
-          entreprise_id: entrepriseId,
-          created_by: user.id,
-          siren: formData.siren || null
-        }]);
-  
-      if (errEntreprise) {
-        console.error("Erreur création entreprise :", errEntreprise.message);
-        alert("Erreur lors de la création de l'entreprise");
-        return;
-      }
-  
-      alert("✅ Entreprise créée avec succès");
-      setFormData({
-        prenom: '',
-        nom: '',
-        email_professionnel: '',
-        telephone_professionnel: '',
-        nom_entreprise: '',
-        statut_client: '',
-        source: '',
-        notes: '',
-        assigne_a: '',
-        type_client: 'individuel',
-        client_entreprise_id: '',
-        siren: ''
-      });
-      setDrawerOpen(false);
-      setCustomSource('');
-      return;
-    }
-  
-    // 👉 Sinon (client individuel), crée un lead
+
     const newLead = {
       user_id: user.id,
       entreprise_id: entrepriseId,
@@ -333,45 +256,32 @@ export default function Leads() {
       nom: formData.nom || '',
       email_professionnel: formData.email_professionnel || '',
       telephone_professionnel: formData.telephone_professionnel || '',
+      nom_entreprise: formData.nom_entreprise || '',
       statut_client: formData.statut_client || '',
       source: formData.source === 'autre' ? customSource || '' : formData.source || '',
-      notes: formData.notes || '',
-      type_client: formData.type_client,
-      client_entreprise_id: formData.client_entreprise_id || null,
-      nom_entreprise: formData.nom_entreprise || '',
+      notes: formData.notes || ''
     };
-  
-    if (formData.assigne_a?.trim()) {
+
+    if (formData.assigne_a && formData.assigne_a.trim() !== '') {
       newLead.assigne_a = formData.assigne_a.trim();
     }
-  
+
     const { data, error } = await supabase.from('leads').insert([newLead]).select();
-  
+
     if (error) {
-      console.error("Erreur ajout lead :", error.message);
+      console.error("Erreur Supabase :", error.message);
       alert("Erreur lors de l'ajout du prospect : " + error.message);
       return;
     }
-  
+
     setLeads([...(data || []), ...leads]);
     setFormData({
-      prenom: '',
-      nom: '',
-      email_professionnel: '',
-      telephone_professionnel: '',
-      nom_entreprise: '',
-      statut_client: '',
-      source: '',
-      notes: '',
-      assigne_a: '',
-      type_client: 'individuel',
-      client_entreprise_id: '',
-      siren: ''
+      prenom: '', nom: '', email_professionnel: '', telephone_professionnel: '',
+      nom_entreprise: '', statut_client: '', source: '', notes: '', assigne_a: ''
     });
     setCustomSource('');
     setDrawerOpen(false);
-  };  
-  
+  };
 
   const handleDeleteCustomField = async (id) => {
     if (!window.confirm("Supprimer ce champ personnalisé ?")) return;
@@ -510,9 +420,6 @@ export default function Leads() {
     };
   }, []);
 
-  const start = (currentPage - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-
   return (
     <>
   {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
@@ -541,21 +448,6 @@ export default function Leads() {
         )}
       </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '1rem', alignItems: 'center', marginTop: '1rem' }}>
-  <label><strong>Afficher :</strong></label>
-  <select
-    value={selectedClientType}
-    onChange={(e) => {
-      setSelectedClientType(e.target.value);
-      setCurrentPage(1); // pour revenir à la première page
-    }}
-    style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc' }}
-  >
-    <option value="tous">Tous les prospects</option>
-    <option value="individuel">Clients individuels</option>
-    <option value="entreprise">Clients entreprises</option>
-  </select>
-</div>
       <div className="export-btn-wrapper" ref={exportButtonRef}>
         <button className="import-btn" onClick={() => setShowExportMenu(prev => !prev)}>
           Exporter ▼
@@ -569,53 +461,12 @@ export default function Leads() {
       </div>
 
       <div className="table-wrapper">
-  <table className="lead-table">
-    <thead>
-      <tr>
-        <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
-        {selectedColumns.map((col) => (
-          <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
-            {col}
-          </ResizableTH>
-        ))}
-      </tr>
-    </thead>
-    <tbody>
-    {selectedClientType === 'entreprise'
-  ? entreprisesOnly.slice(start, end).map(ent => (
-      <tr key={ent.id}>
-        <td></td>
-        <td colSpan={selectedColumns.length}>
-          <strong>{ent.nom}</strong>
-        </td>
-      </tr>
-    ))
-  : paginatedLeads.map(lead => (
-      <tr key={lead.id}>
-        <td>
-          <input
-            type="checkbox"
-            checked={selectedLeads.includes(lead.id)}
-            onChange={() => toggleSelectLead(lead.id)}
-          />
-        </td>
-        {selectedColumns.map((col) => (
-          <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-            {typeof columnFieldMap[col] === 'function'
-              ? columnFieldMap[col](lead)
-              : lead[columnFieldMap[col]]}
-          </td>
-        ))}
-      </tr>
-))}
-    </tbody>
-    <tfoot>
-      <tr className="pagination-info-row">
+            <tr className="pagination-info-row">
         <td colSpan={selectedColumns.length + 1}>
           <div className="pagination-inline">
             <span>
               <em>
-                Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –{' '}
+                Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –
                 {Math.min(currentPage * itemsPerPage, leads.length)} sur {leads.length} prospects
               </em>
             </span>
@@ -635,64 +486,67 @@ export default function Leads() {
           </div>
         </td>
       </tr>
-    </tfoot>
-  </table>
-</div>
-
+        <table className="lead-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
+              {selectedColumns.map((col) => (
+                <ResizableTH key={col} columnKey={col} width={colWidths[col]} onResize={handleResize}>
+                  {col}
+                </ResizableTH>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedLeads.map((lead) => (
+              <tr key={lead.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedLeads.includes(lead.id)}
+                    onChange={() => toggleSelectLead(lead.id)}
+                  />
+                </td>
+                {selectedColumns.map((col) => (
+                  <td key={col} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    {lead[columnFieldMap[col]]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
 
         {drawerOpen && (
           <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
             <div className="drawer" onClick={(e) => e.stopPropagation()}>
-              <h2>Créer un nouveau contact</h2>
-
-              <select name="type_client" value={formData.type_client} onChange={handleInputChange}>
-                <option value="individuel">Client individuel</option>
-                <option value="entreprise">Client entreprise</option>
-              </select>
-
-              {formData.type_client === 'individuel' && (
-                <>
-                  <input type="text" name="prenom" placeholder="Prénom" value={formData.prenom} onChange={handleInputChange} />
-                  <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
-                  <input type="text" name="statut_client" placeholder="Statut" value={formData.statut_client} onChange={handleInputChange} />
-                  <input type="text" name="assigne_a" placeholder="Assigné à" value={formData.assigne_a} onChange={handleInputChange} />
-                  
-                  <select name="client_entreprise_id" value={formData.client_entreprise_id} onChange={handleInputChange}>
-                    <option value="">-- Sélectionner une entreprise --</option>
-                    {entreprisesClients.map(ec => (
-                      <option key={ec.id} value={ec.id}>{ec.nom}</option>
-                    ))}
-                  </select>
-                </>
-              )}
-
-              {formData.type_client === 'entreprise' && (
-                <>
-                  <input type="text" name="nom_entreprise" placeholder="Nom de l'entreprise" value={formData.nom_entreprise} onChange={handleInputChange} />
-                  <input type="text" name="siren" placeholder="SIREN" value={formData.siren} onChange={handleInputChange} />
-                </>
-              )}
-
+              <h2>Créer un nouveau prospect</h2>
+              <input type="text" name="prenom" placeholder="Prénom" value={formData.prenom} onChange={handleInputChange} />
+              <input type="text" name="nom" placeholder="Nom" value={formData.nom} onChange={handleInputChange} />
+              <input type="email" name="email_professionnel" placeholder="Email pro" value={formData.email_professionnel} onChange={handleInputChange} />
+              <input type="text" name="telephone_professionnel" placeholder="Téléphone pro" value={formData.telephone_professionnel} onChange={handleInputChange} />
+              <input type="text" name="nom_entreprise" placeholder="Entreprise" value={formData.nom_entreprise} onChange={handleInputChange} />
+              <input type="text" name="statut_client" placeholder="Statut" value={formData.statut_client} onChange={handleInputChange} />
               <select name="source" value={formData.source} onChange={handleInputChange}>
                 <option value="">-- Source --</option>
                 <option value="bouche-à-bouche">Bouche-à-bouche</option>
                 <option value="appel entrant">Appel entrant</option>
                 <option value="autre">Autre (personnalisée)</option>
               </select>
-
               {formData.source === 'autre' && (
                 <input type="text" placeholder="Source personnalisée" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
               )}
-
+              <input type="text" name="assigne_a" placeholder="Assigné à" value={formData.assigne_a} onChange={handleInputChange} />
               <textarea name="notes" placeholder="Notes" value={formData.notes} onChange={handleInputChange} />
-
               <div className="drawer-buttons">
                 <button onClick={handleAddLead}>Valider</button>
                 <button className="cancel-btn" onClick={() => setDrawerOpen(false)}>Annuler</button>
               </div>
             </div>
           </div>
+          
         )}
 
         {settingsOpen && (

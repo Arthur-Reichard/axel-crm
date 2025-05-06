@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import DashboardLayout from "./pages/DashboardLayout";
 import Campagne from "./pages/Campagne";
+import Equipe from "./pages/Equipe";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import ParcMateriel from "./pages/ParcMateriel";
@@ -91,6 +92,12 @@ function App() {
               path="dashboard"
               element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />}
             />
+
+            <Route
+              path="Equipe"
+              element={<Equipe darkMode={darkMode} toggleMode={toggleMode} />}
+            />
+
             <Route
               path="calendar"
               element={<Calendar darkMode={darkMode} toggleMode={toggleMode} />}
@@ -99,6 +106,7 @@ function App() {
               path="campagne"
               element={<Campagne darkMode={darkMode} toggleMode={toggleMode} />}
             />
+
             <Route
               path="leads"
               element={<Leads darkMode={darkMode} toggleMode={toggleMode} />}
