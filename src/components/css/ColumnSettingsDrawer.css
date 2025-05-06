@@ -1,0 +1,41 @@
+.drawer-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .drawer {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .column-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  
+  .column-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.6rem;
+    background: #f4f4f4;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    cursor: grab;
+  }
+  
+  .drawer-buttons {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
