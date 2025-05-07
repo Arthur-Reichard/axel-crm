@@ -23,7 +23,6 @@ import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import OAuthCallbackOutlook from "./pages/OAuthCallbackOutlook";
 import EntrepriseClientDetails from "./pages/EntrepriseClientDetails";
 
-
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("darkMode");
