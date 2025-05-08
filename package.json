@@ -19,6 +19,7 @@
     "@fullcalendar/list": "^6.1.17",
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.17",
+    "@react-google-maps/api": "^2.20.6",
     "@supabase/supabase-js": "^2.49.3",
     "@tippyjs/react": "^4.2.6",
     "ahooks": "^3.8.4",
