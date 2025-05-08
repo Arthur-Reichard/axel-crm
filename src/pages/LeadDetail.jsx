@@ -8,6 +8,7 @@ import { FiEye, FiEyeOff, FiSettings } from 'react-icons/fi';
 export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  if (!id) return null;
 
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -189,7 +190,7 @@ export default function LeadDetail() {
       {fieldSettingsOpen && (
   <div className="drawer-overlay" onClick={() => setFieldSettingsOpen(false)}>
     <div className="drawer" onClick={(e) => e.stopPropagation()}>
-      <h2>Champs visibles dans cette fiche</h2>
+      <h2>Champs visibles</h2>
       <ul className="custom-field-list">
         {allFields.map(field => (
           <li key={field.name} className="custom-field-item">

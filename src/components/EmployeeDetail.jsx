@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "../helper/supabaseClient";
+import { supabase } from "../helper/supabaseClient";
 
 export default function EmployeeDetail({ employee, onSave, onDelete }) {
   const [formData, setFormData] = useState(employee || {});
