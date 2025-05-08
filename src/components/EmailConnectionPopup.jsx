@@ -6,7 +6,7 @@ export default function EmailConnectionPopup({ utilisateurId, onClose }) {
   const [showSmtpPopup, setShowSmtpPopup] = useState(false);
 
   const clientIdGoogle = "423050071002-sji7iv52o72oqg9j385a9diajsf17m1v.apps.googleusercontent.com";
-  const redirectUri = "http://localhost:8888/axel-crm/oauth/callback";
+  const redirectUri = "http://localhost:8000/axel-crm/oauth/callback";
 
   const scopesGoogle = encodeURIComponent("https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email");
 
@@ -16,7 +16,7 @@ export default function EmailConnectionPopup({ utilisateurId, onClose }) {
   };
 
   const outlookClientId = "74503484-21cf-49a4-af5f-7109fda52160";
-  const outlookRedirectUri = "http://localhost:8888/oauth/callback/outlook";
+  const outlookRedirectUri = "http://localhost:8000/oauth/callback/outlook";
 
   const handleOutlookLogin = () => {
     const scopes = encodeURIComponent("Mail.Send User.Read");

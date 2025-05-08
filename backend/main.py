@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from fastapi.responses import RedirectResponse
 
 from security import chiffrer, dechiffrer
 from send_email import envoyer_email
@@ -163,6 +164,18 @@ async def send_email_universel(request: Request):
         return {"status": "error", "detail": response.text}
 
     return {"status": "ok", "message_id": response.json().get("id")}
+
+
+@app.get("/oauth/callback")
+async def google_oauth_callback(request: Request):
+    code = request.query_params.get("code")
+    if not code:
+        return {"error": "Code manquant"}
+
+    # Pour l'instant, juste un test
+    print("✅ Code reçu depuis Google :", code)
+
+    return RedirectResponse(url="http://localhost:3000/axel-crm/Campagne")
 
 @app.post("/smtp/connect")
 async def connect_smtp(request: Request):

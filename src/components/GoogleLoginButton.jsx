@@ -2,7 +2,7 @@ import googleLogo from "../pages/Images/Googleicon.svg";
 
 export default function GoogleLoginButton() {
     const clientId = "423050071002-sji7iv52o72oqg9j385a9diajsf17m1v.apps.googleusercontent.com";
-    const redirectUri = "http://localhost:8888/axel-crm/oauth/callback";
+    const redirectUri = "http://localhost:8000/axel-crm/oauth/callback";
     const scopes = encodeURIComponent("https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email");
   
     const handleLogin = () => {
