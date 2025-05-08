@@ -1,41 +1,81 @@
 .drawer-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  
-  .drawer {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  
-  .column-list {
-    list-style: none;
-    padding: 0;
-    margin: 1rem 0;
-  }
-  
-  .column-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.6rem;
-    background: #f4f4f4;
-    border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
-    cursor: grab;
-  }
-  
-  .drawer-buttons {
-    display: flex;
-    justify-content: flex-end;
-  }
-  
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  display: flex;
+  justify-content: flex-end;
+  transition: visibility 0.3s, opacity 0.3s;
+}
+
+.drawer-overlay.hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drawer-overlay.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  background: white;
+  width: 100%;
+  max-width: 360px;
+  height: 100%;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.column-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.column-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.drawer-buttons {
+  text-align: right;
+  margin-top: 1rem;
+}
+
+/* Supprime toute bordure sur le bouton contenant les icônes */
+.column-item button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* Icônes des yeux */
+.icon-visibility {
+  font-size: 20px;
+  transition: color 0.2s ease;
+  pointer-events: none;
+}
+
+.icon-visibility.visible {
+  color: #007bff;
+}
+
+.icon-visibility.hidden {
+  color: gray;
+}

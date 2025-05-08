@@ -125,13 +125,12 @@ body {
 }
 
 .table-wrapper {
-  margin: 0 1rem;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-  overflow: auto;
-  max-height: calc(100vh - 220px); /* Ajuste selon tes besoins */
-  padding-bottom: 2rem; /* pour pas que la taskbar masque */
+  overflow-x: auto;
+  padding: 1rem;
+  display: flex;
+  justify-content: center; /* ⬅ centre le tableau */
+  border-radius: 12px; /* ⬅ bord arrondi visible */
+  
 }
 
 .table-wrapper::-webkit-scrollbar {
@@ -139,13 +138,9 @@ body {
 }
 
 .table-wrapper::-webkit-scrollbar-thumb {
-  background: #aaa;
   border-radius: 4px;
 }
 
-.table-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #888;
-}
 
 /* ===================== */
 /* DRAWER (FORMULAIRE)   */
@@ -343,7 +338,7 @@ body {
   color: #111e23 !important;
 }
 
-.dark .lead-detail-buttons .delete-btn {
+.dark .lead-detail-buttons {
   background-color: #ff4c4c !important;
   color: white !important;
 }
@@ -846,10 +841,15 @@ color: #007bff;
 }
 
 .lead-table {
-  width: 100%;
-  table-layout: auto;
+  min-width: calc(150px * var(--visible-cols));
+  width: auto;
+  max-width: 100%;
   border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
 }
+
 
 .lead-table th, .lead-table td {
   padding: 12px 16px;
@@ -857,6 +857,31 @@ color: #007bff;
   text-align: left;
 }
 
-.table-wrapper {
-  overflow-x: auto;
+/* Visuel de la cellule en train d'être déplacée */
+th.draggable-th {
+  transition: background-color 0.2s ease, border 0.2s ease;
+}
+
+/* Cible de drop visible */
+th.drop-target {
+  border-right: 3px solid #007bff;
+}
+
+/* Curseur visuel en mode drag */
+.grabbing {
+  cursor: grabbing !important;
+}
+
+.delete-btn {
+  margin-left: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  background-color: #f4f4f4;
+  color: #111;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 42px;
 }
