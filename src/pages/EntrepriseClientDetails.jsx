@@ -3,85 +3,45 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
+import AdresseAutocomplete from '../components/AdresseAutocomplete';
 
-export default function LeadDetail() {
+export default function EntrepriseClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [lead, setLead] = useState(null);
+  const [entreprise, setEntreprise] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [customFields, setCustomFields] = useState([]);
 
-  const availableFields = [
-    { label: "Nom", name: "nom" },
-    { label: "Prénom", name: "prenom" },
-    { label: "Email", name: "email_professionnel" },
+  const entrepriseFields = [
+    { label: "Nom de l'entreprise", name: "nom" },
+    { label: "SIREN", name: "siren" },
     { label: "Téléphone", name: "telephone_professionnel" },
-    { label: "Entreprise", name: "nom_entreprise" },
-    { label: "Description", name: "description", type: "textarea" },
-    { label: "Poste contact", name: "poste_contact" },
+    { label: "Email", name: "email_professionnel" },
     { label: "Site web", name: "site_web" },
-    { label: "Rue entreprise", name: "adresse_entreprise_rue" },
-    { label: "Ville entreprise", name: "adresse_entreprise_ville" },
-    { label: "Code postal entreprise", name: "adresse_entreprise_cp" },
-    { label: "Pays entreprise", name: "adresse_entreprise_pays" },
-    { label: "SIRET", name: "numero_siret" },
-    { label: "Canal préféré", name: "canal_prefere" },
-    { label: "Langue", name: "langue" },
-    { label: "Origine contact", name: "origine_contact" },
-    { label: "Statut client", name: "statut_client" },
-    { label: "Date premier contact", name: "date_premier_contact", type: "date" },
-    { label: "Date dernier contact", name: "date_dernier_contact", type: "date" },
-    { label: "Devis envoyés", name: "devis_envoyes" },
-    { label: "Statut paiement", name: "statut_paiement" },
-    { label: "Assigné à", name: "assigne_a" },
-    { label: "Niveau priorité", name: "niveau_priorite" },
     { label: "Notes", name: "notes", type: "textarea" }
   ];
 
-  const allFields = [...availableFields, ...customFields.map(f => ({
-    label: f.nom_affichage,
-    name: f.nom_champ,
-    type: f.type
-  }))];
-
   useEffect(() => {
-    const fetchLeadAndFields = async () => {
-      const { data: leadData, error: leadErr } = await supabase
-        .from('leads')
+    const fetchEntreprise = async () => {
+      const { data, error } = await supabase
+        .from('entreprises_clients')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (leadErr || !leadData) {
-        console.error("Erreur chargement lead :", leadErr);
+      if (error || !data) {
+        console.error("Erreur chargement entreprise :", error);
         return;
       }
 
-      const { data: userData, error: userErr } = await supabase
-        .from('utilisateurs')
-        .select('entreprise_id')
-        .eq('id', leadData.user_id);
-
-      if (userErr || !userData?.[0]) return;
-
-      const { data: custom, error: customErr } = await supabase
-        .from('champs_personnalises')
-        .select('*')
-        .eq('entreprise_id', userData[0].entreprise_id);
-
-      if (!customErr && custom) {
-        setCustomFields(custom);
-      }
-
-      setLead(leadData);
+      setEntreprise(data);
       setLoading(false);
     };
 
-    fetchLeadAndFields();
+    fetchEntreprise();
   }, [id]);
 
   const handleChange = (e) => {
-    setLead((prev) => ({
+    setEntreprise((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
@@ -89,8 +49,8 @@ export default function LeadDetail() {
 
   const handleSave = async () => {
     const { error } = await supabase
-      .from('leads')
-      .update(lead)
+      .from('entreprises_clients')
+      .update(entreprise)
       .eq('id', id);
 
     if (error) {
@@ -102,10 +62,14 @@ export default function LeadDetail() {
   };
 
   const handleDelete = async () => {
-    const confirm = window.confirm("Supprimer définitivement ce prospect ?");
+    const confirm = window.confirm("Supprimer définitivement cette entreprise ?");
     if (!confirm) return;
 
-    const { error } = await supabase.from('leads').delete().eq('id', id);
+    const { error } = await supabase
+      .from('entreprises_clients')
+      .delete()
+      .eq('id', id);
+
     if (error) {
       alert("Erreur lors de la suppression : " + error.message);
     } else {
@@ -113,17 +77,17 @@ export default function LeadDetail() {
     }
   };
 
-  if (loading || !lead) return <p style={{ padding: '2rem' }}>Chargement...</p>;
+  if (loading || !entreprise) return <p style={{ padding: '2rem' }}>Chargement...</p>;
 
   return (
     <div className="lead-detail-page">
       <div className="lead-detail-header">
-        <h1>Fiche du Prospect</h1>
+        <h1>Fiche Entreprise</h1>
         <button onClick={() => navigate('/leads')}>← Retour</button>
       </div>
 
       <div className="lead-detail-grid">
-        {allFields.map(({ label, name, type = "text" }) => (
+        {entrepriseFields.map(({ label, name, type = "text" }) => (
           <div
             className="lead-field"
             key={name}
@@ -134,7 +98,7 @@ export default function LeadDetail() {
               <textarea
                 id={name}
                 name={name}
-                value={lead[name] || ''}
+                value={entreprise[name] || ''}
                 onChange={handleChange}
               />
             ) : (
@@ -142,26 +106,87 @@ export default function LeadDetail() {
                 id={name}
                 type={type}
                 name={name}
-                value={lead[name] || ''}
+                value={entreprise[name] || ''}
                 onChange={handleChange}
               />
             )}
           </div>
         ))}
 
+        {/* Champ autocomplete d'adresse Google */}
+        <div className="lead-field adresse-bloc">
+          <label>Adresse (auto-complétée)</label>
+          <AdresseAutocomplete
+            onPlaceSelected={(place) => {
+              const components = place.address_components;
+              const get = (type) =>
+                components.find((c) => c.types.includes(type))?.long_name || '';
+
+              setEntreprise((prev) => ({
+                ...prev,
+                adresse_entreprise_rue: `${get('street_number')} ${get('route')}`.trim(),
+                adresse_entreprise_ville: get('locality'),
+                adresse_entreprise_cp: get('postal_code'),
+                adresse_entreprise_pays: get('country')
+              }));
+            }}
+          />
+        </div>
+
+        {/* Champs séparés visibles */}
+        <div className="adresse-hidden-fields">
+          <div className="lead-field">
+            <label>Rue</label>
+            <input
+              type="text"
+              name="adresse_entreprise_rue"
+              value={entreprise.adresse_entreprise_rue || ''}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="lead-field">
+            <label>Ville</label>
+            <input
+              type="text"
+              name="adresse_entreprise_ville"
+              value={entreprise.adresse_entreprise_ville || ''}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="lead-field">
+            <label>Code Postal</label>
+            <input
+              type="text"
+              name="adresse_entreprise_cp"
+              value={entreprise.adresse_entreprise_cp || ''}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="lead-field">
+            <label>Pays</label>
+            <input
+              type="text"
+              name="adresse_entreprise_pays"
+              value={entreprise.adresse_entreprise_pays || ''}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+
+        {/* Dates en bas */}
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
           <label>Date d'ajout</label>
-          <input type="text" value={new Date(lead.created_at).toLocaleString()} readOnly />
+          <input type="text" value={new Date(entreprise.created_at).toLocaleString()} readOnly />
         </div>
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
           <label>Dernière modification</label>
-          <input type="text" value={new Date(lead.updated_at).toLocaleString()} readOnly />
+          <input type="text" value={new Date(entreprise.updated_at).toLocaleString()} readOnly />
         </div>
       </div>
 
       <div className="lead-detail-buttons">
-        <button onClick={handleSave}>💾 Enregistrer</button>
-        <button className="delete-btn" onClick={handleDelete}>🗑️ Supprimer</button>
+        <button onClick={handleSave}>Enregistrer</button>
+        <button className="delete-btn" onClick={handleDelete}>Supprimer</button>
       </div>
     </div>
   );

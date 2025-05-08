@@ -10,6 +10,14 @@ import FilterDrawer from '../components/FilterDrawer';
 import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useMemo } from 'react';
 import ColumnSettingsDrawer from '../components/ColumnSettingsDrawer';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+
+import DraggableHeader from '../components/DraggableHeader';
 
 const allColumns = [
   'Prénom', 'Nom', 'Email pro', 'Téléphone pro',
@@ -61,6 +69,40 @@ export default function Leads() {
   ]);
   const [customFields, setCustomFields] = useState([]);
   const [visibleFields, setVisibleFields] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [activeDragId, setActiveDragId] = useState(null);
+
+  const handleDragStart = (event) => {
+    setActiveDragId(event.active.id);
+  };
+  
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    setActiveDragId(null); // reset à la fin
+  
+    if (!over || active.id === over.id) return;
+  
+    const oldIndex = columnPreferences.findIndex(c => c.nom_champ === active.id);
+    const newIndex = columnPreferences.findIndex(c => c.nom_champ === over.id);
+    const newOrder = arrayMove(columnPreferences, oldIndex, newIndex);
+  
+    setColumnPreferences(newOrder);
+  
+    const updated = newOrder.map((col, index) => ({
+      utilisateur_id: utilisateurId,
+      nom_champ: col.nom_champ,
+      ordre: index,
+      visible: col.visible
+    }));
+  
+    const { error } = await supabase
+      .from('colonnes_leads')
+      .upsert(updated, { onConflict: ['utilisateur_id', 'nom_champ'] });
+  
+    if (error) {
+      console.error('Erreur lors de la sauvegarde du nouvel ordre:', error);
+    }
+  };
 
   const fullFieldList = useMemo(() => {
     const standardFields = availableFields.map(f => ({
@@ -119,6 +161,12 @@ export default function Leads() {
   const [step, setStep] = useState(1);
   const [parsedRows, setParsedRows] = useState([]);
   const [columnPreferences, setColumnPreferences] = useState([]);
+
+  useEffect(() => {
+    const visibleCount = columnPreferences.filter(c => c.visible).length;
+    document.documentElement.style.setProperty('--visible-cols', visibleCount);
+  }, [columnPreferences]);  
+
   const [utilisateurId, setUtilisateurId] = useState(null);
 
   useEffect(() => {
@@ -218,8 +266,8 @@ export default function Leads() {
         .from('colonnes_leads')
         .select('*')
         .eq('utilisateur_id', user.id)
-        .order('ordre', { ascending: true });
-  
+        .order('ordre', { ascending: true });  
+
       if (!errColonnes && colonnes.length > 0) {
         setColumnPreferences(colonnes);
         setSelectedColumns(colonnes.filter(c => c.visible).map(c => c.nom_champ));
@@ -230,6 +278,7 @@ export default function Leads() {
           ordre: index,
           visible: true
         }));
+
         const { error: insertErr } = await supabase
           .from('colonnes_leads')
           .insert(initial);
@@ -239,7 +288,7 @@ export default function Leads() {
           setSelectedColumns(initial.map(c => c.nom_champ));
         }
       }
-  
+
       // 👤 Récupération entreprise utilisateur
       const { data: utilisateurs, error: userInfoError } = await supabase
         .from('utilisateurs')
@@ -619,6 +668,7 @@ export default function Leads() {
 
   const start = (currentPage - 1) * itemsPerPage;
   const end = start + itemsPerPage;
+  const isReadyForDrawer = settingsOpen && columnPreferences.length > 0 && fullFieldList.length > 0 && utilisateurId;
 
   return (
     <>
@@ -634,9 +684,6 @@ export default function Leads() {
             setFilters={setFilterList}
             availableFields={availableFields}
           />
-        {selectedLeads.length > 0 && (
-          <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
-        )}
       </div>
       </div>
       <div className="top-toolbar">
@@ -662,6 +709,10 @@ export default function Leads() {
             </button>
           </div>
           <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
+
+          {selectedLeads.length > 0 && (
+            <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
+          )}
         </div>
 
         <div className="right-toolbar">
@@ -669,15 +720,19 @@ export default function Leads() {
             <FiSettings size={20} />
           </button>
 
-          <ColumnSettingsDrawer
-            isOpen={settingsOpen}
-            onClose={() => setSettingsOpen(false)}
-            fields={fullFieldList}
-            preferences={columnPreferences}
-            setPreferences={setColumnPreferences}
-            utilisateurId={utilisateurId}
-            supabase={supabase}
-          />
+          {isReadyForDrawer && (
+            <ColumnSettingsDrawer
+              isOpen={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
+              fields={fullFieldList}
+              preferences={columnPreferences}
+              setPreferences={setColumnPreferences}
+              utilisateurId={utilisateurId}
+              supabase={supabase}
+            />
+          )}
+
+
           <label className="import-btn">
             Importer
             <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
@@ -696,100 +751,107 @@ export default function Leads() {
         </div>
       </div>
 
-      <div className="table-wrapper">
-  <table className="lead-table">
-  <thead>
-  <tr>
-    <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
-    {columnPreferences
-      .filter(col => col.visible)
-      .map(col => {
-        const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
-        return (
-          <ResizableTH key={col.nom_champ} columnKey={col.nom_champ} width={colWidths[col.nom_champ]} onResize={handleResize}>
-            {field?.nom_affichage || col.nom_champ}
-          </ResizableTH>
-        );
-      })}
-  </tr>
-</thead>
+      <DndContext collisionDetection={closestCenter}   onDragStart={handleDragStart}   onDragEnd={handleDragEnd}>
+        <div className="table-wrapper">
+          <table className="lead-table">
+            <thead>
+              <SortableContext
+                items={columnPreferences.filter(c => c.visible).map(c => c.nom_champ)}
+                strategy={verticalListSortingStrategy}
+              >
+                <tr>
+                  <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
+                  {columnPreferences
+                    .filter(col => col.visible)
+                    .map(col => {
+                      const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
+                      return (
+                        <DraggableHeader key={col.nom_champ} id={col.nom_champ}>
+                          {field?.nom_affichage || col.nom_champ}
+                        </DraggableHeader>
+                      );
+                    })}
+                </tr>
+              </SortableContext>
+            </thead>
+            <tbody>
+            {selectedClientType === 'entreprise'
+              ? entreprisesOnly.slice(start, end).map(ent => (
+                  <tr
+                    key={ent.id}
+                    onClick={() => navigate(`/entreprises-clients/${ent.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                      <td colSpan={columnPreferences.filter(c => c.visible).length}>
+                        <strong>{ent.nom}</strong>
+                      </td>
+                    </tr>
+                  ))
+            : paginatedLeads.map(lead => (
+                <tr key={lead.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedLeads.includes(lead.id)}
+                      onChange={() => toggleSelectLead(lead.id)}
+                    />
+                  </td>
+                  {columnPreferences
+                    .filter(col => col.visible)
+                    .map(col => {
+                      const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
+                      return (
+                        <td key={col.nom_champ} className={activeDragId === col.nom_champ ? 'drop-target' : ''} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                          {typeof columnFieldMap[field?.nom_affichage] === 'function'
+                            ? columnFieldMap[field.nom_affichage](lead)
+                            : lead[field?.nom_champ || col.nom_champ]}
+                        </td>
+                      );
+                    })}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="pagination-info-row">
+                <td colSpan={selectedColumns.length + 1}>
+                  <div className="pagination-inline">
+                    <span>
+                    <em>
+                      {selectedClientType === 'entreprise' ? (
+                        <>
+                          Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, entreprisesOnly.length)} –{' '}
+                          {Math.min(currentPage * itemsPerPage, entreprisesOnly.length)} sur {entreprisesOnly.length} entreprises
+                        </>
+                      ) : (
+                        <>
+                          Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –{' '}
+                          {Math.min(currentPage * itemsPerPage, leads.length)} sur {leads.length} prospects
+                        </>
+                      )}
+                    </em>
+                    </span>
 
-    <tbody>
-    {selectedClientType === 'entreprise'
-      ? entreprisesOnly.slice(start, end).map(ent => (
-          <tr
-            key={ent.id}
-            onClick={() => navigate(`/entreprises-clients/${ent.id}`)}
-            style={{ cursor: 'pointer' }}
-          >
-            <td colSpan={columnPreferences.filter(c => c.visible).length}>
-              <strong>{ent.nom}</strong>
-            </td>
-          </tr>
-        ))
-  : paginatedLeads.map(lead => (
-      <tr key={lead.id}>
-        <td>
-          <input
-            type="checkbox"
-            checked={selectedLeads.includes(lead.id)}
-            onChange={() => toggleSelectLead(lead.id)}
-          />
-        </td>
-        {columnPreferences
-          .filter(col => col.visible)
-          .map(col => {
-            const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
-            return (
-              <td key={col.nom_champ} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                {typeof columnFieldMap[field?.nom_affichage] === 'function'
-                  ? columnFieldMap[field.nom_affichage](lead)
-                  : lead[field?.nom_champ || col.nom_champ]}
-              </td>
-            );
-          })}
-      </tr>
-    ))}
-    </tbody>
-    <tfoot>
-      <tr className="pagination-info-row">
-        <td colSpan={selectedColumns.length + 1}>
-          <div className="pagination-inline">
-            <span>
-            <em>
-              {selectedClientType === 'entreprise' ? (
-                <>
-                  Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, entreprisesOnly.length)} –{' '}
-                  {Math.min(currentPage * itemsPerPage, entreprisesOnly.length)} sur {entreprisesOnly.length} entreprises
-                </>
-              ) : (
-                <>
-                  Affichage {Math.min((currentPage - 1) * itemsPerPage + 1, leads.length)} –{' '}
-                  {Math.min(currentPage * itemsPerPage, leads.length)} sur {leads.length} prospects
-                </>
-              )}
-            </em>
-            </span>
-
-            <div className="pagination-nav">
-              <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>←</button>
-              <button disabled={currentPage * itemsPerPage >= leads.length} onClick={() => setCurrentPage(prev => prev + 1)}>→</button>
-              <select value={itemsPerPage} onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}>
-                {[10, 25, 50, 100].map(size => (
-                  <option key={size} value={size}>{size} / page</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-  <button className="add-prospect-fab" type="button" onClick={() => setDrawerOpen(true)}>+</button>
-</div>
+                    <div className="pagination-nav">
+                      <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>←</button>
+                      <button disabled={currentPage * itemsPerPage >= leads.length} onClick={() => setCurrentPage(prev => prev + 1)}>→</button>
+                      <select value={itemsPerPage} onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}>
+                        {[10, 25, 50, 100].map(size => (
+                          <option key={size} value={size}>{size} / page</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </DndContext>
+    <button className="add-prospect-fab" type="button" onClick={() => setDrawerOpen(true)}>+</button>
+  </div>
 
         {drawerOpen && (
           <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
@@ -844,108 +906,6 @@ export default function Leads() {
             </div>
           </div>
         )}
-
-        {settingsOpen && (
-          <div className="drawer-overlay" onClick={() => setSettingsOpen(false)}>
-            <div className="drawer" onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ marginBottom: '1rem' }}>Champs personnalisés</h2>
-
-              <div style={{ marginBottom: '2rem' }}>
-                {customFields.length === 0 ? (
-                  <p>Aucun champ personnalisé pour l’instant.</p>
-                ) : (
-                  <ul className="custom-field-list">
-                    {customFields.map(field => (
-                      <li className="custom-field-item" key={field.id}>
-                        <span>{field.nom_affichage}<small> ({field.type})</small></span>
-                        <button onClick={() => handleDeleteCustomField(field.id)}>✕</button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <input
-                type="text"
-                placeholder="Nom du champ"
-                value={newField.nom_affichage}
-                onChange={e => setNewField({ ...newField, nom_affichage: e.target.value })}
-              />
-              <select
-                value={newField.type}
-                onChange={e => setNewField({ ...newField, type: e.target.value })}
-                style={{ marginBottom: '1.5rem' }}
-              >
-                <option value="text">Texte</option>
-                <option value="textarea">Texte long</option>
-                <option value="date">Date</option>
-              </select>
-
-              <div className="drawer-buttons">
-                <button onClick={async () => {                 
-                  if (!entrepriseId || !newField.nom_affichage) return;
-                  const nom_champ = 'champ_' + Date.now();
-
-                  const { data, error } = await supabase
-                    .from('champs_personnalises')
-                    .insert([{
-                      entreprise_id: entrepriseId,
-                      nom_affichage: newField.nom_affichage,
-                      nom_champ,
-                      type: newField.type
-                    }])
-                    .select();
-                  
-                  if (!error && data && data.length > 0) {
-                    const nouveauChamp = data[0];
-                  
-                    // ⬇️ On ajoute aussi sa visibilité par défaut
-                    const { error: visErr } = await supabase.from('champs_visibles').insert([{
-                      entreprise_id: entrepriseId,
-                      nom_champ: nouveauChamp.nom_champ,
-                      visible: true
-                    }]);                  
-                  
-                    if (visErr) {
-                      console.error("Erreur insertion champs_visibles :", visErr.message);
-                    }
-                  
-                    setCustomFields([...customFields, nouveauChamp]);
-                    setNewField({ nom_affichage: '', type: 'text' });
-                  }                                              
-                }}>
-                  Ajouter
-                </button>
-                <button className="cancel-btn" onClick={() => setSettingsOpen(false)}>Fermer</button>
-              </div>
-
-              {fullFieldList.map(field => (
-  <li key={field.nom_champ} className="custom-field-item">
-    <span>{field.nom_affichage}</span>
-    
-    {/* Bouton œil pour (dé)masquer */}
-    <button onClick={() => toggleVisibility(field.nom_champ)}>
-      {visibleFields.includes(field.nom_champ) ? <FiEye /> : <FiEyeOff />}
-    </button>
-
-    {!field.standard && (
-      <button onClick={() => handleDeleteCustomField(field.id)}>✕</button>
-    )}
-  </li>
-))}
-            </div>
-          </div>
-        )}
-      </div>
-      <ColumnSettingsDrawer
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        fields={fullFieldList}
-        preferences={columnPreferences}
-        setPreferences={setColumnPreferences}
-        utilisateurId={utilisateurId}
-        supabase={supabase}
-      />
     </>
   );
 }

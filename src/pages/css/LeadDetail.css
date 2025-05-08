@@ -1,120 +1,211 @@
+/* ============================================================
+   🧾 STYLES DE LA PAGE DETAIL LEAD / ENTREPRISE
+============================================================ */
+
 .lead-detail-page {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .lead-detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-  
-  .lead-detail-header h1 {
-    font-size: 2rem;
-    margin: 0;
-  }
-  
-  .lead-detail-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  
-  .lead-field {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .lead-field label {
-    font-weight: 500;
-    margin-bottom: 0.3rem;
-  }
-  
-  .lead-field input,
-  .lead-field textarea,
-  .lead-field select {
-    padding: 0.6rem 0.8rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 0.95rem;
-  }
-  
-  .lead-field textarea {
-    min-height: 80px;
-    resize: vertical;
-  }
-  
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.lead-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.lead-detail-header h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.lead-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.lead-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.lead-field label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.lead-field input,
+.lead-field textarea,
+.lead-field select {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.lead-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.lead-detail-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.lead-detail-buttons button {
+  padding: 0.7rem 1.5rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.lead-detail-buttons .delete-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.lead-detail-buttons button:hover {
+  opacity: 0.9;
+}
+
+.created-updated {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  color: #666;
+  text-align: right;
+}
+
+@media screen and (max-width: 600px) {
+  .lead-detail-header,
   .lead-detail-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .lead-detail-buttons button {
-    padding: 0.7rem 1.5rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.2s;
+
+  .lead-detail-buttons {
+    align-items: stretch;
   }
-  
-  .lead-detail-buttons .delete-btn {
-    background-color: #e74c3c;
-    color: white;
-  }
-  
-  .lead-detail-buttons button:hover {
-    opacity: 0.9;
-  }
-  
-  .created-updated {
-    margin-top: 2rem;
-    font-size: 0.85rem;
-    color: #666;
-    text-align: right;
-  }
-  
-  @media screen and (max-width: 600px) {
-    .lead-detail-header,
-    .lead-detail-buttons {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  
-    .lead-detail-buttons {
-      align-items: stretch;
-    }
-  }
-  
-  .settings-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .icon-btn:hover svg {
-    color: #444;
-  }
-  
-  .return-btn {
-    background: #f0f0f0;
-    border: none;
-    border-radius: 6px;
-    padding: 0.6rem 1.2rem;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  
-  .return-btn:hover {
-    background: #e2e2e2;
-  }
-  
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.icon-btn:hover svg {
+  color: #444;
+}
+
+.return-btn {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.return-btn:hover {
+  background: #e2e2e2;
+}
+
+/* ============================================================
+   📍 CHAMP AUTOCOMPLÉTION GOOGLE ADRESSE + SUGGESTIONS
+============================================================ */
+
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.adresse-autocomplete {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s;
+  margin-bottom: 1.2rem;
+  box-sizing: border-box;
+}
+
+.adresse-autocomplete:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
+}
+
+.pac-container {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  z-index: 9999 !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ccc;
+  font-size: 15px;
+  background-color: white;
+  pointer-events: auto;
+  transform: translateY(0);
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.pac-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.pac-item:hover {
+  background-color: #f5f5f5;
+}
+
+.pac-item-query {
+  font-weight: bold;
+}
+
+/* ✅ Affiche ou masque le logo Google selon besoin */
+.pac-container .pac-logo,
+.pac-container .hdpi {
+  display: block; /* change en none si tu veux le masquer */
+  margin: 6px auto;
+}
+
+/* ============================================================
+   🏠 CHAMPS DÉTAILLÉS ADRESSE EN DESSOUS DU CHAMP GOOGLE
+============================================================ */
+
+.adresse-bloc {
+  grid-column: 1 / -1;
+  margin-bottom: 1rem;
+}
+
+.adresse-bloc label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+
+.adresse-hidden-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+}
