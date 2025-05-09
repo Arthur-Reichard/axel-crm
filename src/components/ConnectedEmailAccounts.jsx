@@ -31,7 +31,7 @@ export default function ConnectedEmailAccounts({ utilisateurId }) {
 
   const handleGoogleLogin = () => {
     const clientId = "423050071002-sji7iv52o72oqg9j385a9diajsf17m1v.apps.googleusercontent.com";
-    const redirectUri = "http://localhost:8888/axel-crm/oauth/callback";
+    const redirectUri = "http://localhost:8000/axel-crm/oauth/callback";
     const scope = encodeURIComponent("https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid");
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
     window.location.href = url;
@@ -39,7 +39,7 @@ export default function ConnectedEmailAccounts({ utilisateurId }) {
 
   const handleOutlookLogin = () => {
     const clientId = "74503484-21cf-49a4-af5f-7109fda52160";
-    const redirectUri = "http://localhost:8888/oauth/callback/outlook";
+    const redirectUri = "http://localhost:8000/oauth/callback/outlook";
     const scope = encodeURIComponent("Mail.Send User.Read openid profile email offline_access");
     const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&response_mode=query&scope=${scope}&prompt=consent`;
     window.location.href = url;

@@ -7,7 +7,7 @@ export default function AdresseAutocomplete({ onPlaceSelected }) {
   const inputRef = useRef(null);
 
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyCjIiGzGiRwvUu0AALVP-TA0LzgS1EWj3o',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 
