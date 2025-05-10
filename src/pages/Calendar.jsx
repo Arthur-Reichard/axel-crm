@@ -80,6 +80,23 @@ export default function Calendar({ darkMode }) {
         const utilisateur = await getUtilisateur(user.id);
         let userCalendars = await getCalendars(utilisateur);
 
+        if (utilisateur.entreprise_id) {
+          const { data: congesCalendar, error: congesError } = await supabase
+            .from('calendars')
+            .select('*')
+            .eq('entreprise_id', utilisateur.entreprise_id)
+            .eq('name', 'Congés entreprise')
+            .single();
+        
+          if (congesError) {
+            console.warn('Pas de calendrier de congés trouvé ou erreur:', congesError.message);
+          } else {
+            // Évite les doublons si déjà dans la liste
+            const alreadyIncluded = userCalendars.find(c => c.id === congesCalendar.id);
+            if (!alreadyIncluded) userCalendars.push(congesCalendar);
+          }
+        }
+
         const { data: invitations, error: invitationsError } = await supabase
           .from('invitations_events')
           .select('id, event_id, statut, events (title)')

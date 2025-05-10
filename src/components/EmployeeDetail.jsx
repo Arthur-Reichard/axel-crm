@@ -1,161 +1,178 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
+import MiniCalendar from '../components/MiniCalendar';
+import QuickEventPopup from './QuickEventPopup';
 
-export default function EmployeeDetail({ employee, onSave, onDelete }) {
-  const [formData, setFormData] = useState(employee || {});
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+export default function EmployeeDetail({ employee, onSaved, onDeleted }) {
+  const [form, setForm] = useState(null);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
-    setFormData(employee || {});
-    setMessage("");
+    setForm(employee);
+    setEditMode(false); // ← remet en lecture seule à chaque changement d'employé
   }, [employee]);
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const fileName = `${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage
-      .from("avatars")
-      .upload(fileName, file);
-
-    if (error) {
-      setMessage("❌ Erreur lors de l'upload");
-    } else {
-      const { data: publicUrlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-      handleChange("photo_url", publicUrlData.publicUrl);
-      setMessage("✅ Photo mise à jour !");
-    }
-
-    setUploading(false);
-  };
-
-  const saveEmployee = async () => {
-    const { data: user } = await supabase.auth.getUser();
-    const { data: userData } = await supabase
-      .from("utilisateurs")
-      .select("entreprise_id")
-      .eq("id", user.user.id)
-      .single();
-
-    const payload = {
-      ...formData,
-      entreprise_id: userData.entreprise_id,
-    };
-
-    let response;
-    if (formData.id) {
-      response = await supabase.from("employes").update(payload).eq("id", formData.id);
-    } else {
-      response = await supabase.from("employes").insert(payload).select().single();
-      if (!response.error) {
-        onSave(response.data);
+  useEffect(() => {
+    const ensureCalendar = async () => {
+      if (!form?.calendar_id && form?.id && form?.entreprise_id) {
+        const { data, error } = await supabase
+          .from("calendars")
+          .insert([
+            {
+              name: `Calendrier - ${form.prenom} ${form.nom}`,
+              entreprise_id: form.entreprise_id,
+              color: "#14b8a6"
+            }
+          ])
+          .select()
+          .single();
+  
+        if (!error && data) {
+          await supabase
+            .from("employes")
+            .update({ calendar_id: data.id })
+            .eq("id", form.id);
+  
+          setForm(prev => ({ ...prev, calendar_id: data.id }));
+          onSaved?.(); // force le refresh du drawer si nécessaire
+        }
       }
-    }
+    };
+  
+    ensureCalendar();
+  }, [form]);
 
-    if (response.error) {
-      setMessage("❌ Erreur lors de l'enregistrement");
-    } else {
-      setMessage("✅ Employé enregistré");
-    }
+  const handleChange = (e) => {
+    if (!editMode) return;
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const deleteEmployee = async () => {
-    if (!formData.id) return;
-    const { error } = await supabase.from("employes").delete().eq("id", formData.id);
-    if (error) {
-      setMessage("❌ Erreur lors de la suppression");
-    } else {
-      setMessage("✅ Employé supprimé");
-      onDelete();
-    }
+  const handleSave = async () => {
+    if (!form) return;
+    const { error } = await supabase.from('employes').update(form).eq('id', form.id);
+    if (!error && onSaved) onSaved();
+    setEditMode(false);
   };
 
-  if (!employee) {
-    return (
-      <div className="flex-1 p-6 text-gray-500 dark:text-gray-400">
-        Sélectionne un employé
-      </div>
-    );
-  }
+  const handleDelete = async () => {
+    if (!form?.id) return;
+    const { error } = await supabase.from('employes').delete().eq('id', form.id);
+    if (!error && onDeleted) onDeleted();
+  };
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 200, y: 300 });
+  
+
+  if (!form) return <div className="employee-detail">Sélectionnez un employé</div>;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[
-          "prenom",
-          "nom",
-          "email",
-          "telephone",
-          "fonction",
-          "adresse",
-          "ville",
-          "code_postal",
-          "pays",
-          "date_naissance",
-        ].map((field) => (
-          <div key={field}>
-            <label className="block mb-1 text-sm font-medium capitalize">
-              {field.replace("_", " ")}
-            </label>
-            <input
-              type="text"
-              value={formData[field] || ""}
-              onChange={(e) => handleChange(field, e.target.value)}
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1e1e1e] text-sm"
-            />
-          </div>
-        ))}
-        <div className="md:col-span-2">
-          <label className="block mb-1 text-sm font-medium">Notes</label>
-          <textarea
-            rows="4"
-            value={formData.notes || ""}
-            onChange={(e) => handleChange("notes", e.target.value)}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1e1e1e] text-sm"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block mb-1 text-sm font-medium">Photo de profil</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            disabled={uploading}
-            className="text-sm"
-          />
-          {formData.photo_url && (
-            <img
-              src={formData.photo_url}
-              alt="profil"
-              className="mt-2 h-24 rounded-md object-cover"
-            />
-          )}
-        </div>
-      </div>
-      {message && <div className="mt-4 text-sm">{message}</div>}
-      <div className="flex gap-4 justify-end mt-6">
-        <button
-          onClick={deleteEmployee}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-        >
-          Supprimer
-        </button>
-        <button
-          onClick={saveEmployee}
-          className="px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-md text-sm hover:opacity-90 transition"
-        >
-          Enregistrer
-        </button>
-      </div>
+    <div className="employee-detail">
+  <div className="header">
+    <div className="avatar-zone">
+      {form.photo_url ? (
+        <img src={form.photo_url} className="avatar-preview" />
+      ) : (
+        <div className="avatar-placeholder">?</div>
+      )}
+      {editMode && (
+        <input type="file" accept="image/*" onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const filePath = `avatars/${form.id}-${file.name}`;
+          const { error } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+          if (!error) {
+            const url = supabase.storage.from('avatars').getPublicUrl(filePath).data.publicUrl;
+            const updated = { ...form, photo_url: url };
+            setForm(updated);
+            onSaved?.(); // update le drawer
+          }
+        }} />
+      )}
+    </div>
+
+    <div className="title-zone">
+      <h2>{form.prenom || ''} {form.nom || ''}</h2>
+    </div>
+
+    <div className="button-zone">
+      {!editMode ? (
+        <button className="edit" onClick={() => setEditMode(true)}>✏️</button>
+      ) : (
+        <>
+          <button className="edit" onClick={handleSave}>💾</button>
+          <button className="cancel" onClick={() => setEditMode(false)}>✖</button>
+        </>
+      )}
+      <button className="delete" onClick={handleDelete}>🗑️</button>
+    </div>
+  </div>
+
+  <div className="form-grid">
+    <div className="field">
+      <label>Prénom</label>
+      <input name="prenom" value={form.prenom || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+    <div className="field">
+      <label>Nom</label>
+      <input name="nom" value={form.nom || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+    <div className="field">
+      <label>Email</label>
+      <input name="email" value={form.email || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+    <div className="field">
+      <label>Téléphone</label>
+      <input name="telephone" value={form.telephone || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+    <div className="field">
+      <label>Poste</label>
+      <input name="poste" value={form.poste || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+    <div className="field">
+      <label>Date de naissance</label>
+      <input type="date" name="date_naissance" value={form.date_naissance || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+    <div className="field">
+      <label>Adresse</label>
+      <input name="adresse" value={form.adresse || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+
+    <div className="field full-width">
+      <label>Notes</label>
+      <textarea name="notes" rows="3" value={form.notes || ''} onChange={handleChange} readOnly={!editMode} />
+    </div>
+  </div>
+  <MiniCalendar calendarId={form?.calendar_id} fallback={true} />
+
+  <button
+  className="add-event-employee"
+  onClick={(e) => {
+    const rect = e.target.getBoundingClientRect();
+    setPopupPosition({ x: rect.x, y: rect.y });
+    setShowPopup(true);
+  }}
+>
+  + Ajouter un événement
+</button>
+{showPopup && (
+  <QuickEventPopup
+    x={popupPosition.x}
+    y={popupPosition.y}
+    date={new Date()} // ou tu peux prendre la date sélectionnée dans le calendrier si tu veux
+    calendars={[{ id: form.calendar_id, name: 'Calendrier employé' }]}
+    utilisateursEntreprise={[{ id: form.id, prenom: form.prenom, nom: form.nom, email: form.email }]} // associe l’employé en tant qu'invité
+    onClose={() => setShowPopup(false)}
+    onSave={(data) => {
+      console.log('Event à créer pour cet employé :', data);
+      // Tu peux appeler ici ta fonction pour insérer en base (ou passer un prop onEventCreated)
+      setShowPopup(false);
+    }}
+    onMoreOptions={() => {}}
+  />
+)}
     </div>
   );
 }
+

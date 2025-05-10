@@ -1,288 +1,252 @@
 .equipe-layout {
     display: flex;
-    min-height: 100vh;
-    background: #f9fafb;
+    height: 100vh;
+    background: linear-gradient(135deg, #f0f9ff, #e0f7fa);
     font-family: 'Inter', sans-serif;
+    color: #1f2937;
   }
   
+  /* Drawer */
   .team-drawer {
-    width: 260px;
-    background: white;
-    border-right: 1px solid #e5e7eb;
-    padding: 24px 16px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .drawer-scroll {
+    width: 280px;
+    border-right: 2px solid #cbd5e1;
+    background: linear-gradient(180deg, #ffffff, #f9fafb);
+    padding: 1.5rem 1rem;
     overflow-y: auto;
-    flex: 1;
-    padding-top: 12px;
+    box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.05);
   }
   
   .drawer-item {
     display: flex;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .drawer-item:hover {
-    background: #f3f4f6;
-  }
-  
-  .drawer-item.active {
-    background: #e0f2fe;
-  }
-  
-  .avatar {
-    width: 40px;
-    height: 40px;
-    background: #d1d5db;
-    border-radius: 50%;
-  }
-  
-  .meta {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  
-  .meta .name {
-    font-weight: 600;
-  }
-  
-  .meta .fonction {
-    font-size: 12px;
-    color: #6b7280;
-  }
-  
-  .employee-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 24px;
-  }
-  
-  .add-employee-fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #2563eb;
-    color: white;
-    font-size: 32px;
-    font-weight: bold;
-    border: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: background 0.2s ease;
-    z-index: 50;
-  }
-  
-  .add-employee-fab:hover {
-    background: #1e40af;
-  }
-
-  .employee-panel {
-    display: flex;
-    align-items: flex-start;
-    gap: 40px;
-  }
-  
-  .photo-section {
-    width: 180px;
-    flex-shrink: 0;
-  }
-  
-  .photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  
-  .employee-actions {
-    grid-column: 1 / -1;
-    text-align: right;
-    margin-top: 24px;
-  }
-  
-  .employee-actions button {
-    background: #2563eb;
-    color: white;
-    border: none;
-    padding: 10px 22px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  
-  .employee-actions button:hover {
-    background: #1e3a8a;
-  }
-
-  .employee-detail {
-    flex: 1;
-    padding: 48px;
-    background: #fcfcfc;
-  }
-  
-  .employee-detail h2 {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 32px;
-    color: #111827;
-  }
-  
-  .photo-section {
-    width: 180px;
-  }
-  
-  .photo-wrapper {
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    overflow: hidden;
-    position: relative;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    border: 3px solid white;
-    transition: transform 0.2s;
-  }
-  
-  .photo-wrapper:hover {
-    transform: scale(1.03);
-  }
-  
-  .photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  
-  .photo-loader {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.6);
-    display: flex;
     align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #1e3a8a;
-  }
-  
-  .employee-form {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 24px;
-  }
-  
-  .employee-field {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .employee-field label {
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 4px;
-  }
-  
-  .employee-field input,
-  .employee-field textarea {
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 10px 12px;
-    font-size: 14px;
-    background: white;
-    transition: border 0.2s;
-  }
-  
-  .employee-field input:focus,
-  .employee-field textarea:focus {
-    border-color: #2563eb;
-    outline: none;
-  }
-  
-  .employee-field.full {
-    grid-column: 1 / -1;
-  }
-  
-  .employee-actions {
-    grid-column: 1 / -1;
-    text-align: right;
-    margin-top: 24px;
-  }
-  
-  .employee-actions button {
-    background: #2563eb;
-    color: white;
-    padding: 10px 24px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    border-radius: 6px;
+    gap: 0.75rem;
+    padding: 0.7rem;
+    border-radius: 12px;
     cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .employee-actions button:hover {
-    background: #1e3a8a;
-  }
-  
-  .employee-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 48px;
-    padding-top: 24px;
-    border-top: 1px solid #e5e7eb;
-  }
-  
-  .employee-footer button {
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 6px;
-    padding: 10px 20px;
-    cursor: pointer;
-    border: none;
     transition: all 0.2s ease;
   }
   
-  .employee-footer .delete {
-    background-color: #f87171;
-    color: white;
+  .drawer-item:hover {
+    background-color: #e0f2fe;
+    transform: translateX(2px);
   }
   
-  .employee-footer .delete:hover {
-    background-color: #b91c1c;
+  .drawer-item.active {
+    background-color: #bae6fd;
+    border: 1px solid #38bdf8;
+    font-weight: 600;
   }
   
-  .employee-footer .save {
-    background-color: #2563eb;
-    color: white;
-  }
-  
-  .employee-footer .save:hover {
-    background-color: #1e3a8a;
-  }
-  
-  .photo-empty {
-    width: 120px;
-    height: 120px;
+  .avatar {
+    width: 42px;
+    height: 42px;
+    background-color: #334155;
     border-radius: 50%;
-    background-color: #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    color: #6b7280;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    overflow: hidden;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  /* Detail */
+  .employee-detail {
+    flex: 1;
+    padding: 3rem 4rem;
+    background: white;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.4s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  
+  .employee-detail h2 {
+    font-size: 26px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #0f172a;
+  }
+  
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+  
+  input, textarea {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #f1f5f9;
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, textarea:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
+    outline: none;
+  }
+  
+  input[readonly],
+  textarea[readonly] {
+    background-color: transparent;
+    border: none;
+    color: #1e293b;
+    padding-left: 0;
+    font-weight: 500;
+    pointer-events: none;
+  }
+  
+  /* Grid form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .full-width {
+    grid-column: 1 / -1;
+  }
+  
+  /* Avatar zone */
+  .avatar-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #38bdf8;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    animation: pulse 1.5s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  
+  .avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    background: #94a3b8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+  }
+  
+  /* Top right buttons */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .title-zone h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    color: #0f172a;
+  }
+  
+  .button-zone {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .button-zone button {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .button-zone .edit {
+    background: linear-gradient(to right, #3b82f6, #60a5fa);
+  }
+  
+  .button-zone .cancel {
+    background: #9ca3af;
+  }
+  
+  .button-zone .delete {
+    background: linear-gradient(to right, #ef4444, #f87171);
+  }
+  
+  .button-zone button:hover {
+    transform: scale(1.05);
+  }
+  
+  /* Add button */
+  .add-employee-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: white;
+    font-size: 26px;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 100;
+  }
+  
+  .add-employee-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+  }
+  
+  .mini-employee-calendar {
+    margin-top: 2rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem;
+    background-color: #f9fafb;
+  }
+
+  .add-event-employee {
+    margin-top: 1rem;
+    padding: 8px 16px;
+    background-color: #10b981;
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .add-event-employee:hover {
+    background-color: #059669;
   }
