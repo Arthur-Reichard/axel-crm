@@ -13,6 +13,8 @@ from send_email import envoyer_email
 
 load_dotenv()
 
+app = FastAPI(root_path="/axel-crm")
+
 # 🔧 Config Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -25,9 +27,6 @@ CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 # 🔧 Config Outlook (via .env uniquement)
 OUTLOOK_CLIENT_ID = os.getenv("OUTLOOK_CLIENT_ID")
 OUTLOOK_CLIENT_SECRET = os.getenv("OUTLOOK_CLIENT_SECRET")
-
-# 🚀 Init FastAPI
-app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -169,13 +168,58 @@ async def send_email_universel(request: Request):
 @app.get("/oauth/callback")
 async def google_oauth_callback(request: Request):
     code = request.query_params.get("code")
+    utilisateur_id = request.query_params.get("state")
+
     if not code:
         return {"error": "Code manquant"}
+    if not utilisateur_id or utilisateur_id == "no-user":
+        return {"error": "Utilisateur non identifié"}
 
-    # Pour l'instant, juste un test
-    print("✅ Code reçu depuis Google :", code)
+    # Échange code ↔ tokens
+    token_url = "https://oauth2.googleapis.com/token"
+    redirect_uri = "http://localhost:8000/axel-crm/oauth/callback"
+    data = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri,
+    }
+
+    token_response = requests.post(token_url, data=data)
+    if token_response.status_code != 200:
+        print("❌ Erreur échange token :", token_response.text)
+        return {"error": "Impossible d'obtenir le token"}
+
+    token_data = token_response.json()
+    access_token = token_data.get("access_token")
+    refresh_token = token_data.get("refresh_token")
+
+    # Récupérer l'email via le token
+    headers = {"Authorization": f"Bearer {access_token}"}
+    userinfo_response = requests.get("https://www.googleapis.com/oauth2/v2/userinfo", headers=headers)
+    if userinfo_response.status_code != 200:
+        print("❌ Erreur userinfo :", userinfo_response.text)
+        return {"error": "Impossible d'obtenir l'email"}
+
+    email = userinfo_response.json().get("email")
+    if not email:
+        return {"error": "Email introuvable dans userinfo"}
+
+    # Enregistrement Supabase
+    supabase.table("comptes_email").upsert({
+        "utilisateur_id": utilisateur_id,
+        "fournisseur": "gmail",
+        "email": email,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "etat_token": "valide"
+    }, on_conflict=["utilisateur_id", "fournisseur"]).execute()
+
+    print(f"✅ Gmail connecté pour {email} (utilisateur {utilisateur_id})")
 
     return RedirectResponse(url="http://localhost:3000/axel-crm/Campagne")
+
 
 @app.post("/smtp/connect")
 async def connect_smtp(request: Request):
