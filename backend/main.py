@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from fastapi.responses import RedirectResponse
+from google_oauth import router as google_oauth_router
 
 from security import chiffrer, dechiffrer
 from send_email import envoyer_email
@@ -34,6 +34,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(google_oauth_router)
 
 # 🔁 Refresh Gmail
 def refresh_access_token(refresh_token):
@@ -101,14 +103,21 @@ async def send_email_universel(request: Request):
     subject = body["subject"]
     html_content = body["html"]
 
-    compte = supabase.from_("comptes_email").select("*").eq("utilisateur_id", utilisateur_id).single().execute()
-    if compte.error or not compte.data:
+    compte = supabase.table("comptes_email") \
+        .select("*") \
+        .eq("utilisateur_id", utilisateur_id) \
+        .limit(1) \
+        .execute()
+
+    if compte.data is None or len(compte.data) == 0:
         return {"status": "error", "detail": "Aucun compte email trouvé"}
 
-    fournisseur = compte.data["fournisseur"]
-    sender = compte.data["email"]
-    access_token = compte.data.get("access_token")
-    refresh_token = compte.data.get("refresh_token")
+    compte_data = compte.data[0]
+
+    fournisseur = compte_data["fournisseur"]
+    sender = compte_data["email"]
+    access_token = compte_data.get("access_token")
+    refresh_token = compte_data.get("refresh_token")
 
     if fournisseur == "gmail":
         response = envoyer_message_gmail(access_token, sender, to, subject, html_content)
@@ -165,62 +174,6 @@ async def send_email_universel(request: Request):
     return {"status": "ok", "message_id": response.json().get("id")}
 
 
-@app.get("/oauth/callback")
-async def google_oauth_callback(request: Request):
-    code = request.query_params.get("code")
-    utilisateur_id = request.query_params.get("state")
-
-    if not code:
-        return {"error": "Code manquant"}
-    if not utilisateur_id or utilisateur_id == "no-user":
-        return {"error": "Utilisateur non identifié"}
-
-    # Échange code ↔ tokens
-    token_url = "https://oauth2.googleapis.com/token"
-    redirect_uri = "http://localhost:8000/axel-crm/oauth/callback"
-    data = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "code": code,
-        "grant_type": "authorization_code",
-        "redirect_uri": redirect_uri,
-    }
-
-    token_response = requests.post(token_url, data=data)
-    if token_response.status_code != 200:
-        print("❌ Erreur échange token :", token_response.text)
-        return {"error": "Impossible d'obtenir le token"}
-
-    token_data = token_response.json()
-    access_token = token_data.get("access_token")
-    refresh_token = token_data.get("refresh_token")
-
-    # Récupérer l'email via le token
-    headers = {"Authorization": f"Bearer {access_token}"}
-    userinfo_response = requests.get("https://www.googleapis.com/oauth2/v2/userinfo", headers=headers)
-    if userinfo_response.status_code != 200:
-        print("❌ Erreur userinfo :", userinfo_response.text)
-        return {"error": "Impossible d'obtenir l'email"}
-
-    email = userinfo_response.json().get("email")
-    if not email:
-        return {"error": "Email introuvable dans userinfo"}
-
-    # Enregistrement Supabase
-    supabase.table("comptes_email").upsert({
-        "utilisateur_id": utilisateur_id,
-        "fournisseur": "gmail",
-        "email": email,
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "etat_token": "valide"
-    }, on_conflict=["utilisateur_id", "fournisseur"]).execute()
-
-    print(f"✅ Gmail connecté pour {email} (utilisateur {utilisateur_id})")
-
-    return RedirectResponse(url="http://localhost:3000/axel-crm/Campagne")
-
-
 @app.post("/smtp/connect")
 async def connect_smtp(request: Request):
     data = await request.json()
@@ -248,3 +201,30 @@ async def connect_smtp(request: Request):
     }, on_conflict=["utilisateur_id", "fournisseur"]).execute()
 
     return {"status": "ok"}
+
+@app.post("/deconnecter-google")
+async def deconnecter_google(request: Request):
+    body = await request.json()
+    utilisateur_id = body["utilisateur_id"]
+
+    compte = supabase.table("comptes_email") \
+        .select("id, access_token") \
+        .eq("utilisateur_id", utilisateur_id) \
+        .eq("fournisseur", "gmail") \
+        .single().execute()
+
+    if not compte.data:
+        return {"status": "error", "detail": "Compte Google non trouvé"}
+
+    access_token = compte.data["access_token"]
+
+    revoke_response = requests.post(
+        f'https://oauth2.googleapis.com/revoke?token={access_token}',
+        headers={'content-type': 'application/x-www-form-urlencoded'}
+    )
+
+    if revoke_response.status_code in [200, 400]: # 400 si token déjà révoqué/expiré
+        supabase.table("comptes_email").delete().eq("id", compte.data["id"]).execute()
+        return {"status": "ok"}
+
+    return {"status": "error", "detail": revoke_response.text}

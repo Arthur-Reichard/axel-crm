@@ -1,21 +1,48 @@
-// src/components/ConnectedEmailAccounts.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
-import "./ConnectedEmailAccounts.css";
+import { useSearchParams } from "react-router-dom";
 import SMTPConnectionPopup from "./SMTPConnectionPopup";
+import "./ConnectedEmailAccounts.css";
 
-export default function ConnectedEmailAccounts({ utilisateurId }) {
+export default function ConnectedEmailAccounts({ utilisateurId: initialUtilisateurId }) {
   const [comptes, setComptes] = useState([]);
   const [popupSMTPVisible, setPopupSMTPVisible] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [utilisateurId, setUtilisateurId] = useState(initialUtilisateurId || null);
+
+  useEffect(() => {
+    const idFromUrl = searchParams.get("utilisateur_id");
+    const success = searchParams.get("oauth");
+
+    if (success === "success" && idFromUrl) {
+      setUtilisateurId(idFromUrl);
+      localStorage.setItem("connected_email_user_id", idFromUrl);
+
+      // 🔄 Rafraîchir immédiatement les comptes après OAuth réussi
+      fetchComptes(idFromUrl);
+    }
+  }, [searchParams]);
+
+  const fetchComptes = async (userId) => {
+    const { data, error } = await supabase
+      .from("comptes_email")
+      .select("id, email, fournisseur, etat_token")
+      .eq("utilisateur_id", userId);
+
+    if (!error) setComptes(data || []);
+  };
+
 
   useEffect(() => {
     const fetchComptes = async () => {
+      if (!utilisateurId) return;
+
       const { data, error } = await supabase
         .from("comptes_email")
         .select("id, email, fournisseur, etat_token")
         .eq("utilisateur_id", utilisateurId);
 
-      if (!error) setComptes(data);
+      if (!error) setComptes(data || []);
     };
 
     fetchComptes();
@@ -37,11 +64,10 @@ export default function ConnectedEmailAccounts({ utilisateurId }) {
 
     const clientId = "423050071002-sji7iv52o72oqg9j385a9diajsf17m1v.apps.googleusercontent.com";
     const redirectUri = "http://localhost:8000/axel-crm/oauth/callback";
-    const scope = encodeURIComponent("https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid");
-
+    const scope = encodeURIComponent("https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email openid");
     const state = encodeURIComponent(utilisateurId);
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
     window.location.href = url;
   };
 
@@ -49,6 +75,7 @@ export default function ConnectedEmailAccounts({ utilisateurId }) {
     const clientId = "74503484-21cf-49a4-af5f-7109fda52160";
     const redirectUri = "http://localhost:8000/oauth/callback/outlook";
     const scope = encodeURIComponent("Mail.Send User.Read openid profile email offline_access");
+
     const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&response_mode=query&scope=${scope}&prompt=consent`;
     window.location.href = url;
   };
@@ -86,6 +113,13 @@ export default function ConnectedEmailAccounts({ utilisateurId }) {
           <button className="btn-deco" onClick={() => handleDeconnexion(compte.id)}>Déconnecter</button>
         </div>
       ))}
+
+      {popupSMTPVisible && (
+        <SMTPConnectionPopup
+          utilisateurId={utilisateurId}
+          onClose={() => setPopupSMTPVisible(false)}
+        />
+      )}
     </div>
   );
 }

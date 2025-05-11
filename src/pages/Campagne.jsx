@@ -18,6 +18,20 @@ export default function Campagne({ darkMode }) {
   const [comptesConnectes, setComptesConnectes] = useState([]);
 
 
+  useEffect(() => {
+  const fetchComptesConnectes = async () => {
+    if (!userId) return;
+    const { data, error } = await supabase
+      .from("comptes_email")
+      .select("id, fournisseur")
+      .eq("utilisateur_id", userId);
+
+    if (!error) setComptesConnectes(data || []);
+  };
+
+  fetchComptesConnectes();
+}, [userId]);
+
   const supprimerCampagne = async (id) => {
     const confirmation = window.confirm("Supprimer cette campagne ?");
     if (!confirmation) return;

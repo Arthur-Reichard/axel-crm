@@ -143,10 +143,11 @@ export default function EmailSenderPopup({ campagne, onClose, userId, entreprise
     
       const messagePourLead = personnaliserMessage(messageBrut, lead);
     
-      const response = await fetch("http://localhost:8000/send-email", {
+      const response = await fetch("http://localhost:8000/send-email-universel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          utilisateur_id: userId,
           to: lead.email_professionnel,
           subject: objet,
           html: messagePourLead,
