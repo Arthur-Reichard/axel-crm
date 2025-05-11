@@ -128,7 +128,15 @@
 
 .autocomplete-wrapper {
   position: relative;
-  width: 100%;
+  z-index: 1000;
+}
+
+.autocomplete-wrapper .pac-container {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 9999 !important;
 }
 
 .adresse-autocomplete {
@@ -138,54 +146,7 @@
   border-radius: 8px;
   font-size: 16px;
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s;
-  margin-bottom: 1.2rem;
   box-sizing: border-box;
-}
-
-.adresse-autocomplete:focus {
-  outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
-}
-
-.pac-container {
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  z-index: 9999 !important;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid #ccc;
-  font-size: 15px;
-  background-color: white;
-  pointer-events: auto;
-  transform: translateY(0);
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-.pac-item {
-  padding: 10px 14px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-}
-
-.pac-item:hover {
-  background-color: #f5f5f5;
-}
-
-.pac-item-query {
-  font-weight: bold;
-}
-
-/* ✅ Affiche ou masque le logo Google selon besoin */
-.pac-container .pac-logo,
-.pac-container .hdpi {
-  display: block; /* change en none si tu veux le masquer */
-  margin: 6px auto;
 }
 
 /* ============================================================

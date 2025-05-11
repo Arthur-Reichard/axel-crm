@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
@@ -10,6 +10,7 @@ export default function EntrepriseClientDetail() {
   const navigate = useNavigate();
   const [entreprise, setEntreprise] = useState(null);
   const [loading, setLoading] = useState(true);
+  const adresseRef = useRef({}); // 🧠 stockage persistant des champs adresse
 
   const entrepriseFields = [
     { label: "Nom de l'entreprise", name: "nom" },
@@ -34,6 +35,13 @@ export default function EntrepriseClientDetail() {
       }
 
       setEntreprise(data);
+      adresseRef.current = {
+        adresse_entreprise_rue: data.adresse_entreprise_rue,
+        adresse_entreprise_cp: data.adresse_entreprise_cp,
+        adresse_entreprise_ville: data.adresse_entreprise_ville,
+        adresse_entreprise_pays: data.adresse_entreprise_pays
+      };
+
       setLoading(false);
     };
 
@@ -48,14 +56,31 @@ export default function EntrepriseClientDetail() {
   };
 
   const handleSave = async () => {
-    const { error } = await supabase
+    if (!entreprise) {
+      console.warn("❌ handleSave : entreprise est null");
+      return;
+    }
+
+    const payload = {
+      ...entreprise,
+      ...adresseRef.current
+    };
+
+    console.log("📝 Données envoyées à Supabase :", payload);
+
+    const { error, data } = await supabase
       .from('entreprises_clients')
-      .update(entreprise)
-      .eq('id', id);
+      .update(payload)
+      .eq('id', id)
+      .select();
+
+    console.log("📥 Supabase response:", data);
 
     if (error) {
+      console.error("❌ Erreur Supabase :", error);
       alert("Erreur lors de la mise à jour : " + error.message);
     } else {
+      console.log("✅ Données enregistrées avec succès");
       localStorage.setItem('leadUpdated', 'true');
       navigate('/leads');
     }
@@ -118,17 +143,42 @@ export default function EntrepriseClientDetail() {
           <label>Adresse (auto-complétée)</label>
           <AdresseAutocomplete
             onPlaceSelected={(place) => {
-              const components = place.address_components;
+              console.log("📍 place reçu :", place);
+
+              const components = place.address_components || [];
+
               const get = (type) =>
                 components.find((c) => c.types.includes(type))?.long_name || '';
 
-              setEntreprise((prev) => ({
-                ...prev,
-                adresse_entreprise_rue: `${get('street_number')} ${get('route')}`.trim(),
-                adresse_entreprise_ville: get('locality'),
-                adresse_entreprise_cp: get('postal_code'),
-                adresse_entreprise_pays: get('country')
-              }));
+              const streetNumber = get('street_number');
+              const route = get('route');
+              const ville = get('locality') || get('postal_town');
+              const codePostal = get('postal_code');
+              const pays = get('country');
+
+              const newAdresse = {
+                adresse_entreprise_rue: [streetNumber, route].filter(Boolean).join(' '),
+                adresse_entreprise_ville: ville,
+                adresse_entreprise_cp: codePostal,
+                adresse_entreprise_pays: pays
+              };
+
+              console.log("📦 Données extraites de l'adresse :", newAdresse);
+
+              // Stock dans ref persistante
+              adresseRef.current = newAdresse;
+
+              // Pour affichage immédiat dans les champs
+              setEntreprise((prev) => {
+                if (!prev) {
+                  console.warn("❌ setEntreprise ignoré : prev est null");
+                  return prev;
+                }
+
+                const updated = { ...prev, ...newAdresse };
+                console.log("✅ Entreprise mise à jour dans l'état :", updated);
+                return updated;
+              });
             }}
           />
         </div>
@@ -141,7 +191,7 @@ export default function EntrepriseClientDetail() {
               type="text"
               name="adresse_entreprise_rue"
               value={entreprise.adresse_entreprise_rue || ''}
-              onChange={handleChange}
+              disabled
             />
           </div>
           <div className="lead-field">
@@ -150,7 +200,7 @@ export default function EntrepriseClientDetail() {
               type="text"
               name="adresse_entreprise_ville"
               value={entreprise.adresse_entreprise_ville || ''}
-              onChange={handleChange}
+              disabled
             />
           </div>
           <div className="lead-field">
@@ -159,7 +209,7 @@ export default function EntrepriseClientDetail() {
               type="text"
               name="adresse_entreprise_cp"
               value={entreprise.adresse_entreprise_cp || ''}
-              onChange={handleChange}
+              disabled
             />
           </div>
           <div className="lead-field">
@@ -168,7 +218,7 @@ export default function EntrepriseClientDetail() {
               type="text"
               name="adresse_entreprise_pays"
               value={entreprise.adresse_entreprise_pays || ''}
-              onChange={handleChange}
+              disabled
             />
           </div>
         </div>
