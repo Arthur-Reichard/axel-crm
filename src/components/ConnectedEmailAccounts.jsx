@@ -29,16 +29,18 @@ export default function ConnectedEmailAccounts({ utilisateurId }) {
   const isConnected = (fournisseur) =>
     comptes.some((compte) => compte.fournisseur === fournisseur);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
+    if (!utilisateurId) {
+      alert("Utilisateur non identifié !");
+      return;
+    }
+
     const clientId = "423050071002-sji7iv52o72oqg9j385a9diajsf17m1v.apps.googleusercontent.com";
     const redirectUri = "http://localhost:8000/axel-crm/oauth/callback";
     const scope = encodeURIComponent("https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid");
 
-    // ✅ récupérer l’utilisateur connecté
-    const { data: { user } } = await supabase.auth.getUser();
-    const utilisateurId = user?.id;
-
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(utilisateurId || "no-user")}`;
+    const state = encodeURIComponent(utilisateurId);
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
     window.location.href = url;
   };
