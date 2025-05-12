@@ -86,6 +86,7 @@ export default function LeadDetail() {
           .select('nom_champ')
           .eq('entreprise_id', entrepriseId)
           .eq('visible', true)
+          .eq('type_fiche', 'lead')
       ]);
 
       if (customErr) {
@@ -205,8 +206,9 @@ export default function LeadDetail() {
                   .upsert({
                     entreprise_id: entrepriseId,
                     nom_champ: field.name,
-                    visible: !isVisible
-                  }, { onConflict: ['entreprise_id', 'nom_champ'] });
+                    visible: !isVisible,
+                    type_fiche: 'lead'
+                  }, { onConflict: ['entreprise_id', 'nom_champ', 'type_fiche'] })
 
                 if (error) {
                   console.error("Erreur modification visibilité :", error.message);

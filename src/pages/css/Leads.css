@@ -678,6 +678,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   height: 42px;
+  margin-bottom: 0;
 }
 
 .view-toggle button.active,

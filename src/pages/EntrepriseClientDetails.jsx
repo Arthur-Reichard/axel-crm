@@ -4,13 +4,16 @@ import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
 import AdresseAutocomplete from '../components/AdresseAutocomplete';
+import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function EntrepriseClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [entreprise, setEntreprise] = useState(null);
   const [loading, setLoading] = useState(true);
-  const adresseRef = useRef({}); // 🧠 stockage persistant des champs adresse
+  const adresseRef = useRef({});
+  const [visibleFields, setVisibleFields] = useState([]);
+  const [fieldSettingsOpen, setFieldSettingsOpen] = useState(false);
 
   const entrepriseFields = [
     { label: "Nom de l'entreprise", name: "nom" },
@@ -42,6 +45,28 @@ export default function EntrepriseClientDetail() {
         adresse_entreprise_pays: data.adresse_entreprise_pays
       };
 
+      const { data: utilisateur, error: utilisateurErr } = await supabase
+        .from('utilisateurs')
+        .select('entreprise_id')
+        .eq('id', data.created_by)
+        .single();
+
+      if (!utilisateur || utilisateurErr) {
+        console.warn("Impossible de récupérer entreprise_id");
+        return;
+      }
+
+      const { data: visibles, error: visibleErr } = await supabase
+        .from('champs_visibles')
+        .select('nom_champ')
+        .eq('entreprise_id', utilisateur.entreprise_id)
+        .eq('type_fiche', 'entreprise')
+        .eq('visible', true);
+
+      if (!visibleErr) {
+        setVisibleFields(visibles.map(v => v.nom_champ));
+      }
+
       setLoading(false);
     };
 
@@ -56,39 +81,29 @@ export default function EntrepriseClientDetail() {
   };
 
   const handleSave = async () => {
-    if (!entreprise) {
-      console.warn("❌ handleSave : entreprise est null");
-      return;
-    }
+    if (!entreprise) return;
 
     const payload = {
       ...entreprise,
       ...adresseRef.current
     };
 
-    console.log("📝 Données envoyées à Supabase :", payload);
-
-    const { error, data } = await supabase
+    const { error } = await supabase
       .from('entreprises_clients')
       .update(payload)
       .eq('id', id)
       .select();
 
-    console.log("📥 Supabase response:", data);
-
     if (error) {
-      console.error("❌ Erreur Supabase :", error);
       alert("Erreur lors de la mise à jour : " + error.message);
     } else {
-      console.log("✅ Données enregistrées avec succès");
       localStorage.setItem('leadUpdated', 'true');
       navigate('/leads');
     }
   };
 
   const handleDelete = async () => {
-    const confirm = window.confirm("Supprimer définitivement cette entreprise ?");
-    if (!confirm) return;
+    if (!window.confirm("Supprimer définitivement cette entreprise ?")) return;
 
     const { error } = await supabase
       .from('entreprises_clients')
@@ -108,122 +123,83 @@ export default function EntrepriseClientDetail() {
     <div className="lead-detail-page">
       <div className="lead-detail-header">
         <h1>Fiche Entreprise</h1>
-        <button onClick={() => navigate('/leads')}>← Retour</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={() => navigate('/leads')}>← Retour</button>
+          <button onClick={() => setFieldSettingsOpen(true)} className="settings-btn" title="Gérer les champs visibles">
+            <FiSettings size={22} />
+          </button>
+        </div>
       </div>
 
       <div className="lead-detail-grid">
-        {entrepriseFields.map(({ label, name, type = "text" }) => (
-          <div
-            className="lead-field"
-            key={name}
-            style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
-          >
-            <label htmlFor={name}>{label}</label>
-            {type === "textarea" ? (
-              <textarea
-                id={name}
-                name={name}
-                value={entreprise[name] || ''}
-                onChange={handleChange}
-              />
-            ) : (
-              <input
-                id={name}
-                type={type}
-                name={name}
-                value={entreprise[name] || ''}
-                onChange={handleChange}
-              />
-            )}
-          </div>
-        ))}
+        {entrepriseFields
+          .filter(f => visibleFields.includes(f.name))
+          .map(({ label, name, type = "text" }) => (
+            <div
+              className="lead-field"
+              key={name}
+              style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
+            >
+              <label htmlFor={name}>{label}</label>
+              {type === "textarea" ? (
+                <textarea
+                  id={name}
+                  name={name}
+                  value={entreprise[name] || ''}
+                  onChange={handleChange}
+                />
+              ) : (
+                <input
+                  id={name}
+                  type={type}
+                  name={name}
+                  value={entreprise[name] || ''}
+                  onChange={handleChange}
+                />
+              )}
+            </div>
+          ))}
 
-        {/* Champ autocomplete d'adresse Google */}
         <div className="lead-field adresse-bloc">
           <label>Adresse (auto-complétée)</label>
           <AdresseAutocomplete
             onPlaceSelected={(place) => {
-              console.log("📍 place reçu :", place);
-
               const components = place.address_components || [];
-
-              const get = (type) =>
-                components.find((c) => c.types.includes(type))?.long_name || '';
-
-              const streetNumber = get('street_number');
-              const route = get('route');
-              const ville = get('locality') || get('postal_town');
-              const codePostal = get('postal_code');
-              const pays = get('country');
+              const get = (type) => components.find((c) => c.types.includes(type))?.long_name || '';
 
               const newAdresse = {
-                adresse_entreprise_rue: [streetNumber, route].filter(Boolean).join(' '),
-                adresse_entreprise_ville: ville,
-                adresse_entreprise_cp: codePostal,
-                adresse_entreprise_pays: pays
+                adresse_entreprise_rue: [get('street_number'), get('route')].filter(Boolean).join(' '),
+                adresse_entreprise_ville: get('locality') || get('postal_town'),
+                adresse_entreprise_cp: get('postal_code'),
+                adresse_entreprise_pays: get('country')
               };
 
-              console.log("📦 Données extraites de l'adresse :", newAdresse);
-
-              // Stock dans ref persistante
               adresseRef.current = newAdresse;
 
-              // Pour affichage immédiat dans les champs
-              setEntreprise((prev) => {
-                if (!prev) {
-                  console.warn("❌ setEntreprise ignoré : prev est null");
-                  return prev;
-                }
-
-                const updated = { ...prev, ...newAdresse };
-                console.log("✅ Entreprise mise à jour dans l'état :", updated);
-                return updated;
-              });
+              setEntreprise((prev) => ({ ...prev, ...newAdresse }));
             }}
           />
         </div>
 
-        {/* Champs séparés visibles */}
         <div className="adresse-hidden-fields">
           <div className="lead-field">
             <label>Rue</label>
-            <input
-              type="text"
-              name="adresse_entreprise_rue"
-              value={entreprise.adresse_entreprise_rue || ''}
-              disabled
-            />
+            <input type="text" name="adresse_entreprise_rue" value={entreprise.adresse_entreprise_rue || ''} disabled />
           </div>
           <div className="lead-field">
             <label>Ville</label>
-            <input
-              type="text"
-              name="adresse_entreprise_ville"
-              value={entreprise.adresse_entreprise_ville || ''}
-              disabled
-            />
+            <input type="text" name="adresse_entreprise_ville" value={entreprise.adresse_entreprise_ville || ''} disabled />
           </div>
           <div className="lead-field">
             <label>Code Postal</label>
-            <input
-              type="text"
-              name="adresse_entreprise_cp"
-              value={entreprise.adresse_entreprise_cp || ''}
-              disabled
-            />
+            <input type="text" name="adresse_entreprise_cp" value={entreprise.adresse_entreprise_cp || ''} disabled />
           </div>
           <div className="lead-field">
             <label>Pays</label>
-            <input
-              type="text"
-              name="adresse_entreprise_pays"
-              value={entreprise.adresse_entreprise_pays || ''}
-              disabled
-            />
+            <input type="text" name="adresse_entreprise_pays" value={entreprise.adresse_entreprise_pays || ''} disabled />
           </div>
         </div>
 
-        {/* Dates en bas */}
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
           <label>Date d'ajout</label>
           <input type="text" value={new Date(entreprise.created_at).toLocaleString()} readOnly />
@@ -238,6 +214,71 @@ export default function EntrepriseClientDetail() {
         <button onClick={handleSave}>Enregistrer</button>
         <button className="delete-btn" onClick={handleDelete}>Supprimer</button>
       </div>
+
+      {fieldSettingsOpen && (
+        <div className="drawer-overlay" onClick={() => setFieldSettingsOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <h2>Champs visibles (entreprise)</h2>
+            <ul className="custom-field-list">
+              {entrepriseFields.map(field => (
+                <li key={field.name} className="custom-field-item">
+                  <span>{field.label}</span>
+                  <button
+                    onClick={async () => {
+                      const isVisible = visibleFields.includes(field.name);
+                      const utilisateurId = entreprise.created_by;
+
+                      const { data: utilisateur, error: utilisateurErr } = await supabase
+                        .from('utilisateurs')
+                        .select('entreprise_id')
+                        .eq('id', utilisateurId)
+                        .single();
+
+                      if (!utilisateur || utilisateurErr) {
+                        console.warn("Impossible de récupérer entreprise_id");
+                        return;
+                      }
+
+                      const entrepriseId = utilisateur.entreprise_id;
+
+                      const { error } = await supabase
+                        .from('champs_visibles')
+                        .upsert({
+                          entreprise_id: entrepriseId,
+                          nom_champ: field.name,
+                          visible: !isVisible,
+                          type_fiche: 'entreprise'
+                        }, { onConflict: ['entreprise_id', 'nom_champ', 'type_fiche'] });
+
+                      if (error) {
+                        console.error("Erreur modification visibilité :", error.message);
+                        return;
+                      }
+
+                      const { data: visibles, error: fetchErr } = await supabase
+                        .from('champs_visibles')
+                        .select('nom_champ')
+                        .eq('entreprise_id', entrepriseId)
+                        .eq('type_fiche', 'entreprise')
+                        .eq('visible', true);
+
+                      if (!fetchErr) {
+                        setVisibleFields(visibles.map(v => v.nom_champ));
+                      }
+                    }}
+                  >
+                    {visibleFields.includes(field.name) ? <FiEye /> : <FiEyeOff />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="drawer-buttons">
+              <button className="cancel-btn" onClick={() => setFieldSettingsOpen(false)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

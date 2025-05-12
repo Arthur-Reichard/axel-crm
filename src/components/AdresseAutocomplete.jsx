@@ -33,7 +33,7 @@ export default function AdresseAutocomplete({ onPlaceSelected }) {
         pacContainer.style.top = '100%';
         pacContainer.style.left = '0';
         pacContainer.style.width = '100%';
-        pacContainer.style.zIndex = '9999';
+        pacContainer.style.zIndex = '300';
       }
     }, 300);
 
@@ -45,13 +45,15 @@ export default function AdresseAutocomplete({ onPlaceSelected }) {
 
   return (
     <div className="autocomplete-wrapper">
-      <input
-        ref={inputRef}
-        type="text"
-        placeholder="Commencez à taper l'adresse..."
-        className="adresse-autocomplete pac-target-input"
-        autoComplete="off"
-      />
+      <div className="lead-field">
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Commencez à taper l'adresse..."
+          className="adresse-autocomplete pac-target-input"
+          autoComplete="off"
+        />
+      </div>
       <div ref={suggestionsRef} />
     </div>
   );

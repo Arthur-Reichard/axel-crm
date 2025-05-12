@@ -128,7 +128,7 @@
 
 .autocomplete-wrapper {
   position: relative;
-  z-index: 1000;
+  z-index: 300;
 }
 
 .autocomplete-wrapper .pac-container {
@@ -169,4 +169,21 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.2rem;
+}
+
+.custom-field-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: block;
+  text-align: left;
+}
+
+
+.drawer-overlay {
+  width: auto;
+}
+
+.drawer {
+  justify-content: normal;
 }
