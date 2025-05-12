@@ -16,13 +16,45 @@ export default function EntrepriseClientDetail() {
   const [fieldSettingsOpen, setFieldSettingsOpen] = useState(false);
 
   const entrepriseFields = [
-    { label: "Nom de l'entreprise", name: "nom" },
+    { label: "Nom de l'entreprise", name: "raison_sociale" },
     { label: "SIREN", name: "siren" },
+    { label: "SIRET", name: "siret" },
+    { label: "Forme juridique", name: "forme_juridique" },
+    { label: "Capital social (€)", name: "capital_social" },
+    { label: "Date immatriculation", name: "date_immatriculation", type: "date" },
     { label: "Téléphone", name: "telephone_professionnel" },
     { label: "Email", name: "email_professionnel" },
     { label: "Site web", name: "site_web" },
+    { label: "Code APE (NAF)", name: "naf_code" },
+    { label: "Activité principale", name: "naf_label" },
+    { label: "Statut", name: "statut_entreprise" },
+    { label: "N° RCS", name: "numero_rcs" },
     { label: "Notes", name: "notes", type: "textarea" }
   ];
+
+ const fetchInseeData = async () => {
+  if (!entreprise?.siren || entreprise.siren.length !== 9) {
+    alert("Veuillez saisir un SIREN valide (9 chiffres).");
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8000/axel-crm/insee/${entreprise.siren}`);
+    const data = await response.json();
+
+    if (data.error) {
+      alert("Erreur INSEE : " + data.error);
+      return;
+    }
+
+    // Met à jour les champs de l’entreprise avec les données reçues
+    setEntreprise((prev) => ({ ...prev, ...data }));
+  } catch (error) {
+    console.error("Erreur appel API INSEE :", error);
+    alert("Impossible de récupérer les données INSEE.");
+  }
+};
+
 
   useEffect(() => {
     const fetchEntreprise = async () => {
@@ -132,6 +164,9 @@ export default function EntrepriseClientDetail() {
       </div>
 
       <div className="lead-detail-grid">
+        <button onClick={fetchInseeData} className="greffe-btn">
+          Récupérer depuis l'INSEE
+        </button>
         {entrepriseFields
           .filter(f => visibleFields.includes(f.name))
           .map(({ label, name, type = "text" }) => (

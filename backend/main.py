@@ -10,10 +10,21 @@ from google_oauth import router as google_oauth_router
 
 from security import chiffrer, dechiffrer
 from send_email import envoyer_email
+from fastapi.middleware.cors import CORSMiddleware
+from insee_api import router as insee_router
+
 
 load_dotenv()
 
 app = FastAPI(root_path="/axel-crm")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Pour tests locaux. En prod, remplace "*" par ton domaine
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 🔧 Config Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -36,6 +47,7 @@ app.add_middleware(
 )
 
 app.include_router(google_oauth_router)
+app.include_router(insee_router)
 
 # 🔁 Refresh Gmail
 def refresh_access_token(refresh_token):

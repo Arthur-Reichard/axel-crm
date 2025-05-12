@@ -187,3 +187,24 @@
 .drawer {
   justify-content: normal;
 }
+
+.greffe-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  height: auto;
+  line-height: 1;
+}
+
+
+.greffe-btn:hover {
+  background-color: #0055aa;
+}
