@@ -29,6 +29,7 @@ export default function EntrepriseClientDetail() {
     F: "Fermée"
   };
 
+
   const entrepriseFields = [
     { label: "Nom de l'entreprise", name: "raison_sociale" },
     { label: "SIREN", name: "siren" },
@@ -290,7 +291,15 @@ return (
         </div>
         <div className="lead-field" style={{ gridColumn: '1 / -1' }}>
           <label>Dernière modification</label>
-          <input type="text" value={new Date(entreprise.updated_at).toLocaleString()} readOnly />
+          <input
+            type="text"
+            value={
+              entreprise.updated_at
+                ? new Date(entreprise.updated_at).toLocaleString()
+                : "Non modifié"
+            }
+            readOnly
+          />
         </div>
       </div>
 

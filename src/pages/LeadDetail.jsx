@@ -18,6 +18,37 @@ export default function LeadDetail() {
   const [fieldSettingsOpen, setFieldSettingsOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const clientType = searchParams.get("type") || "individuel";
+  const [entreprisesClients, setEntreprisesClients] = useState([]);
+  const [entrepriseId, setEntrepriseId] = useState(null);
+
+  useEffect(() => {
+    const fetchEntrepriseId = async () => {
+      const {
+        data: { user },
+        error: userErr
+      } = await supabase.auth.getUser();
+
+      if (userErr || !user) {
+        console.error("Utilisateur non authentifié");
+        return;
+      }
+
+      const { data: utilisateur, error: fetchErr } = await supabase
+        .from('utilisateurs')
+        .select('entreprise_id')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchErr || !utilisateur) {
+        console.warn("Impossible de récupérer entreprise_id");
+        return;
+      }
+
+      setEntrepriseId(utilisateur.entreprise_id);
+    };
+
+    fetchEntrepriseId();
+  }, []);
 
   const availableFields = [
     { label: "Nom", name: "nom" },
@@ -28,11 +59,6 @@ export default function LeadDetail() {
     { label: "Description", name: "description", type: "textarea" },
     { label: "Poste contact", name: "poste_contact" },
     { label: "Site web", name: "site_web" },
-    { label: "Rue entreprise", name: "adresse_entreprise_rue" },
-    { label: "Ville entreprise", name: "adresse_entreprise_ville" },
-    { label: "Code postal entreprise", name: "adresse_entreprise_cp" },
-    { label: "Pays entreprise", name: "adresse_entreprise_pays" },
-    { label: "SIRET", name: "numero_siret" },
     { label: "Canal préféré", name: "canal_prefere" },
     { label: "Langue", name: "langue" },
     { label: "Origine contact", name: "origine_contact" },
@@ -54,6 +80,21 @@ export default function LeadDetail() {
       type: f.type
     }))
   ], [customFields]);
+
+    useEffect(() => {
+    const fetchEntreprises = async () => {
+      const { data, error } = await supabase
+        .from('entreprises_clients')
+        .select('id, raison_sociale')
+        .order('raison_sociale', { ascending: true });
+
+      if (!error && data) {
+        setEntreprisesClients(data);
+      }
+    };
+
+    fetchEntreprises();
+  }, []);
 
   useEffect(() => {
     const fetchLeadAndFields = async () => {
@@ -169,7 +210,47 @@ export default function LeadDetail() {
           .map(({ label, name, type = "text" }) => (
             <div className="lead-field" key={name} style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}>
               <label htmlFor={name}>{label}</label>
-              {type === "textarea" ? (
+
+              {name === 'nom_entreprise' ? (
+                <select
+                  name="nom_entreprise"
+                  value={lead.nom_entreprise || ''}
+                  onChange={async (e) => {
+                    const value = e.target.value;
+                    if (value === '__new') {
+                      const nouvelleEntreprise = prompt("Nom de la nouvelle entreprise :");
+                      if (!nouvelleEntreprise) return;
+
+                      const { data: { user } } = await supabase.auth.getUser();
+
+                      const { data, error } = await supabase
+                        .from('entreprises_clients')
+                        .insert({
+                          raison_sociale: nouvelleEntreprise,
+                          created_by: user.id,
+                          entreprise_id: entrepriseId
+                        })
+                        .select()
+                        .single();
+
+                      if (!error && data) {
+                        setEntreprisesClients((prev) => [...prev, data]);
+                        setLead((prev) => ({ ...prev, nom_entreprise: data.raison_sociale }));
+                      } else {
+                        alert("Erreur création entreprise");
+                      }
+                    } else {
+                      setLead((prev) => ({ ...prev, nom_entreprise: value }));
+                    }
+                  }}
+                >
+                  <option value="">--Sélectionner une entreprise--</option>
+                  {entreprisesClients.map((ent) => (
+                    <option key={ent.id} value={ent.raison_sociale}>{ent.raison_sociale}</option>
+                  ))}
+                  <option value="__new">Ajouter une entreprise...</option>
+                </select>
+              ) : type === "textarea" ? (
                 <textarea id={name} name={name} value={lead[name] || ''} onChange={handleChange} />
               ) : (
                 <input id={name} type={type} name={name} value={lead[name] || ''} onChange={handleChange} />

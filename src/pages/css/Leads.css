@@ -853,7 +853,7 @@ color: #007bff;
 
 
 .lead-table th, .lead-table td {
-  padding: 12px 16px;
+  padding: 8px 16px;
   white-space: nowrap;
   text-align: left;
 }
@@ -885,4 +885,39 @@ th.drop-target {
   cursor: pointer;
   transition: all 0.2s ease;
   height: 42px;
+}
+
+.entreprise-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.entreprise-cell .entreprise-nom {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.entreprise-cell .entreprise-info {
+  font-size: 0.85rem;
+  color: #555;
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+}
+
+.entreprise-statut {
+  font-weight: 500;
+}
+
+.entreprise-statut.active {
+  color: #2e7d32; /* vert */
+}
+
+.entreprise-statut.closed {
+  color: #d32f2f; /* rouge */
+}
+
+.entreprise-statut.unknown {
+  color: #999; /* gris */
 }

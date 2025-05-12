@@ -52,11 +52,6 @@ export default function Leads() {
     { label: "Description", name: "description", type: "textarea" },
     { label: "Poste contact", name: "poste_contact" },
     { label: "Site web", name: "site_web" },
-    { label: "Rue entreprise", name: "adresse_entreprise_rue" },
-    { label: "Ville entreprise", name: "adresse_entreprise_ville" },
-    { label: "Code postal entreprise", name: "adresse_entreprise_cp" },
-    { label: "Pays entreprise", name: "adresse_entreprise_pays" },
-    { label: "SIRET", name: "numero_siret" },
     { label: "Canal préféré", name: "canal_prefere" },
     { label: "Langue", name: "langue" },
     { label: "Origine contact", name: "origine_contact" },
@@ -262,7 +257,7 @@ export default function Leads() {
         const fetchEntreprisesClients = async (entrepriseId) => {
         const { data, error } = await supabase
           .from('entreprises_clients')
-          .select('id, raison_sociale')
+          .select('id, raison_sociale, siren, statut_entreprise')
           .eq('entreprise_id', entrepriseId.split(':')[0]);
     
         if (!error) {
@@ -817,11 +812,26 @@ export default function Leads() {
                   onClick={(e) => e.stopPropagation()}
                 />
               </td>
-              <td colSpan={columnPreferences.filter(c => c.visible).length}>
-                <strong>{ent.raison_sociale || 'Nom manquant'}</strong>
-              </td>
+                <td colSpan={columnPreferences.filter(c => c.visible).length}>
+                  <div className="entreprise-cell">
+                    <div className="entreprise-nom">{ent.raison_sociale || 'Nom manquant'}</div>
+                    <div className="entreprise-info">
+                      <span>SIREN : {ent.siren || '—'}</span>
+                      <span className={`entreprise-statut ${
+                        ent.statut_entreprise === 'A' ? 'active' :
+                        ent.statut_entreprise === 'F' ? 'closed' : 'unknown'
+                      }`}>
+                        Statut : {
+                          ent.statut_entreprise === 'A' ? 'Active' :
+                          ent.statut_entreprise === 'F' ? 'Fermée' :
+                          ent.statut_entreprise === 'C' ? 'Cessée' : 'Inconnu'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </td>
             </tr>
-))
+            ))
 
             : paginatedLeads.map(lead => (
                 <tr key={lead.id}>
