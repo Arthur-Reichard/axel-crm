@@ -4,6 +4,7 @@ import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
 import { FiEye, FiEyeOff, FiSettings } from 'react-icons/fi';
+import { useSearchParams } from 'react-router-dom';
 
 export default function LeadDetail() {
   const { id } = useParams();
@@ -15,6 +16,8 @@ export default function LeadDetail() {
   const [customFields, setCustomFields] = useState([]);
   const [visibleFields, setVisibleFields] = useState([]);
   const [fieldSettingsOpen, setFieldSettingsOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const clientType = searchParams.get("type") || "individuel";
 
   const availableFields = [
     { label: "Nom", name: "nom" },
@@ -149,7 +152,7 @@ export default function LeadDetail() {
       <div className="lead-detail-header">
       <h1>Fiche du Prospect</h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <button onClick={() => navigate('/leads')} className="return-btn">← Retour</button>
+      <button onClick={() => navigate(`/leads?type=${clientType}`)}>← Retour</button>
       <button
         onClick={() => setFieldSettingsOpen(true)}
         className="settings-btn"

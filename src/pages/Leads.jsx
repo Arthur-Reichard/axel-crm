@@ -11,6 +11,7 @@ import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useMemo } from 'react';
 import ColumnSettingsDrawer from '../components/ColumnSettingsDrawer';
 import { DndContext, closestCenter } from '@dnd-kit/core';
+import { useSearchParams } from 'react-router-dom';
 import {
   arrayMove,
   SortableContext,
@@ -31,7 +32,7 @@ const columnFieldMap = {
   'Téléphone pro': 'telephone_professionnel',
   'Entreprise': (lead) => {
     if (lead.type_client === 'entreprise' && lead.entreprises_clients) {
-      return lead.entreprises_clients.nom;
+      return lead.entreprises_clients.raison_sociale;
     }
     return lead.nom_entreprise;
   },
@@ -41,6 +42,7 @@ const columnFieldMap = {
 };
 
 export default function Leads() {
+  const [searchParams] = useSearchParams();
   const [availableFields, setAvailableFields] = useState([
     { label: "Nom", name: "nom" },
     { label: "Prénom", name: "prenom" },
@@ -94,7 +96,10 @@ export default function Leads() {
       ordre: index,
       visible: col.visible
     }));
-  
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+
     const { error } = await supabase
       .from('colonnes_leads')
       .upsert(updated, { onConflict: ['utilisateur_id', 'nom_champ'] });
@@ -170,10 +175,9 @@ export default function Leads() {
   const [utilisateurId, setUtilisateurId] = useState(null);
 
   useEffect(() => {
-    const savedType = localStorage.getItem('lastClientType');
-    if (savedType === 'individuel' || savedType === 'entreprise') {
-      setSelectedClientType(savedType);
-    }
+    const paramType = searchParams.get('type');
+    const validType = paramType === 'entreprise' ? 'entreprise' : 'individuel';
+    setSelectedClientType(validType);
   }, []);
 
   useEffect(() => {
@@ -255,6 +259,18 @@ export default function Leads() {
 
   allFieldsRef.current = allFields;
 
+        const fetchEntreprisesClients = async (entrepriseId) => {
+        const { data, error } = await supabase
+          .from('entreprises_clients')
+          .select('id, raison_sociale')
+          .eq('entreprise_id', entrepriseId.split(':')[0]);
+    
+        if (!error) {
+          setEntreprisesClients(data);
+          setEntreprisesOnly(data);
+        }
+      };
+
   useEffect(() => {
     const fetchLeads = async () => {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
@@ -318,7 +334,7 @@ export default function Leads() {
         .select(`
           id, prenom, nom, type_client, nom_entreprise, statut_client, assigne_a,
           email_professionnel, telephone_professionnel, source, notes,
-          entreprises_clients(id, nom)
+          entreprises_clients(id, raison_sociale)
         `)
         .eq('entreprise_id', entreprise_id)
         .order('created_at', { ascending: false });
@@ -329,26 +345,12 @@ export default function Leads() {
       }
     };
   
-    const fetchEntreprisesClients = async (entrepriseId) => {
-      const { data, error } = await supabase
-        .from('entreprises_clients')
-        .select('id, nom')
-        .eq('entreprise_id', entrepriseId);
-  
-      if (!error) {
-        setEntreprisesClients(data);
-        setEntreprisesOnly(data);
-      }
-    };
-  
     fetchLeads();
   }, []);  
 
   const [paginatedLeads, setPaginatedLeads] = useState([]);
 
   useEffect(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
     setPaginatedLeads(leads.slice(start, end));
   }, [leads, currentPage, itemsPerPage]);
 
@@ -451,7 +453,7 @@ export default function Leads() {
       const { data: entrepriseCreee, error: errEntreprise } = await supabase
         .from('entreprises_clients')
         .insert([{
-          nom: formData.nom_entreprise,
+          raison_sociale: formData.nom_entreprise,
           entreprise_id: entrepriseId,
           created_by: user.id,
           siren: formData.siren || null
@@ -478,6 +480,7 @@ export default function Leads() {
         client_entreprise_id: '',
         siren: ''
       });
+      await fetchEntreprisesClients(entrepriseId);
       setDrawerOpen(false);
       setCustomSource('');
       return;
@@ -619,11 +622,16 @@ export default function Leads() {
   };
 
   const toggleSelectAll = () => {
+    const idsToSelect = selectedClientType === 'entreprise'
+      ? entreprisesOnly.slice(start, end).map(ent => ent.id)
+      : leads.slice(start, end).map(lead => lead.id);
+
     if (selectAll) {
       setSelectedLeads([]);
     } else {
-      setSelectedLeads(leads.map(lead => lead.id));
+      setSelectedLeads(idsToSelect);
     }
+
     setSelectAll(!selectAll);
   };
 
@@ -637,15 +645,33 @@ export default function Leads() {
 
   const handleDeleteSelected = async () => {
     if (!selectedLeads.length) return;
-    if (!window.confirm(`Supprimer définitivement ${selectedLeads.length} prospect(s) ?`)) return;
+    if (!window.confirm(`Supprimer définitivement ${selectedLeads.length} ${selectedClientType === 'entreprise' ? 'entreprise(s)' : 'prospect(s)'} ?`)) return;
 
-    const { data, error } = await supabase.from('leads').delete().in('id', selectedLeads);
+    let error = null;
+
+    if (selectedClientType === 'entreprise') {
+      const { error: delErr } = await supabase
+        .from('entreprises_clients')
+        .delete()
+        .in('id', selectedLeads);
+      error = delErr;
+    } else {
+      const { error: delErr } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', selectedLeads);
+      error = delErr;
+    }
 
     if (error) {
-      console.error('Erreur lors de la suppression :', error.message, error.details);
+      console.error('Erreur lors de la suppression :', error.message);
       alert('Erreur lors de la suppression : ' + error.message);
     } else {
-      setLeads(leads.filter(lead => !selectedLeads.includes(lead.id)));
+      if (selectedClientType === 'entreprise') {
+        setEntreprisesOnly(prev => prev.filter(ent => !selectedLeads.includes(ent.id)));
+      } else {
+        setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)));
+      }
       setSelectedLeads([]);
       setSelectAll(false);
     }
@@ -754,39 +780,49 @@ export default function Leads() {
       <DndContext collisionDetection={closestCenter}   onDragStart={handleDragStart}   onDragEnd={handleDragEnd}>
         <div className="table-wrapper">
           <table className="lead-table">
-            <thead>
-              <SortableContext
-                items={columnPreferences.filter(c => c.visible).map(c => c.nom_champ)}
-                strategy={verticalListSortingStrategy}
-              >
-                <tr>
-                  <th><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
-                  {columnPreferences
-                    .filter(col => col.visible)
-                    .map(col => {
-                      const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
-                      return (
-                        <DraggableHeader key={col.nom_champ} id={col.nom_champ}>
-                          {field?.nom_affichage || col.nom_champ}
-                        </DraggableHeader>
-                      );
-                    })}
-                </tr>
-              </SortableContext>
-            </thead>
+          <thead>
+            <SortableContext
+              items={columnPreferences.filter(c => c.visible).map(c => c.nom_champ)}
+              strategy={verticalListSortingStrategy}
+            >
+              <tr>
+                <th>
+                  <input type="checkbox" checked={selectAll} onChange={toggleSelectAll} />
+                </th>
+                {columnPreferences
+                  .filter(col => col.visible)
+                  .map(col => (
+                    <DraggableHeader key={col.nom_champ} id={col.nom_champ}>
+                      {selectedClientType === 'entreprise' ? '\u00A0' : (
+                        fullFieldList.find(f => f.nom_champ === col.nom_champ)?.nom_affichage || col.nom_champ
+                      )}
+                    </DraggableHeader>
+                  ))}
+              </tr>
+            </SortableContext>
+          </thead>
             <tbody>
             {selectedClientType === 'entreprise'
               ? entreprisesOnly.slice(start, end).map(ent => (
-                  <tr
-                    key={ent.id}
-                    onClick={() => navigate(`/entreprises-clients/${ent.id}`)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                      <td colSpan={columnPreferences.filter(c => c.visible).length}>
-                        <strong>{ent.nom}</strong>
-                      </td>
-                    </tr>
-                  ))
+            <tr
+              key={ent.id}
+              onClick={() => navigate(`/entreprises-clients/${ent.id}?type=entreprise`)}
+              style={{ cursor: 'pointer' }}
+            >
+              <td>
+                <input
+                  type="checkbox"
+                  checked={selectedLeads.includes(ent.id)}
+                  onChange={() => toggleSelectLead(ent.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </td>
+              <td colSpan={columnPreferences.filter(c => c.visible).length}>
+                <strong>{ent.raison_sociale || 'Nom manquant'}</strong>
+              </td>
+            </tr>
+))
+
             : paginatedLeads.map(lead => (
                 <tr key={lead.id}>
                   <td>
@@ -801,7 +837,7 @@ export default function Leads() {
                     .map(col => {
                       const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
                       return (
-                        <td key={col.nom_champ} className={activeDragId === col.nom_champ ? 'drop-target' : ''} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                        <td key={col.nom_champ} className={activeDragId === col.nom_champ ? 'drop-target' : ''} onClick={() => navigate(`/leads/${lead.id}?type=${selectedClientType}`)} style={{ cursor: 'pointer' }}>
                           {typeof columnFieldMap[field?.nom_affichage] === 'function'
                             ? columnFieldMap[field.nom_affichage](lead)
                             : lead[field?.nom_champ || col.nom_champ]}
@@ -873,7 +909,7 @@ export default function Leads() {
                   <select name="client_entreprise_id" value={formData.client_entreprise_id} onChange={handleInputChange}>
                     <option value="">-- Sélectionner une entreprise --</option>
                     {entreprisesClients.map(ec => (
-                      <option key={ec.id} value={ec.id}>{ec.nom}</option>
+                      <option key={ec.id} value={ec.id}>{ec.raison_sociale}</option>
                     ))}
                   </select>
                 </>

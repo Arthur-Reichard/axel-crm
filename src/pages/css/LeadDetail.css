@@ -35,7 +35,6 @@
 
 .lead-field label {
   font-weight: 500;
-  margin-bottom: 0.3rem;
 }
 
 .lead-field input,
@@ -155,18 +154,17 @@
 
 .adresse-bloc {
   grid-column: 1 / -1;
-  margin-bottom: 1rem;
 }
 
-.adresse-bloc label {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-weight: 500;
+.adresse-hidden-fields .lead-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .adresse-hidden-fields {
   grid-column: 1 / -1;
-  display: grid;
+  display: flex;
   grid-template-columns: 1fr;
   gap: 1.2rem;
 }
@@ -208,3 +206,33 @@
 .greffe-btn:hover {
   background-color: #0055aa;
 }
+
+/* Dans Leads.css ou LeadDetail.css */
+.overlay-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.6);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  border: 5px solid #ccc;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

@@ -5,8 +5,13 @@ import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
 import AdresseAutocomplete from '../components/AdresseAutocomplete';
 import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
+import { createClient } from '@supabase/supabase-js';
+import { useSearchParams } from 'react-router-dom';
+
 
 export default function EntrepriseClientDetail() {
+  const [searchParams] = useSearchParams();
+  const clientType = searchParams.get("type") || "Entreprises";
   const { id } = useParams();
   const navigate = useNavigate();
   const [entreprise, setEntreprise] = useState(null);
@@ -14,6 +19,15 @@ export default function EntrepriseClientDetail() {
   const adresseRef = useRef({});
   const [visibleFields, setVisibleFields] = useState([]);
   const [fieldSettingsOpen, setFieldSettingsOpen] = useState(false);
+  const [utilisateurId, setUtilisateurId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingInsee, setIsFetchingInsee] = useState(false);
+
+  const statutEntrepriseLabels = {
+    A: "Active",
+    C: "Cessée",
+    F: "Fermée"
+  };
 
   const entrepriseFields = [
     { label: "Nom de l'entreprise", name: "raison_sociale" },
@@ -32,32 +46,52 @@ export default function EntrepriseClientDetail() {
     { label: "Notes", name: "notes", type: "textarea" }
   ];
 
- const fetchInseeData = async () => {
-  if (!entreprise?.siren || entreprise.siren.length !== 9) {
-    alert("Veuillez saisir un SIREN valide (9 chiffres).");
-    return;
-  }
-
-  try {
-    const response = await fetch(`http://localhost:8000/axel-crm/insee/${entreprise.siren}`);
-    const data = await response.json();
-
-    if (data.error) {
-      alert("Erreur INSEE : " + data.error);
+  const fetchInseeData = async () => {
+    if (!entreprise?.siren || entreprise.siren.length !== 9) {
+      alert("Veuillez saisir un SIREN valide (9 chiffres).");
       return;
     }
 
-    // Met à jour les champs de l’entreprise avec les données reçues
-    setEntreprise((prev) => ({ ...prev, ...data }));
-  } catch (error) {
-    console.error("Erreur appel API INSEE :", error);
-    alert("Impossible de récupérer les données INSEE.");
-  }
-};
+    setIsFetchingInsee(true); // démarre le chargement
+
+    try {
+      const response = await fetch(`http://localhost:8000/axel-crm/insee/${entreprise.siren}?utilisateur_id=${utilisateurId}`);
+      const data = await response.json();
+
+      if (data.error) {
+        alert("Erreur INSEE : " + data.error);
+        return;
+      }
+
+      setEntreprise((prev) => ({ ...prev, ...data }));
+    } catch (error) {
+      console.error("Erreur appel API INSEE :", error);
+      alert("Impossible de récupérer les données INSEE.");
+    } finally {
+      setIsFetchingInsee(false); // arrête le chargement
+    }
+  };
 
 
-  useEffect(() => {
-    const fetchEntreprise = async () => {
+useEffect(() => {
+  const fetchEntreprise = async () => {
+    setIsLoading(true); // ➤ démarre le chargement
+
+    try {
+      // 🔑 Récupère l'utilisateur connecté
+      const {
+        data: { user },
+        error: userErr
+      } = await supabase.auth.getUser();
+
+      if (userErr || !user) {
+        console.error("Utilisateur non authentifié");
+        return;
+      }
+
+      setUtilisateurId(user.id);
+
+      // 🔁 Charge les infos de l'entreprise
       const { data, error } = await supabase
         .from('entreprises_clients')
         .select('*')
@@ -70,6 +104,8 @@ export default function EntrepriseClientDetail() {
       }
 
       setEntreprise(data);
+
+      // 🔁 Stocke l'adresse pour modification éventuelle
       adresseRef.current = {
         adresse_entreprise_rue: data.adresse_entreprise_rue,
         adresse_entreprise_cp: data.adresse_entreprise_cp,
@@ -77,6 +113,7 @@ export default function EntrepriseClientDetail() {
         adresse_entreprise_pays: data.adresse_entreprise_pays
       };
 
+      // 🔎 Récupère entreprise_id du créateur pour champs visibles
       const { data: utilisateur, error: utilisateurErr } = await supabase
         .from('utilisateurs')
         .select('entreprise_id')
@@ -88,6 +125,7 @@ export default function EntrepriseClientDetail() {
         return;
       }
 
+      // ✅ Récupère les champs visibles pour les fiches entreprise
       const { data: visibles, error: visibleErr } = await supabase
         .from('champs_visibles')
         .select('nom_champ')
@@ -95,15 +133,19 @@ export default function EntrepriseClientDetail() {
         .eq('type_fiche', 'entreprise')
         .eq('visible', true);
 
-      if (!visibleErr) {
+      if (!visibleErr && visibles) {
         setVisibleFields(visibles.map(v => v.nom_champ));
       }
+    } catch (err) {
+      console.error("Erreur inattendue :", err);
+    } finally {
+      setLoading(false);   // ancienne version de "chargement principal"
+      setIsLoading(false); // ➤ désactive l’overlay
+    }
+  };
 
-      setLoading(false);
-    };
-
-    fetchEntreprise();
-  }, [id]);
+  fetchEntreprise();
+}, [id]);
 
   const handleChange = (e) => {
     setEntreprise((prev) => ({
@@ -151,12 +193,18 @@ export default function EntrepriseClientDetail() {
 
   if (loading || !entreprise) return <p style={{ padding: '2rem' }}>Chargement...</p>;
 
-  return (
+return (
+  <>
+    {(isLoading || isFetchingInsee) && (
+      <div className="overlay-loading">
+        <div className="spinner" />
+      </div>
+    )}
     <div className="lead-detail-page">
       <div className="lead-detail-header">
         <h1>Fiche Entreprise</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button onClick={() => navigate('/leads')}>← Retour</button>
+          <button onClick={() => navigate(`/leads?type=${clientType}`)}>← Retour</button>
           <button onClick={() => setFieldSettingsOpen(true)} className="settings-btn" title="Gérer les champs visibles">
             <FiSettings size={22} />
           </button>
@@ -176,12 +224,13 @@ export default function EntrepriseClientDetail() {
               style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
             >
               <label htmlFor={name}>{label}</label>
-              {type === "textarea" ? (
-                <textarea
+              {name === "statut_entreprise" ? (
+                <input
                   id={name}
+                  type="text"
                   name={name}
-                  value={entreprise[name] || ''}
-                  onChange={handleChange}
+                  value={statutEntrepriseLabels[entreprise[name]] || entreprise[name] || ''}
+                  disabled
                 />
               ) : (
                 <input
@@ -315,5 +364,6 @@ export default function EntrepriseClientDetail() {
         </div>
       )}
     </div>
+   </>
   );
 }
