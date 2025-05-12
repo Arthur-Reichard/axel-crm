@@ -22,6 +22,9 @@ export default function EntrepriseClientDetail() {
   const [utilisateurId, setUtilisateurId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingInsee, setIsFetchingInsee] = useState(false);
+  const [customFields, setCustomFields] = useState([]);
+  const [newField, setNewField] = useState({ nom_affichage: '', nom_champ: '', type: 'text' });
+
 
   const statutEntrepriseLabels = {
     A: "Active",
@@ -30,7 +33,7 @@ export default function EntrepriseClientDetail() {
   };
 
 
-  const entrepriseFields = [
+  const baseFields = [
     { label: "Nom de l'entreprise", name: "raison_sociale" },
     { label: "SIREN", name: "siren" },
     { label: "SIRET", name: "siret" },
@@ -46,6 +49,12 @@ export default function EntrepriseClientDetail() {
     { label: "N° RCS", name: "numero_rcs" },
     { label: "Notes", name: "notes", type: "textarea" }
   ];
+
+  const entrepriseFields = [...baseFields, ...customFields.map(f => ({
+    label: f.nom_affichage,
+    name: f.nom_champ,
+    type: f.type
+  }))];
 
   const fetchInseeData = async () => {
     if (!entreprise?.siren || entreprise.siren.length !== 9) {
@@ -311,7 +320,69 @@ return (
       {fieldSettingsOpen && (
         <div className="drawer-overlay" onClick={() => setFieldSettingsOpen(false)}>
           <div className="drawer" onClick={(e) => e.stopPropagation()}>
-            <h2>Champs visibles (entreprise)</h2>
+            <h2>Champs visibles</h2>            <h3>Ajouter un champ personnalisé</h3>
+            <input
+              type="text"
+              placeholder="Nom affiché"
+              value={newField.nom_affichage}
+              onChange={e => setNewField({ ...newField, nom_affichage: e.target.value, nom_champ: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+            />
+            <select
+              value={newField.type}
+              onChange={e => setNewField({ ...newField, type: e.target.value })}
+            >
+              <option value="text">Texte</option>
+              <option value="textarea">Zone de texte</option>
+              <option value="date">Date</option>
+            </select>
+            <button
+              onClick={async () => {
+                if (!newField.nom_affichage.trim()) return;
+                const { error } = await supabase.from('champs_personnalises').insert({
+                  entreprise_id: entreprise.entreprise_id,
+                  nom_affichage: newField.nom_affichage,
+                  nom_champ: newField.nom_champ,
+                  type: newField.type,
+                  type_fiche: 'entreprise'
+                });
+                if (!error) {
+                  setCustomFields(prev => [...prev, newField]);
+                  setNewField({ nom_affichage: '', nom_champ: '', type: 'text' });
+                }
+              }}
+            >
+              Ajouter le champ
+            </button>
+
+            {customFields.map(field => (
+              <li key={field.nom_champ} className="custom-field-item">
+                <span>{field.nom_affichage}</span>
+                <div>
+                  <button
+                    onClick={() => toggleFieldVisibility(field.nom_champ)}
+                  >
+                    {visibleFields.includes(field.nom_champ) ? <FiEye /> : <FiEyeOff />}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Supprimer ce champ ?')) return;
+                      const { error } = await supabase
+                        .from('champs_personnalises')
+                        .delete()
+                        .eq('nom_champ', field.nom_champ)
+                        .eq('entreprise_id', entreprise.entreprise_id);
+                      if (!error) {
+                        setCustomFields(prev => prev.filter(f => f.nom_champ !== field.nom_champ));
+                        setVisibleFields(prev => prev.filter(v => v !== field.nom_champ));
+                      }
+                    }}
+                    style={{ color: 'red', marginLeft: '0.5rem' }}
+                  >
+                    ❌
+                  </button>
+                </div>
+              </li>
+            ))}
             <ul className="custom-field-list">
               {entrepriseFields.map(field => (
                 <li key={field.name} className="custom-field-item">
@@ -333,6 +404,13 @@ return (
                       }
 
                       const entrepriseId = utilisateur.entreprise_id;
+
+                      const { data: custom, error: customErr } = await supabase
+                        .from('champs_personnalises')
+                        .select('*')
+                        .eq('entreprise_id', utilisateur.entreprise_id);
+
+                      if (!customErr) setCustomFields(custom);
 
                       const { error } = await supabase
                         .from('champs_visibles')
