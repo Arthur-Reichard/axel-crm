@@ -918,3 +918,16 @@ th.drop-target {
 .filter-btn {
   margin-left: 10px;
 }
+
+.skeleton-box {
+  height: 16px;
+  background: linear-gradient(90deg, #eee, #ddd, #eee);
+  animation: pulse 1.5s infinite;
+  border-radius: 4px;
+  width: 100%;
+}
+
+@keyframes pulse {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}

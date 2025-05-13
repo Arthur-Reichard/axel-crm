@@ -49,6 +49,7 @@ const columnFieldMap = {
 };
 
 export default function Leads() {
+  const [isLoading, setIsLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [utilisateursEntreprise, setUtilisateursEntreprise] = useState([]);
   const [availableFields, setAvailableFields] = useState([
@@ -297,6 +298,7 @@ export default function Leads() {
 
   useEffect(() => {
     const fetchLeads = async () => {
+      setIsLoading(true);
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) return;
       setUtilisateurId(user.id);
@@ -387,6 +389,7 @@ export default function Leads() {
         setAllLeads(data);
         setLeads(data);
       }
+    setIsLoading(false);
     };
   
     fetchLeads();
@@ -748,6 +751,17 @@ export default function Leads() {
     ? entrepriseFilterFields
     : allFields;
 
+  const renderSkeletonRows = (count = 10, colCount = 5) => {
+    return Array.from({ length: count }).map((_, rowIdx) => (
+      <tr key={`skeleton-${rowIdx}`}>
+        <td><div className="skeleton-box" style={{ width: '20px' }} /></td>
+        {Array.from({ length: colCount }).map((_, colIdx) => (
+          <td key={colIdx}><div className="skeleton-box" /></td>
+        ))}
+      </tr>
+    ));
+  };
+
   return (
     <>
   {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
@@ -868,9 +882,11 @@ export default function Leads() {
             </tr>
           )}
           </thead>
-            <tbody>
-            {selectedClientType === 'entreprise'
-              ? entreprisesOnly.slice(start, end).map(ent => (
+          <tbody>
+            {isLoading
+              ? renderSkeletonRows(10, columnPreferences.filter(c => c.visible).length)
+              : selectedClientType === 'entreprise'
+                ? entreprisesOnly.slice(start, end).map(ent => (
             <tr
               key={ent.id}
               onClick={() => navigate(`/entreprises-clients/${ent.id}?type=entreprise`)}
@@ -904,7 +920,6 @@ export default function Leads() {
                 </td>
             </tr>
             ))
-
             : paginatedLeads.map(lead => (
                 <tr key={lead.id}>
                   <td>
@@ -928,7 +943,7 @@ export default function Leads() {
                     })}
                 </tr>
               ))}
-            </tbody>
+          </tbody>
             <tfoot>
               <tr className="pagination-info-row">
                 <td colSpan={selectedColumns.length + 1}>
