@@ -331,3 +331,15 @@
   text-align: left;
   width: 100%;
 }
+
+.lead-field select,
+.lead-field option {
+  color: #111 !important;
+  background-color: white !important;
+}
+
+.dark .lead-field select,
+.dark .lead-field option {
+  color: #f2f2f2 !important;
+  background-color: #1e1e1e !important;
+}

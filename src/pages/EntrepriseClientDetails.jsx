@@ -159,7 +159,6 @@ useEffect(() => {
         return;
       }
 
-      // ✅ Récupère les champs visibles pour les fiches entreprise
       const { data: visibles, error: visibleErr } = await supabase
         .from('champs_visibles')
         .select('nom_champ')
@@ -167,9 +166,32 @@ useEffect(() => {
         .eq('type_fiche', 'entreprise')
         .eq('visible', true);
 
-      if (!visibleErr && visibles) {
+      if (!visibleErr && visibles && visibles.length > 0) {
         setVisibleFields(visibles.map(v => v.nom_champ));
+      } else {
+        // ⚙️ Champs à afficher la première fois
+        const champsParDefaut = [
+          'raison_sociale',
+          'siren',
+          'siret',
+          'telephone_professionnel',
+          'email_professionnel',
+          'site_web',
+          'notes'
+        ];
+
+        setVisibleFields(champsParDefaut);
+
+        const inserts = champsParDefaut.map(nom => ({
+          entreprise_id: utilisateur.entreprise_id,
+          nom_champ: nom,
+          visible: true,
+          type_fiche: 'entreprise'
+        }));
+
+        await supabase.from('champs_visibles').insert(inserts);
       }
+
     } catch (err) {
       console.error("Erreur inattendue :", err);
     } finally {

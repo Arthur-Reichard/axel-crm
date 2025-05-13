@@ -1,15 +1,18 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
 import { FiEye, FiEyeOff, FiSettings, FiSave, FiTrash2 } from 'react-icons/fi';
+import AdresseAutocomplete from '../components/AdresseAutocomplete';
 
 export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clientType = searchParams.get("type") || "individuel";
+  const adresseRef = useRef({});
+  const [membresEntreprise, setMembresEntreprise] = useState([]);
 
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,16 +22,32 @@ export default function LeadDetail() {
   const [newField, setNewField] = useState({ nom_affichage: '', nom_champ: '', type: 'text' });
   const [entrepriseId, setEntrepriseId] = useState(null);
   const [entreprisesClients, setEntreprisesClients] = useState([]);
-
   const availableFields = [
     { label: "Nom", name: "nom" },
     { label: "Prénom", name: "prenom" },
-    { label: "Email", name: "email_professionnel" },
-    { label: "Téléphone", name: "telephone_professionnel" },
-    { label: "Entreprise", name: "nom_entreprise" },
+    { label: "Email professionnel", name: "email_professionnel" },
+    { label: "Téléphone professionnel", name: "telephone_professionnel" },
+    { label: "Nom de l'entreprise", name: "nom_entreprise" },
+    { label: "Assigné à", name: "assigne_a" },
+    { label: "Statut", name: "status" },
+    { label: "Source", name: "source" },
+    { label: "Notes", name: "notes", type: "textarea" },
     { label: "Description", name: "description", type: "textarea" },
-    { label: "Notes", name: "notes", type: "textarea" }
+    { label: "Poste contact", name: "poste_contact" },
+    { label: "Site web", name: "site_web" },
+    { label: "Canal préféré", name: "canal_prefere" },
+    { label: "Langue", name: "langue" },
+    { label: "Origine contact", name: "origine_contact" },
+    { label: "Statut client", name: "statut_client" },
+    { label: "Date premier contact", name: "date_premier_contact", type: "date" },
+    { label: "Date dernier contact", name: "date_dernier_contact", type: "date" },
+    { label: "Historique commandes", name: "historique_commandes", type: "textarea" },
+    { label: "Devis envoyés", name: "devis_envoyes" },
+    { label: "Statut paiement", name: "statut_paiement" },
+    { label: "Niveau priorité", name: "niveau_priorite" },
+    { label: "Documents", name: "documents", type: "textarea" }
   ];
+
 
   const allFields = useMemo(() => {
     const customFieldNames = customFields.map(f => f.nom_champ);
@@ -42,7 +61,7 @@ export default function LeadDetail() {
         type: f.type
       }))
     ];
-  }, [customFields]);
+  }, [customFields, availableFields]);
 
   useEffect(() => {
     const fetchEntreprises = async () => {
@@ -60,54 +79,141 @@ export default function LeadDetail() {
   }, []);
 
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+useEffect(() => {
+  const fetchAll = async () => {
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !user) {
+      console.log("Erreur utilisateur :", userErr);
+      return;
+    }
 
-      const { data: utilisateur } = await supabase
+
+    const { data: utilisateur, error: utilisateurErr } = await supabase
+      .from('utilisateurs')
+      .select('entreprise_id')
+      .eq('id', user.id)
+      .single();
+
+    if (utilisateurErr || !utilisateur) {
+      console.log("Erreur récupération utilisateur/entreprise :", utilisateurErr);
+      return;
+    }
+
+    setEntrepriseId(utilisateur.entreprise_id);
+
+    // → On récupère le lead d'abord pour savoir s'il a un assigné
+    const { data: leadData, error: leadErr } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (leadErr || !leadData) {
+      console.log("Erreur récupération lead :", leadErr);
+      return;
+    }
+
+    setLead(leadData);
+
+    // → On récupère tous les membres de l'entreprise
+    const { data: membres, error: membresErr } = await supabase
+      .from('utilisateurs')
+      .select('id, email')
+      .eq('entreprise_id', utilisateur.entreprise_id);
+
+    let membresFinal = membres || [];
+
+    // → Si le lead a un assigne_a qui n'est pas dans les membres
+    if (
+      leadData.assigne_a &&
+      !membresFinal.find((m) => m.id === leadData.assigne_a)
+    ) {
+      console.log("Lead assigné à un membre manquant :", leadData.assigne_a);
+
+      const { data: membreManquant, error: membreErr } = await supabase
         .from('utilisateurs')
-        .select('entreprise_id')
-        .eq('id', user.id)
+        .select('id, email')
+        .eq('id', leadData.assigne_a)
         .single();
 
-      if (!utilisateur) return;
-      setEntrepriseId(utilisateur.entreprise_id);
+      if (!membreErr && membreManquant) {
+        console.log("Membre assigné récupéré :", membreManquant);
+        membresFinal = [...membresFinal, membreManquant];
+      } else {
+        console.log("Erreur récupération membre assigné :", membreErr);
+      }
+    }
 
-      const { data: leadData } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('id', id)
-        .single();
-      setLead(leadData);
+    setMembresEntreprise(membresFinal);
 
-      const { data: custom } = await supabase
-        .from('champs_personnalises')
-        .select('*')
-        .eq('entreprise_id', utilisateur.entreprise_id)
-        .eq('type_fiche', 'lead');
-      setCustomFields(custom);
+    // Champs personnalisés
+    const { data: custom, error: customErr } = await supabase
+      .from('champs_personnalises')
+      .select('*')
+      .eq('entreprise_id', utilisateur.entreprise_id)
+      .eq('type_fiche', 'lead');
+    setCustomFields(custom || []);
 
-      const { data: visibles } = await supabase
-        .from('champs_visibles')
-        .select('nom_champ')
-        .eq('entreprise_id', utilisateur.entreprise_id)
-        .eq('type_fiche', 'lead')
-        .eq('visible', true);
+    // Champs visibles
+    const { data: visibles, error: visiblesErr } = await supabase
+      .from('champs_visibles')
+      .select('nom_champ')
+      .eq('entreprise_id', utilisateur.entreprise_id)
+      .eq('type_fiche', 'lead')
+      .eq('visible', true);
+
+    if (visiblesErr) {
+      console.log("Erreur récupération champs visibles :", visiblesErr);
+    }
+
+    if (visibles?.length > 0) {
       setVisibleFields(visibles.map(v => v.nom_champ));
+    } else {
+      const defaultVisible = [
+        "nom",
+        "prenom",
+        "email_professionnel",
+        "telephone_professionnel",
+        "nom_entreprise",
+        "assigne_a",
+        "status",
+        "source",
+        "notes",
+        "description"
+      ];
 
-      setLoading(false);
-    };
+      setVisibleFields(defaultVisible);
 
-    fetchAll();
-  }, [id]);
+      const inserts = [
+        ...availableFields.map(f => f.name),
+        ...custom.map(f => f.nom_champ)
+      ].map(nom => ({
+        entreprise_id: utilisateur.entreprise_id,
+        nom_champ: nom,
+        visible: defaultVisible.includes(nom),
+        type_fiche: 'lead'
+      }));
+
+      await supabase.from('champs_visibles').insert(inserts);
+    }
+
+    setLoading(false);
+  };
+
+  fetchAll();
+}, [id]);
+
 
   const handleChange = (e) => {
     setLead(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSave = async () => {
-    const { error } = await supabase.from('leads').update(lead).eq('id', id);
+    const payload = {
+      ...lead,
+      ...adresseRef.current
+    };
+    const { error } = await supabase.from('leads').update(payload).eq('id', id);
     if (!error) {
       localStorage.setItem('leadUpdated', 'true');
       navigate('/leads');
@@ -210,11 +316,65 @@ export default function LeadDetail() {
                   ))}
                   <option value="__new">Ajouter une entreprise...</option>
                 </select>
-              ) : (
-                <input id={name} type={type} name={name} value={lead[name] || ''} onChange={handleChange} />
-              )}
+                ) : name === 'assigne_a' ? (
+                  <select
+                    name="assigne_a"
+                    value={lead.assigne_a || ''}
+                    onChange={handleChange}
+                    style={{ color: '#111' }} // au cas où
+                  >
+                    <option value="">-- Sélectionner un membre --</option>
+                    {membresEntreprise.map((membre) => (
+                      <option key={membre.id} value={membre.id}>
+                        {membre.email}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input id={name} type={type} name={name} value={lead[name] || ''} onChange={handleChange} />
+                )}
             </div>
         ))}
+      </div>
+
+            <div className="lead-field adresse-bloc">
+        <label>Adresse (auto-complétée)</label>
+        <AdresseAutocomplete
+          onPlaceSelected={(place) => {
+            const components = place.address_components || [];
+            const get = (type) =>
+              components.find((c) => c.types.includes(type))?.long_name || '';
+
+            const newAdresse = {
+              adresse_entreprise_rue: [get('street_number'), get('route')].filter(Boolean).join(' '),
+              adresse_entreprise_ville: get('locality') || get('postal_town'),
+              adresse_entreprise_cp: get('postal_code'),
+              adresse_entreprise_pays: get('country')
+            };
+
+            adresseRef.current = newAdresse;
+            setLead((prev) => ({ ...prev, ...newAdresse }));
+          }}
+        />
+      </div>
+
+      <div className="adresse-hidden-fields">
+        <div className="lead-field">
+          <label>Rue</label>
+          <input type="text" name="adresse_entreprise_rue" value={lead.adresse_entreprise_rue || ''} disabled />
+        </div>
+        <div className="lead-field">
+          <label>Ville</label>
+          <input type="text" name="adresse_entreprise_ville" value={lead.adresse_entreprise_ville || ''} disabled />
+        </div>
+        <div className="lead-field">
+          <label>Code Postal</label>
+          <input type="text" name="adresse_entreprise_cp" value={lead.adresse_entreprise_cp || ''} disabled />
+        </div>
+        <div className="lead-field">
+          <label>Pays</label>
+          <input type="text" name="adresse_entreprise_pays" value={lead.adresse_entreprise_pays || ''} disabled />
+        </div>
       </div>
 
       <div className="lead-detail-buttons">

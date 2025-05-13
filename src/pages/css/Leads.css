@@ -125,13 +125,14 @@ body {
 }
 
 .table-wrapper {
+  width: 85%;
+  max-width: 85%;
   overflow-x: auto;
   padding: 1rem;
-  display: flex;
-  justify-content: center; /* ⬅ centre le tableau */
-  border-radius: 12px; /* ⬅ bord arrondi visible */
-  
+  margin: 0 auto;
+  border-radius: 12px;
 }
+
 
 .table-wrapper::-webkit-scrollbar {
   width: 8px;
@@ -844,9 +845,8 @@ color: #007bff;
 }
 
 .lead-table {
-  min-width: calc(150px * var(--visible-cols));
-  width: auto;
-  max-width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   border-radius: 12px;
   overflow: hidden;
@@ -922,4 +922,11 @@ th.drop-target {
 
 .entreprise-statut.unknown {
   color: #999; /* gris */
+}
+
+.lead-table td.max-width {
+  max-width: 250px; /* largeur maximum par défaut */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -37,12 +37,20 @@ const columnFieldMap = {
     return lead.nom_entreprise;
   },
   'Statut': 'statut_client',
-  'Assigné à': 'assigne_a',
+  'Assigné à': (lead, utilisateurs = []) => {
+  const user = utilisateurs.find(u => u.id === lead.assigne_a);
+  if (!user) return '—';
+  if (user.prenom || user.nom) {
+    return `${user.prenom || ''} ${user.nom || ''}`.trim();
+  }
+  return user.email || '—';
+},
   'Notes': 'notes'
 };
 
 export default function Leads() {
   const [searchParams] = useSearchParams();
+  const [utilisateursEntreprise, setUtilisateursEntreprise] = useState([]);
   const [availableFields, setAvailableFields] = useState([
     { label: "Nom", name: "nom" },
     { label: "Prénom", name: "prenom" },
@@ -141,6 +149,7 @@ export default function Leads() {
       setVisibleFields(visibles.map(v => v.nom_champ));
     }
   };
+  
   
 
   const navigate = useNavigate();
@@ -272,33 +281,44 @@ export default function Leads() {
       if (userErr || !user) return;
       setUtilisateurId(user.id);
   
-      // 🔁 Récupération ou création des préférences de colonnes
-      const { data: colonnes, error: errColonnes } = await supabase
-        .from('colonnes_leads')
-        .select('*')
-        .eq('utilisateur_id', user.id)
-        .order('ordre', { ascending: true });  
+    const { data: colonnes, error: errColonnes } = await supabase
+      .from('colonnes_leads')
+      .select('*')
+      .eq('utilisateur_id', user.id)
+      .order('ordre', { ascending: true });
 
-      if (!errColonnes && colonnes.length > 0) {
-        setColumnPreferences(colonnes);
-        setSelectedColumns(colonnes.filter(c => c.visible).map(c => c.nom_champ));
-      } else {
-        const initial = fullFieldList.map((field, index) => ({
+    if (!errColonnes && colonnes && colonnes.length > 0) {
+      setColumnPreferences(colonnes);
+      setSelectedColumns(colonnes.filter(c => c.visible).map(c => c.nom_champ));
+    } else {
+      // 👇 Définir les colonnes visibles par défaut
+      const champsParDefaut = [
+        'prenom', 'nom', 'telephone_professionnel', 'description',
+        'nom_entreprise', 'poste_contact', 'email_professionnel', 'assigne_a'
+      ];
+
+      const initial = fullFieldList.map((field, index) => {
+        const indexDefaut = champsParDefaut.indexOf(field.nom_champ);
+        return {
           utilisateur_id: user.id,
           nom_champ: field.nom_champ,
-          ordre: index,
-          visible: true
-        }));
+          ordre: indexDefaut !== -1 ? indexDefaut : champsParDefaut.length + index,
+          visible: indexDefaut !== -1
+        };
+      });
 
-        const { error: insertErr } = await supabase
-          .from('colonnes_leads')
-          .insert(initial);
-  
-        if (!insertErr) {
-          setColumnPreferences(initial);
-          setSelectedColumns(initial.map(c => c.nom_champ));
-        }
+      const { error: insertErr } = await supabase
+        .from('colonnes_leads')
+        .insert(initial);
+
+      if (!insertErr) {
+        const visibles = initial.filter(c => c.visible);
+        setColumnPreferences(initial);
+        setSelectedColumns(visibles.map(c => c.nom_champ));
+      } else {
+        console.error("Erreur insertion colonnes_leads :", insertErr.message);
       }
+    }
 
       // 👤 Récupération entreprise utilisateur
       const { data: utilisateurs, error: userInfoError } = await supabase
@@ -314,8 +334,17 @@ export default function Leads() {
       const entreprise_id = utilisateurs[0].entreprise_id;
       setEntrepriseId(entreprise_id);
       await fetchEntreprisesClients(entreprise_id);
+
+      const { data: users, error: usersErr } = await supabase
+        .from('utilisateurs')
+        .select('id, prenom, nom, email')
+        .eq('entreprise_id', entreprise_id);
+
+      if (!usersErr && users) {
+        setUtilisateursEntreprise(users);
+      }
   
-      // 🧩 Champs personnalisés
+      //  Champs personnalisés
       const { data: custom, error: customErr } = await supabase
         .from('champs_personnalises')
         .select('*')
@@ -776,6 +805,7 @@ export default function Leads() {
         <div className="table-wrapper">
           <table className="lead-table">
           <thead>
+          {selectedClientType === 'individuel' ? (
             <SortableContext
               items={columnPreferences.filter(c => c.visible).map(c => c.nom_champ)}
               strategy={verticalListSortingStrategy}
@@ -788,13 +818,26 @@ export default function Leads() {
                   .filter(col => col.visible)
                   .map(col => (
                     <DraggableHeader key={col.nom_champ} id={col.nom_champ}>
-                      {selectedClientType === 'entreprise' ? '\u00A0' : (
-                        fullFieldList.find(f => f.nom_champ === col.nom_champ)?.nom_affichage || col.nom_champ
-                      )}
+                      {fullFieldList.find(f => f.nom_champ === col.nom_champ)?.nom_affichage || col.nom_champ}
                     </DraggableHeader>
                   ))}
               </tr>
             </SortableContext>
+          ) : (
+            <tr>
+              <th>
+                <input type="checkbox" checked={selectAll} onChange={toggleSelectAll} />
+              </th>
+              {columnPreferences
+                .filter(col => col.visible)
+                .map(col => (
+                  <th key={col.nom_champ}>
+                    {/* Affiche un nom vide ou un titre simple */}
+                    &nbsp;
+                  </th>
+                ))}
+            </tr>
+          )}
           </thead>
             <tbody>
             {selectedClientType === 'entreprise'
@@ -847,9 +890,9 @@ export default function Leads() {
                     .map(col => {
                       const field = fullFieldList.find(f => f.nom_champ === col.nom_champ);
                       return (
-                        <td key={col.nom_champ} className={activeDragId === col.nom_champ ? 'drop-target' : ''} onClick={() => navigate(`/leads/${lead.id}?type=${selectedClientType}`)} style={{ cursor: 'pointer' }}>
+                        <td key={col.nom_champ} className={`${activeDragId === col.nom_champ ? 'drop-target' : ''} ${col.nom_champ === 'description' ? 'max-width' : ''}`} onClick={() => navigate(`/leads/${lead.id}?type=${selectedClientType}`)} style={{ cursor: 'pointer' }}>
                           {typeof columnFieldMap[field?.nom_affichage] === 'function'
-                            ? columnFieldMap[field.nom_affichage](lead)
+                            ? columnFieldMap[field.nom_affichage](lead, utilisateursEntreprise)
                             : lead[field?.nom_champ || col.nom_champ]}
                         </td>
                       );
