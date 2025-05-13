@@ -185,6 +185,26 @@ export default function Leads() {
   }, []);
 
   useEffect(() => {
+    setFilterList((prev) =>
+      prev.map(f => {
+        if (!f.confirmed) {
+          return {
+            ...f,
+            availableFields: selectedClientType === 'entreprise'
+              ? [
+                  { label: "Nom de l'entreprise", name: "raison_sociale" },
+                  { label: "SIREN", name: "siren" },
+                  { label: "Statut entreprise", name: "statut_entreprise" }
+                ]
+              : allFieldsRef.current
+          };
+        }
+        return f;
+      })
+    );
+  }, [selectedClientType]);
+
+  useEffect(() => {
     localStorage.setItem('lastClientType', selectedClientType);
   }, [selectedClientType]);
   
@@ -718,6 +738,16 @@ export default function Leads() {
   const end = start + itemsPerPage;
   const isReadyForDrawer = settingsOpen && columnPreferences.length > 0 && fullFieldList.length > 0 && utilisateurId;
 
+  const entrepriseFilterFields = [
+    { label: "Nom de l'entreprise", name: "raison_sociale" },
+    { label: "SIREN", name: "siren" },
+    { label: "Statut entreprise", name: "statut_entreprise" }
+  ];
+
+  const currentFilterFields = selectedClientType === 'entreprise'
+    ? entrepriseFilterFields
+    : allFields;
+
   return (
     <>
   {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
@@ -730,7 +760,7 @@ export default function Leads() {
           onClose={() => setFilterDrawerOpen(false)}
           filters={filterList}
           setFilters={setFilterList}
-          availableFields={allFields} // ou autre source
+          availableFields={currentFilterFields}
           filteredCount={leads.length}
         />
       </div>
@@ -756,8 +786,8 @@ export default function Leads() {
             >
               Entreprises
             </button>
+            <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
           </div>
-          <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
 
           {selectedLeads.length > 0 && (
             <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>

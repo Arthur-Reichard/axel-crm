@@ -25,7 +25,6 @@ export default function EntrepriseClientDetail() {
   const [customFields, setCustomFields] = useState([]);
   const [newField, setNewField] = useState({ nom_affichage: '', nom_champ: '', type: 'text' });
 
-
   const statutEntrepriseLabels = {
     A: "Active",
     C: "Cessée",
@@ -117,6 +116,20 @@ useEffect(() => {
 
       setEntreprise(data);
 
+      // ➕ Récupère les valeurs des champs personnalisés
+      const { data: valeurs, error: valeursErr } = await supabase
+        .from('valeurs_champs_personnalises')
+        .select('nom_champ, valeur')
+        .eq('entreprise_client_id', id);
+
+      if (!valeursErr && valeurs) {
+        const valeursMap = Object.fromEntries(valeurs.map(v => [v.nom_champ, v.valeur]));
+        console.log("📥 Champs personnalisés récupérés :", valeursMap);
+        setEntreprise(prev => ({ ...prev, ...valeursMap }));
+      } else if (valeursErr) {
+        console.error("❌ Erreur récupération champs personnalisés :", valeursErr.message);
+      }
+
       // ➕ Charge les champs personnalisés (structure)
       const { data: custom, error: customErr } = await supabase
         .from('champs_personnalises')
@@ -126,17 +139,6 @@ useEffect(() => {
 
       if (!customErr && custom) {
         setCustomFields(custom);
-      }
-
-      // Récupère les valeurs des champs personnalisés
-      const { data: valeurs, error: valeursErr } = await supabase
-        .from('valeurs_champs_personnalises')
-        .select('nom_champ, valeur')
-        .eq('entreprise_client_id', id);
-
-      if (!valeursErr && valeurs) {
-        const valeursMap = Object.fromEntries(valeurs.map(v => [v.nom_champ, v.valeur]));
-        setEntreprise(prev => ({ ...prev, ...valeursMap }));
       }
 
       // 🔁 Stocke l'adresse pour modification éventuelle
@@ -282,6 +284,12 @@ useEffect(() => {
 
     // ✅ Enregistre ou met à jour les valeurs des champs personnalisés
     for (const champ of champsPerso) {
+      console.log("📤 Sauvegarde champ personnalisé :", {
+        entreprise_client_id: id,
+        nom_champ: champ.nom_champ,
+        valeur: champ.valeur
+      });
+
       const { error: valeurErr } = await supabase
         .from('valeurs_champs_personnalises')
         .upsert({
@@ -293,7 +301,9 @@ useEffect(() => {
         });
 
       if (valeurErr) {
-        console.error("Erreur champ personnalisé :", champ.nom_champ, valeurErr.message);
+        console.error("❌ Erreur champ personnalisé :", champ.nom_champ, valeurErr.message);
+      } else {
+        console.log("✅ Champ enregistré ou mis à jour :", champ.nom_champ);
       }
     }
 

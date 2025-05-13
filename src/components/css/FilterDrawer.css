@@ -1,99 +1,186 @@
+/* Overlay général */
 .drawer-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    backdrop-filter: blur(2px);
-  }
-  
-  .drawer.left {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 360px;
-    background-color: #fff;
-    padding: 2rem 1.5rem;
-    z-index: 1001;
-    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
-    overflow-y: auto;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+/* Drawer à gauche */
+.drawer.left {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 360px;
+  background-color: #fff;
+  padding: 2rem 1.5rem;
+  z-index: 1001;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  animation: slideInLeft 0.3s ease-out forwards;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Animation d’entrée */
+@keyframes slideInLeft {
+  from {
     transform: translateX(-100%);
-    animation: slideInLeft 0.3s ease-out forwards;
-    display: flex;
-    flex-direction: column;
   }
-  
-  @keyframes slideInLeft {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(0);
-    }
+  to {
+    transform: translateX(0);
   }
-  
-  h2 {
-    font-size: 1.8rem;
-    font-weight: bold;
-    margin-bottom: 2rem;
-  }
-  
-  .filter-block {
-    margin-bottom: 2rem;
-  }
-  
-  .filter-block label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #111;
-  }
-  
-  .filter-block select,
-  .filter-block input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-  }
-  
-  .filter-block select:focus,
-  .filter-block input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
-  }
-  
-  .drawer-buttons {
-    margin-top: auto;
-    display: flex;
-    gap: 1rem;
-  }
-  
-  .drawer-buttons button {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  
-  .drawer-buttons button:first-child {
-    background-color: #111e23;
-    color: white;
-  }
-  
-  .drawer-buttons .cancel-btn {
-    background-color: #f1f1f1;
-    color: #111;
-  }
-  
-  .drawer-buttons .cancel-btn:hover {
-    background-color: #ddd;
-  }
-  
+}
+
+/* Titre */
+.drawer.left h2 {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* Bouton Ajouter un filtre */
+.add-filter-btn {
+  width: 100%;
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.add-filter-btn:hover {
+  background-color: #1d4ed8;
+}
+
+/* Ligne de filtre en cours */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+  flex-direction: column;
+}
+
+.filter-row select,
+.filter-row input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  min-width: 100px;
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Bouton Appliquer */
+.apply-filter-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.apply-filter-btn:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Bouton croix (supprimer ligne) */
+.remove-filter-btn {
+  background-color: #e11d48;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Zone des filtres actifs */
+.confirmed-filters-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+/* Badge de filtre appliqué */
+.filter-badge {
+  background-color: #eef2ff;
+  color: #1e3a8a;
+  border: 1px solid #c7d2fe;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-badge button {
+  background: transparent;
+  border: none;
+  color: #1e3a8a;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.filter-badge button:hover {
+  color: #dc2626;
+}
+
+/* Compteur de prospects */
+.filtered-count {
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+/* Bas du drawer */
+.drawer-buttons {
+  margin-top: auto;
+  display: flex;
+  gap: 1rem;
+}
+
+.drawer-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.drawer-buttons button:first-child {
+  background-color: #111e23;
+  color: white;
+}
+
+.drawer-buttons .cancel-btn {
+  background-color: #f1f1f1;
+  color: #111;
+}
+
+.drawer-buttons .cancel-btn:hover {
+  background-color: #ddd;
+}
