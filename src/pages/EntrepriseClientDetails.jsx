@@ -4,7 +4,7 @@ import { supabase } from '../helper/supabaseClient';
 import '../pages/css/Leads.css';
 import '../pages/css/LeadDetail.css';
 import AdresseAutocomplete from '../components/AdresseAutocomplete';
-import { FiSettings, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiSettings, FiEye, FiEyeOff, FiSave, FiTrash2 } from 'react-icons/fi';
 import { createClient } from '@supabase/supabase-js';
 import { useSearchParams } from 'react-router-dom';
 
@@ -53,8 +53,10 @@ export default function EntrepriseClientDetail() {
   const entrepriseFields = [...baseFields, ...customFields.map(f => ({
     label: f.nom_affichage,
     name: f.nom_champ,
-    type: f.type
+    type: f.type,
+    options: f.options || []
   }))];
+
 
   const fetchInseeData = async () => {
     if (!entreprise?.siren || entreprise.siren.length !== 9) {
@@ -115,6 +117,28 @@ useEffect(() => {
 
       setEntreprise(data);
 
+      // ➕ Charge les champs personnalisés (structure)
+      const { data: custom, error: customErr } = await supabase
+        .from('champs_personnalises')
+        .select('*')
+        .eq('entreprise_id', data.entreprise_id)
+        .eq('type_fiche', 'entreprise');
+
+      if (!customErr && custom) {
+        setCustomFields(custom);
+      }
+
+      // Récupère les valeurs des champs personnalisés
+      const { data: valeurs, error: valeursErr } = await supabase
+        .from('valeurs_champs_personnalises')
+        .select('nom_champ, valeur')
+        .eq('entreprise_client_id', id);
+
+      if (!valeursErr && valeurs) {
+        const valeursMap = Object.fromEntries(valeurs.map(v => [v.nom_champ, v.valeur]));
+        setEntreprise(prev => ({ ...prev, ...valeursMap }));
+      }
+
       // 🔁 Stocke l'adresse pour modification éventuelle
       adresseRef.current = {
         adresse_entreprise_rue: data.adresse_entreprise_rue,
@@ -157,33 +181,102 @@ useEffect(() => {
   fetchEntreprise();
 }, [id]);
 
+  const toggleFieldVisibility = async (champ) => {
+    const isVisible = visibleFields.includes(champ);
+    const entrepriseId = entreprise.entreprise_id;
+
+    const { error } = await supabase
+      .from('champs_visibles')
+      .upsert({
+        entreprise_id: entrepriseId,
+        nom_champ: champ,
+        visible: !isVisible,
+        type_fiche: 'entreprise'
+      }, { onConflict: ['entreprise_id', 'nom_champ', 'type_fiche'] });
+
+    if (error) {
+      console.error("Erreur modification visibilité :", error.message);
+      return;
+    }
+
+    const { data: visibles, error: fetchErr } = await supabase
+      .from('champs_visibles')
+      .select('nom_champ')
+      .eq('entreprise_id', entrepriseId)
+      .eq('type_fiche', 'entreprise')
+      .eq('visible', true);
+
+    if (!fetchErr) {
+      setVisibleFields(visibles.map(v => v.nom_champ));
+    }
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setEntreprise((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: typeof value === 'string' ? value : value.toString(),
     }));
   };
 
   const handleSave = async () => {
     if (!entreprise) return;
 
-    const payload = {
-      ...entreprise,
-      ...adresseRef.current
-    };
+    // 🟢 Champs standards uniquement (d'après ta table entreprises_clients)
+    const champsStandards = [
+      "id", "siren", "site_web", "notes", "entreprise_id", "created_by", "created_at",
+      "adresse_entreprise_rue", "adresse_entreprise_cp", "adresse_entreprise_ville", "adresse_entreprise_pays",
+      "email_professionnel", "telephone_professionnel", "siret", "raison_sociale", "forme_juridique",
+      "capital_social", "date_immatriculation", "siege_social_rue", "siege_social_cp",
+      "siege_social_ville", "siege_social_pays", "naf_code", "naf_label",
+      "statut_entreprise", "numero_rcs", "dernier_traitement", "categorie_juridique_code",
+      "categorie_entreprise", "annee_categorie_entreprise", "date_derniere_mise_a_jour", "updated_at"
+    ];
 
-    const { error } = await supabase
+    // 🟡 Séparer les champs
+    const payload = {};
+    const champsPerso = [];
+
+    for (const key in entreprise) {
+      const value = entreprise[key];
+      if (champsStandards.includes(key)) {
+        payload[key] = value;
+      } else {
+        champsPerso.push({ nom_champ: key, valeur: value });
+      }
+    }
+
+    // ✅ Met à jour les champs standards dans entreprises_clients
+    const { error: updateError } = await supabase
       .from('entreprises_clients')
-      .update(payload)
+      .update({ ...payload, ...adresseRef.current })
       .eq('id', id)
       .select();
 
-    if (error) {
-      alert("Erreur lors de la mise à jour : " + error.message);
-    } else {
-      localStorage.setItem('leadUpdated', 'true');
-      navigate('/leads');
+    if (updateError) {
+      alert("Erreur lors de la mise à jour : " + updateError.message);
+      return;
     }
+
+    // ✅ Enregistre ou met à jour les valeurs des champs personnalisés
+    for (const champ of champsPerso) {
+      const { error: valeurErr } = await supabase
+        .from('valeurs_champs_personnalises')
+        .upsert({
+          entreprise_client_id: id,
+          nom_champ: champ.nom_champ,
+          valeur: champ.valeur
+        }, {
+          onConflict: ['entreprise_client_id', 'nom_champ']
+        });
+
+      if (valeurErr) {
+        console.error("Erreur champ personnalisé :", champ.nom_champ, valeurErr.message);
+      }
+    }
+
+    localStorage.setItem('leadUpdated', 'true');
+    navigate('/leads');
   };
 
   const handleDelete = async () => {
@@ -227,20 +320,36 @@ return (
         </button>
         {entrepriseFields
           .filter(f => visibleFields.includes(f.name))
-          .map(({ label, name, type = "text" }) => (
+          .map(({ label, name, type = "text", options = [] }) => (
             <div
               className="lead-field"
               key={name}
               style={{ gridColumn: type === "textarea" ? '1 / -1' : undefined }}
             >
               <label htmlFor={name}>{label}</label>
-              {name === "statut_entreprise" ? (
-                <input
+              {type === 'select' ? (
+                <select
                   id={name}
-                  type="text"
                   name={name}
-                  value={statutEntrepriseLabels[entreprise[name]] || entreprise[name] || ''}
-                  disabled
+                  value={entreprise[name] || ''}
+                  onChange={handleChange}
+                >
+                  <option value="">-- Sélectionner --</option>
+                  {options.map(opt => {
+                    const [label, color] = opt.split('|');
+                    return (
+                      <option key={label} value={label} style={{ color: color || 'black' }}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : type === 'textarea' ? (
+                <textarea
+                  id={name}
+                  name={name}
+                  value={entreprise[name] || ''}
+                  onChange={handleChange}
                 />
               ) : (
                 <input
@@ -320,129 +429,234 @@ return (
       {fieldSettingsOpen && (
         <div className="drawer-overlay" onClick={() => setFieldSettingsOpen(false)}>
           <div className="drawer" onClick={(e) => e.stopPropagation()}>
-            <h2>Champs visibles</h2>            <h3>Ajouter un champ personnalisé</h3>
-            <input
-              type="text"
-              placeholder="Nom affiché"
-              value={newField.nom_affichage}
-              onChange={e => setNewField({ ...newField, nom_affichage: e.target.value, nom_champ: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
-            />
-            <select
-              value={newField.type}
-              onChange={e => setNewField({ ...newField, type: e.target.value })}
-            >
-              <option value="text">Texte</option>
-              <option value="textarea">Zone de texte</option>
-              <option value="date">Date</option>
-            </select>
-            <button
-              onClick={async () => {
-                if (!newField.nom_affichage.trim()) return;
-                const { error } = await supabase.from('champs_personnalises').insert({
-                  entreprise_id: entreprise.entreprise_id,
-                  nom_affichage: newField.nom_affichage,
-                  nom_champ: newField.nom_champ,
-                  type: newField.type,
-                  type_fiche: 'entreprise'
-                });
-                if (!error) {
-                  setCustomFields(prev => [...prev, newField]);
-                  setNewField({ nom_affichage: '', nom_champ: '', type: 'text' });
+            <h2>Champs visibles</h2>
+            <div className="custom-field-creator">
+              <input
+                type="text"
+                placeholder="Ajouter un champ"
+                value={newField.nom_affichage}
+                onChange={e =>
+                  setNewField({
+                    ...newField,
+                    nom_affichage: e.target.value,
+                    nom_champ: e.target.value.toLowerCase().replace(/\s+/g, '_'),
+                  })
                 }
-              }}
-            >
-              Ajouter le champ
-            </button>
+              />
 
-            {customFields.map(field => (
-              <li key={field.nom_champ} className="custom-field-item">
-                <span>{field.nom_affichage}</span>
-                <div>
-                  <button
-                    onClick={() => toggleFieldVisibility(field.nom_champ)}
-                  >
-                    {visibleFields.includes(field.nom_champ) ? <FiEye /> : <FiEyeOff />}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!window.confirm('Supprimer ce champ ?')) return;
-                      const { error } = await supabase
-                        .from('champs_personnalises')
-                        .delete()
-                        .eq('nom_champ', field.nom_champ)
-                        .eq('entreprise_id', entreprise.entreprise_id);
-                      if (!error) {
-                        setCustomFields(prev => prev.filter(f => f.nom_champ !== field.nom_champ));
-                        setVisibleFields(prev => prev.filter(v => v !== field.nom_champ));
-                      }
-                    }}
-                    style={{ color: 'red', marginLeft: '0.5rem' }}
-                  >
-                    ❌
-                  </button>
-                </div>
-              </li>
-            ))}
-            <ul className="custom-field-list">
-              {entrepriseFields.map(field => (
+              <select
+                value={newField.type}
+                onChange={(e) => setNewField({ ...newField, type: e.target.value })}
+              >
+                <option value="text">Texte</option>
+                <option value="date">Date</option>
+                <option value="select">Menu déroulant</option>
+              </select>
+
+              {newField.type === 'select' && (
+                <input
+                  type="text"
+                  placeholder="Options séparées par des virgules (ex: Option 1, Option 2)"
+                  value={newField.options || ''}
+                  onChange={(e) =>
+                    setNewField({ ...newField, options: e.target.value })
+                  }
+                />
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!newField.nom_affichage.trim()) return;
+                  if (!entreprise?.entreprise_id) {
+                    alert("Impossible d'ajouter un champ sans entreprise_id.");
+                    return;
+                  }
+
+                  const { error } = await supabase.from('champs_personnalises').insert({
+                    entreprise_id: entreprise.entreprise_id,
+                    nom_affichage: newField.nom_affichage,
+                    nom_champ: newField.nom_champ,
+                    type: newField.type,
+                    type_fiche: 'entreprise',
+                    options:
+                      newField.type === 'select'
+                        ? newField.options.split(',').map((opt) => opt.trim())
+                        : null,
+                  });
+
+                  if (!error) {
+                    const { data: updatedFields } = await supabase
+                      .from('champs_personnalises')
+                      .select('*')
+                      .eq('entreprise_id', entreprise.entreprise_id)
+                      .eq('type_fiche', 'entreprise');
+                    setCustomFields(updatedFields || []);
+                    setNewField({ nom_affichage: '', nom_champ: '', type: 'text', options: '' });
+                  }
+                }}
+              >
+                Ajouter le champ
+              </button>
+            </div>
+
+              <ul className="custom-field-list">
+              {baseFields.map((field) => (
                 <li key={field.name} className="custom-field-item">
                   <span>{field.label}</span>
                   <button
-                    onClick={async () => {
-                      const isVisible = visibleFields.includes(field.name);
-                      const utilisateurId = entreprise.created_by;
-
-                      const { data: utilisateur, error: utilisateurErr } = await supabase
-                        .from('utilisateurs')
-                        .select('entreprise_id')
-                        .eq('id', utilisateurId)
-                        .single();
-
-                      if (!utilisateur || utilisateurErr) {
-                        console.warn("Impossible de récupérer entreprise_id");
-                        return;
-                      }
-
-                      const entrepriseId = utilisateur.entreprise_id;
-
-                      const { data: custom, error: customErr } = await supabase
-                        .from('champs_personnalises')
-                        .select('*')
-                        .eq('entreprise_id', utilisateur.entreprise_id);
-
-                      if (!customErr) setCustomFields(custom);
-
-                      const { error } = await supabase
-                        .from('champs_visibles')
-                        .upsert({
-                          entreprise_id: entrepriseId,
-                          nom_champ: field.name,
-                          visible: !isVisible,
-                          type_fiche: 'entreprise'
-                        }, { onConflict: ['entreprise_id', 'nom_champ', 'type_fiche'] });
-
-                      if (error) {
-                        console.error("Erreur modification visibilité :", error.message);
-                        return;
-                      }
-
-                      const { data: visibles, error: fetchErr } = await supabase
-                        .from('champs_visibles')
-                        .select('nom_champ')
-                        .eq('entreprise_id', entrepriseId)
-                        .eq('type_fiche', 'entreprise')
-                        .eq('visible', true);
-
-                      if (!fetchErr) {
-                        setVisibleFields(visibles.map(v => v.nom_champ));
-                      }
-                    }}
+                    onClick={() => toggleFieldVisibility(field.name)}
+                    title="Afficher / Masquer"
                   >
                     {visibleFields.includes(field.name) ? <FiEye /> : <FiEyeOff />}
                   </button>
                 </li>
               ))}
             </ul>
+
+
+            {customFields.map((field, index) => (
+              <li key={field.nom_champ} className="custom-field-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <label style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>Nom affiché :</label>
+                  <input
+                    className="custom-field-input"
+                    type="text"
+                    value={field.nom_affichage}
+                    onChange={async (e) => {
+                      const newValue = e.target.value;
+                      const updated = [...customFields];
+                      updated[index].nom_affichage = newValue;
+                      setCustomFields(updated);
+
+                      const { error } = await supabase
+                        .from('champs_personnalises')
+                        .update({ nom_affichage: newValue })
+                        .eq('id', field.id);
+
+                      if (error) {
+                        alert("Erreur lors de la mise à jour du nom affiché : " + error.message);
+                      }
+                    }}
+                  />
+
+                {field.type === 'select' && (
+                  <>
+                    <div className="custom-field-options-wrapper">
+                      <label style={{ marginBottom: '0.25rem' }}>Options :</label>
+                      <div className="tag-container">
+                        {field.options?.map((opt, i) => (
+                          <span key={i} className="tag">
+                            {opt}
+                          <button
+                            className="remove-tag"
+                            onClick={async () => {
+                              const updated = [...customFields];
+                              updated[index].options = updated[index].options.filter((_, j) => j !== i);
+                              setCustomFields(updated);
+
+                              // ➤ Sauvegarde dans Supabase
+                              const { error } = await supabase
+                                .from('champs_personnalises')
+                                .update({
+                                  options: updated[index].options
+                                })
+                                .eq('id', field.id);
+
+                              if (error) {
+                                alert("Erreur lors de la suppression : " + error.message);
+                              }
+                            }}
+                          >
+                            &times;
+                          </button>
+                          </span>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Ajouter une option"
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && e.target.value.trim()) {
+                            const newOption = e.target.value.trim();
+                            const updated = [...customFields];
+
+                            // évite les doublons
+                            if (!updated[index].options.includes(newOption)) {
+                              updated[index].options = [...updated[index].options, newOption];
+                              setCustomFields(updated);
+
+                              // ➤ Envoie dans Supabase
+                              const { error } = await supabase
+                                .from('champs_personnalises')
+                                .update({
+                                  options: updated[index].options
+                                })
+                                .eq('id', field.id);
+
+                              if (error) {
+                                alert("Erreur lors de l'ajout de l'option : " + error.message);
+                              }
+                            }
+
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <button
+                    title="Enregistrer"
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from('champs_personnalises')
+                        .update({
+                          nom_affichage: customFields[index].nom_affichage,
+                          options: customFields[index].options || null
+                        })
+                        .eq('id', field.id);
+
+                      if (error) {
+                        alert("Erreur lors de la sauvegarde : " + error.message);
+                      } else {
+                        alert("Champ mis à jour !");
+                      }
+                    }}
+                  >
+                    <FiSave />
+                  </button>
+                  <button
+                    onClick={() => toggleFieldVisibility(field.nom_champ)}
+                    title="Afficher / Masquer"
+                  >
+                    {visibleFields.includes(field.nom_champ) ? <FiEye /> : <FiEyeOff />}
+                  </button>
+                  <button
+                    title="Supprimer"
+                    style={{ color: 'red' }}
+                    onClick={async () => {
+                      if (!window.confirm('Supprimer ce champ ?')) return;
+
+                      const { error } = await supabase
+                        .from('champs_personnalises')
+                        .delete()
+                        .eq('id', field.id);
+
+                      if (error) {
+                        alert("Erreur lors de la suppression : " + error.message);
+                      } else {
+                        // Met à jour les champs côté frontend
+                        setCustomFields(prev => prev.filter(f => f.id !== field.id));
+                        setVisibleFields(prev => prev.filter(v => v !== field.nom_champ));
+                      }
+                    }}
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              </li>
+            ))}
 
             <div className="drawer-buttons">
               <button className="cancel-btn" onClick={() => setFieldSettingsOpen(false)}>Fermer</button>
