@@ -70,14 +70,15 @@ function DashboardNavbar({ darkMode, toggleMode }) {
   
         {/* Liens de navigation */}
         <ul className={`nav-links ${menuOpen ? "show" : ""}`}>
-          <li><NavLink to="/dashboard" className="nav-link" onClick={handleLinkClick}>Tableau de bord</NavLink></li>
-          <li><NavLink to="/leads" className="nav-link" onClick={handleLinkClick}>Clients</NavLink></li>
-          <li><NavLink to="/Campagne" className="nav-link" onClick={handleLinkClick}>Campagne</NavLink></li>
-          <li><NavLink to="/Equipe" className="nav-link" onClick={handleLinkClick}>Equipe</NavLink></li>
-          <li><NavLink to="/calendar" className="nav-link" onClick={handleLinkClick}>Calendrier</NavLink></li>
-          <li><NavLink to="/materiel" className="nav-link" onClick={handleLinkClick}>Parc Matériel</NavLink></li>
-          <li><NavLink to="/factures" className="nav-link" onClick={handleLinkClick}>Factures</NavLink></li>
-          <li><NavLink to="/MyUserProfil" className="nav-link" onClick={handleLinkClick}>Mon Profil</NavLink></li>
+          <li><NavLink to="/dashboard" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Tableau de bord</NavLink></li>
+          <li><NavLink to="/leads" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Clients</NavLink></li>
+          <li><NavLink to="/Campagne" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Campagne</NavLink></li>
+          <li><NavLink to="/Equipe" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Equipe</NavLink></li>
+          <li><NavLink to="/calendar" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Calendrier</NavLink></li>
+          <li><NavLink to="/materiel" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Parc Matériel</NavLink></li>
+          <li><NavLink to="/factures" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Factures</NavLink></li>
+          <li><NavLink to="/reunions" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Réunions</NavLink></li>
+          <li><NavLink to="/MyUserProfil" className="nav-link" onClick={handleLinkClick} style={{ color: navbarTextColor }}>Mon Profil</NavLink></li>
         </ul>
 
       </div>
