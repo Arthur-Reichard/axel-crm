@@ -3,17 +3,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background-color: #ED5F2D;
-  border-bottom: 1px solid #ddd;
+  padding: var(--space-xs) var(--space-md);
+  background-color: var(--color-navbar);
+  border-bottom: 1px solid var(--color-border);
   transition: background-color 0.3s, color 0.3s;
   flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.dark.top-navbar {
-  background-color: #EA4D2A;
-  color: #f0f0f0;
+  gap: var(--space-md);
 }
 
 /* === Structure === */
@@ -22,26 +17,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--space-xs) var(--space-md);
 }
 
+/* === Alignements === */
 .left-nav,
 .right-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-md);
   flex-wrap: nowrap;
+}
+
+.right-nav {
+  gap: var(--space-md);
 }
 
 /* === Logo === */
 .nav-logo {
-  height: 50px;
+  height: 40px;
+  object-fit: contain;
 }
 
 /* === Liens === */
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 1.5rem;
+  gap: var(--space-lg);
   padding: 0;
   margin: 0;
   flex-wrap: wrap;
@@ -50,27 +52,27 @@
 .nav-links li a,
 .nav-link {
   text-decoration: none;
-  color: white;
+  color: var(--color-white);
   font-weight: 500;
-  padding: 0.5rem;
+  padding: var(--space-xs);
   transition: border 0.3s ease;
 }
 
 .nav-link:hover,
 .nav-links li a:hover {
-  border-bottom: 2px solid white;
+  border-bottom: 2px solid var(--color-white);
 }
 
 .nav-link.active {
   font-weight: 600;
-  border-bottom: 2px solid white;
+  border-bottom: 2px solid var(--color-white);
 }
 
 /* === Boutons === */
 .btn {
-  padding: 0.5rem 1rem;
+  padding: var(--space-xs) var(--space-md);
   font-size: 0.95rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-decoration: none;
   font-weight: 600;
   transition: background 0.3s;
@@ -78,32 +80,32 @@
 }
 
 .btn.primary {
-  background-color: #0077ff;
-  color: white;
+  background-color: var(--primary);
+  color: var(--color-white);
   border: none;
 }
 
 .btn.primary:hover {
-  background-color: #005fd1;
+  background-color: var(--primary-hover);
 }
 
 .btn.outline {
   background: none;
-  color: #0077ff;
-  border: 2px solid #0077ff;
+  color: var(--primary);
+  border: 2px solid var(--primary);
 }
 
 .btn.outline:hover {
-  background-color: #e0eaff;
+  background-color: #e0eaff; /* à convertir si récurrente */
 }
 
 /* === Icônes / autres === */
 .mode-button {
-  margin-left: 1rem;
+  margin-left: var(--space-md);
   border: 2px solid currentColor;
   background: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
@@ -118,7 +120,7 @@
   font-size: 2rem;
   background: none;
   border: none;
-  color: white;
+  color: var(--color-white);
   cursor: pointer;
   padding: 0;
   margin: 0;
@@ -127,7 +129,7 @@
 /* === Responsive === */
 @media (max-width: 768px) {
   .top-navbar {
-    padding: 0.5rem 1rem;
+    padding: var(--space-xs) var(--space-md);
   }
 
   .nav-logo {
@@ -147,10 +149,8 @@
   }
 
   .right-nav {
-    display: flex;
-    align-items: center;
     justify-content: flex-end;
-    gap: 0.3rem;
+    gap: var(--space-xs);
     width: auto;
   }
 
@@ -162,7 +162,7 @@
     overflow: hidden;
     transition: all 0.3s ease;
     pointer-events: none;
-    gap: 0.75rem;
+    gap: var(--space-sm);
   }
 
   .nav-links.show {
@@ -174,7 +174,7 @@
   .nav-link {
     display: block;
     width: 100%;
-    padding: 1rem 0;
+    padding: var(--space-md) 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     text-align: left;
   }
@@ -183,7 +183,7 @@
   .btn {
     width: 100%;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-xs);
   }
 
   .right-nav .btn,
@@ -191,28 +191,6 @@
   .right-nav .mode-button {
     width: 100%;
     text-align: left;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-xs);
   }
-}
-.nav-wrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* ✅ Centre verticalement */
-  padding: 0.5rem 1rem;
-}
-
-.left-nav {
-  display: flex;
-  align-items: center;
-}
-
-.right-nav {
-  display: flex;
-  align-items: center; /* ✅ Très important pour aligner avatar + burger */
-  gap: 1rem;
-}
-
-.nav-logo {
-  height: 40px;
-  object-fit: contain;
 }

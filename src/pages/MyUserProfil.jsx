@@ -5,6 +5,7 @@ import "../pages/css/MyUserProfil.css";
 import DashboardNavbar from "./DashboardNavbar";
 
 function MonProfil({ darkMode, toggleMode }) {
+  const [navbarTextColor, setNavbarTextColor] = useState("#FFFFFF");
   const navigate = useNavigate();
   const [userId, setUserId] = useState(null);
   const [entrepriseId, setEntrepriseId] = useState(null);
@@ -22,9 +23,9 @@ function MonProfil({ darkMode, toggleMode }) {
   const [editMode, setEditMode] = useState({ prenom: false, nom: false, birthdate: false, phone: false });
   const [newCode, setNewCode] = useState(null);
 
-  useEffect(() => {
-    console.log("Utilisateurs dans la même entreprise :", users);
-  }, [users]);
+  // === Nouveau ===
+  const [navbarColor, setNavbarColor] = useState("#ED5F2D");
+  const [logoUrl, setLogoUrl] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -51,6 +52,7 @@ function MonProfil({ darkMode, toggleMode }) {
         setIsAdmin(userData.role === "admin");
         setEntreprise(userData.entreprises);
         if (userData.entreprise_id) fetchUsers(userData.entreprise_id);
+        fetchParametres(user.id);
       }
     };
     fetchUserData();
@@ -64,46 +66,85 @@ function MonProfil({ darkMode, toggleMode }) {
     setUsers(data);
   };
 
+const fetchParametres = async (id) => {
+  const { data, error } = await supabase
+    .from("parametres_interface")
+    .select("*")
+    .eq("utilisateur_id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erreur récupération paramètres :", error.message);
+    return;
+  }
+
+  if (data) {
+    setNavbarColor(data.couleur_navbar || "#ED5F2D");
+    setLogoUrl(data.logo_url || null);
+    setNavbarTextColor(data.couleur_texte_navbar || "#FFFFFF");
+  }
+  else {
+    // Aucune ligne trouvée : on en crée une par défaut
+    const { error: insertError } = await supabase
+      .from("parametres_interface")
+      .upsert(
+        {
+          utilisateur_id: id,
+          couleur_navbar: "#ED5F2D",
+          logo_url: null,
+        },
+        { onConflict: ["utilisateur_id"] }
+      );
+
+    if (insertError) {
+      console.error("Erreur création paramètres par défaut :", insertError.message);
+    }
+  }
+};
+
+
   const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const toggleEdit = (field) => setEditMode((prev) => ({ ...prev, [field]: !prev[field] }));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.from("utilisateurs").upsert({ id: userId, ...formData });
-    if (error) alert("Erreur : " + error.message);
-    else alert("Profil mis à jour");
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-  const handleRoleChange = async (id, role) => {
-    await supabase.from("utilisateurs").update({ role }).eq("id", id);
-    fetchUsers(entrepriseId);
-  };
+  const { error } = await supabase
+    .from("utilisateurs")
+    .upsert({ id: userId, ...formData });
 
-  const handleDelete = async (id) => {
-    if (id === userId) return alert("Tu ne peux pas te supprimer toi-même !");
-    await supabase
-      .from("utilisateurs")
-      .update({
-        entreprise_id: null,
-        code_utilise: null
-      })
-      .eq("id", id);
-    fetchUsers(entrepriseId);
-  };
-  
+  if (error) alert("Erreur : " + error.message);
+  else alert("Profil mis à jour");
 
-  const generateInviteCode = async () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const expire = new Date();
-    expire.setDate(expire.getDate() + 7);
-    const { data, error } = await supabase
-      .from("codes_invitation")
-      .insert({ code, entreprise_id: entrepriseId, expire_le: expire.toISOString(), utilise: false })
-      .select()
-      .single();
-    if (error) return alert("Erreur : " + error.message);
-    setNewCode(data.code);
-    fetchUsers(entrepriseId); // utile si tu veux rafraîchir après une action
+  await supabase.from("parametres_interface").upsert(
+    {
+      utilisateur_id: userId, // ✅ ici
+      couleur_navbar: navbarColor,
+      logo_url: logoUrl,
+      couleur_texte_navbar: navbarTextColor
+    },
+    {
+      onConflict: "utilisateur_id",
+      ignoreDuplicates: false,
+    }
+  );
+};
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop();
+    const path = `${userId}/logo.${ext}`;
+
+    const { error: uploadError } = await supabase.storage.from("logos").upload(path, file, {
+      upsert: true,
+    });
+
+    if (uploadError) return alert("Erreur upload : " + uploadError.message);
+
+    const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
+    setLogoUrl(`${publicUrl}?t=${Date.now()}`); // Cache buster
   };
 
   const handleAvatarUpload = async (e) => {
@@ -127,6 +168,37 @@ function MonProfil({ darkMode, toggleMode }) {
       ...prev,
       avatar_url: `${publicUrl}?t=${Date.now()}`,
     }));
+  };
+
+  const generateInviteCode = async () => {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expire = new Date();
+    expire.setDate(expire.getDate() + 7);
+    const { data, error } = await supabase
+      .from("codes_invitation")
+      .insert({ code, entreprise_id: entrepriseId, expire_le: expire.toISOString(), utilise: false })
+      .select()
+      .single();
+    if (error) return alert("Erreur : " + error.message);
+    setNewCode(data.code);
+    fetchUsers(entrepriseId);
+  };
+
+  const handleRoleChange = async (id, role) => {
+    await supabase.from("utilisateurs").update({ role }).eq("id", id);
+    fetchUsers(entrepriseId);
+  };
+
+  const handleDelete = async (id) => {
+    if (id === userId) return alert("Tu ne peux pas te supprimer toi-même !");
+    await supabase
+      .from("utilisateurs")
+      .update({
+        entreprise_id: null,
+        code_utilise: null
+      })
+      .eq("id", id);
+    fetchUsers(entrepriseId);
   };
 
   const renderField = (label, name, type = "text") => (
@@ -164,9 +236,7 @@ function MonProfil({ darkMode, toggleMode }) {
                 justifyContent: "center",
                 fontSize: "0.8rem",
                 color: "#fff"
-              }}>
-                ?
-              </div>
+              }}>?</div>
             )}
             <input type="file" accept="image/*" onChange={handleAvatarUpload} />
           </div>
@@ -181,6 +251,22 @@ function MonProfil({ darkMode, toggleMode }) {
             <input name="email" value={formData.email} readOnly />
           </div>
 
+          {/* 🎨 Choix de couleur de navbar */}
+          <div className="profil-field">
+            <label>Couleur de la Navbar :</label>
+            <input type="color" value={navbarColor} onChange={(e) => setNavbarColor(e.target.value)} />
+          </div>
+
+          {/* 🖼️ Upload logo */}
+          <div className="profil-field">
+            <label>Logo personnalisé :</label>
+            {logoUrl && <img src={logoUrl} alt="Logo" style={{ height: "40px", marginBottom: "10px" }} />}
+            <input type="file" accept="image/*" onChange={handleLogoUpload} />
+          </div>
+          <div className="profil-field">
+            <label>Couleur du texte de la Navbar :</label>
+            <input type="color" value={navbarTextColor} onChange={(e) => setNavbarTextColor(e.target.value)} />
+          </div>
           <button type="submit">Enregistrer</button>
         </form>
 
@@ -227,6 +313,7 @@ function MonProfil({ darkMode, toggleMode }) {
                 ))}
               </tbody>
             </table>
+
             <h3>Membres ayant utilisé un code d’invitation</h3>
             <table className="equipe-table">
               <thead>
