@@ -15,7 +15,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = "http://localhost:8000/axel-crm/oauth/callback"
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 router = APIRouter()
 
@@ -93,7 +93,9 @@ async def google_oauth_callback(request: Request):
                 "etat_token": "valide"
             }).execute()
 
-        return RedirectResponse(url=f"http://192.168.1.151:8888/axel-crm/Campagne/?oauth=success&utilisateur_id={state}")
+        FRONTEND_URL = os.getenv("FRONTEND_URL")
+        return RedirectResponse(url=f"{FRONTEND_URL}/axel-crm/Campagne/?oauth=success&utilisateur_id={state}")
+
 
     except Exception as e:
         print("[EXCEPTION]", e)

@@ -38,10 +38,11 @@ CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 # 🔧 Config Outlook (via .env uniquement)
 OUTLOOK_CLIENT_ID = os.getenv("OUTLOOK_CLIENT_ID")
 OUTLOOK_CLIENT_SECRET = os.getenv("OUTLOOK_CLIENT_SECRET")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://192.168.1.151:8888"],
+    allow_origins=[FRONTEND_URL],
     allow_methods=["*"],
     allow_headers=["*"],
 )

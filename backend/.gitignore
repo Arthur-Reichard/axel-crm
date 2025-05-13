@@ -30,3 +30,4 @@ __pycache__/
 # Pour ignorer les fichiers d’environnement
 .env
 .env.*
+backend/.env
