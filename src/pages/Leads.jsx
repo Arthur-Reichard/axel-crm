@@ -379,32 +379,30 @@ export default function Leads() {
   }, [leads, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    const applyFilters = () => {
-      return allLeads
-      .filter(lead => {
-        const type = (lead.type_client || '').toLowerCase();
-        if (selectedClientType === 'individuel') return type === 'individuel';
-        if (selectedClientType === 'entreprise') return type === 'entreprise';
-        return true;
-      })      
-        .filter(lead => {
-        return filterList.every(({ field, operator, value }) => {
-          const v = (lead[field.name] || '').toString().toLowerCase();
-          const s = (value || '').toLowerCase();
-  
-          switch (operator) {
-            case 'contains': return v.includes(s);
-            case 'not_contains': return !v.includes(s);
-            case 'equals': return v === s;
-            case 'not_equals': return v !== s;
-            case 'empty': return v === '';
-            case 'not_empty': return v !== '';
-            default: return true;
-          }
-        });
+  const applyFilters = () => {
+    const currentLeads = selectedClientType === 'entreprise' ? entreprisesOnly : allLeads;
+
+    return currentLeads.filter(lead => {
+      return filterList.every(({ field, operator, value }) => {
+        const raw = lead[field.name];
+
+        if (operator === 'empty') return !raw || raw.toString().trim() === '';
+        if (operator === 'not_empty') return raw && raw.toString().trim() !== '';
+
+        const input = (raw ?? '').toString().toLowerCase();
+        const val = (value ?? '').toString().toLowerCase();
+
+        switch (operator) {
+          case 'contains': return input.includes(val);
+          case 'not_contains': return !input.includes(val);
+          case 'equals': return input === val;
+          case 'not_equals': return input !== val;
+          default: return true;
+        }
       });
-    };
-  
+    });
+  };
+
     setLeads(applyFilters());
   }, [filterList, allLeads, selectedClientType]);
 
@@ -727,13 +725,14 @@ export default function Leads() {
     <div className="leads-container">
     <div className="leads-header">
       <div>
-          <FilterDrawer
-            isOpen={filterDrawerOpen}
-            onClose={() => setFilterDrawerOpen(false)}
-            filters={filterList}
-            setFilters={setFilterList}
-            availableFields={availableFields}
-          />
+        <FilterDrawer
+          isOpen={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
+          filters={filterList}
+          setFilters={setFilterList}
+          availableFields={allFields} // ou autre source
+          filteredCount={leads.length}
+        />
       </div>
       </div>
       <div className="top-toolbar">

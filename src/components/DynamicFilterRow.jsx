@@ -1,18 +1,35 @@
 import React from 'react';
 
-export default function DynamicFilterRow({ filter, index, fields, onChange, onRemove }) {
+export default function DynamicFilterRow({ filter, index, onChange, onRemove }) {
   const { field, operator, value } = filter;
+
+  const handleFieldChange = (e) => {
+    const selectedField = JSON.parse(e.target.value);
+    onChange(index, { ...filter, field: selectedField, value: '' });
+  };
+
+  const handleOperatorChange = (e) => {
+    const newOp = e.target.value;
+    onChange(index, { ...filter, operator: newOp });
+  };
+
+  const handleValueChange = (e) => {
+    onChange(index, { ...filter, value: e.target.value });
+  };
+
+  const fieldOptions = filter?.field?.options || [];
+  const type = filter?.field?.type;
 
   return (
     <div className="filter-row">
-      <select value={field} onChange={(e) => onChange(index, { ...filter, field: e.target.value })}>
+      <select value={JSON.stringify(field)} onChange={handleFieldChange}>
         <option value="">-- champ --</option>
-        {fields.map(f => (
-          <option key={f.label} value={f.key}>{f.label}</option>
+        {filter.availableFields?.map(f => (
+          <option key={f.name} value={JSON.stringify(f)}>{f.label}</option>
         ))}
       </select>
 
-      <select value={operator} onChange={(e) => onChange(index, { ...filter, operator: e.target.value })}>
+      <select value={operator} onChange={handleOperatorChange}>
         <option value="">-- condition --</option>
         <option value="contains">contient</option>
         <option value="not_contains">ne contient pas</option>
@@ -23,12 +40,18 @@ export default function DynamicFilterRow({ filter, index, fields, onChange, onRe
       </select>
 
       {!['empty', 'not_empty'].includes(operator) && (
-        <input
-          type="text"
-          placeholder="valeur"
-          value={value}
-          onChange={(e) => onChange(index, { ...filter, value: e.target.value })}
-        />
+        type === 'date' ? (
+          <input type="date" value={value} onChange={handleValueChange} />
+        ) : type === 'select' ? (
+          <select value={value} onChange={handleValueChange}>
+            <option value="">-- valeur --</option>
+            {fieldOptions.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        ) : (
+          <input type="text" placeholder="valeur" value={value} onChange={handleValueChange} />
+        )
       )}
 
       <button className="remove-filter-btn" onClick={() => onRemove(index)}>✕</button>
