@@ -22,6 +22,9 @@ import ColumnMapping from './pages/ColumnMapping';
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import OAuthCallbackOutlook from "./pages/OAuthCallbackOutlook";
 import EntrepriseClientDetails from "./pages/EntrepriseClientDetails";
+import Reunions from './pages/Reunions';
+import NouveauCompteRendu from './pages/NouveauCompteRendu';
+import ReunionDetail from './pages/ReunionDetail';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -139,7 +142,12 @@ function App() {
             />
             <Route 
             path="/column-mapping" element={<ColumnMapping />}
+            
             />
+              <Route path="/reunions" element={<Reunions />} />
+              <Route path="/reunions/nouveau" element={<NouveauCompteRendu />} />
+              <Route path="/reunions/:id" element={<ReunionDetail />} />
+
           </Route>
         </Route>
       </Routes>

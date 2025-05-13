@@ -1,0 +1,278 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+
+/* -------------------- BASE -------------------- */
+body {
+  margin: 0;
+  font-family: 'Rubik', sans-serif;
+  background-color: #f9fafb;
+  color: #1e293b;
+  line-height: 1.5;
+  font-size: 15px;
+  min-height: 100vh;
+}
+
+/* -------------------- PAGE CONTAINER -------------------- */
+.reunion-page {
+  padding: 32px;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+/* -------------------- FORMULAIRE -------------------- */
+.reunion-form {
+  width: 100%;
+  max-width: 1600px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+
+.reunion-form h2 {
+  grid-column: span 12;
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: left;
+  margin-bottom: 16px;
+  color: #1f2937;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full {
+  grid-column: span 12;
+}
+
+.form-group.half {
+  grid-column: span 6;
+}
+
+.form-group.third {
+  grid-column: span 4;
+}
+
+.form-group.two-thirds {
+  grid-column: span 8;
+}
+
+.form-group.nine {
+  grid-column: span 9;
+}
+
+.form-group.three {
+  grid-column: span 3;
+}
+
+.reunion-form label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.reunion-form input,
+.reunion-form textarea,
+.reunion-form select {
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  transition: border 0.2s ease;
+  width: 100%;
+}
+
+.reunion-form input:focus,
+.reunion-form textarea:focus,
+.reunion-form select:focus {
+  border-color: #6366f1;
+  outline: none;
+}
+
+.reunion-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Spécifique au contenu de réunion */
+.form-group.contenu {
+  grid-column: span 12;
+}
+
+.reunion-btn {
+  grid-column: span 2;
+  justify-self: end;
+  background-color: #4338ca;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-left: auto;
+}
+
+.reunion-btn:hover {
+  background-color: #3730a3;
+}
+
+.participant-chip {
+  display: inline-block;
+  background-color: #e5e7eb;
+  color: #1f2937;
+  padding: 5px 10px;
+  border-radius: 9999px;
+  margin: 4px 6px 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* -------------------- LISTE DES RÉUNIONS -------------------- */
+.reunion-list {
+  width: 100%;
+  max-width: 2000px;
+  margin: 0 ;
+  display:flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.reunion-header {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.reunion-item {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reunion-item:first-child {
+  border-top: none;
+}
+
+.reunion-item:hover {
+  background-color: #f3f4f6;
+}
+
+.reunion-item h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.reunion-item p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 1024px) {
+  .reunion-form {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .form-group.full,
+  .form-group.half,
+  .form-group.third,
+  .form-group.two-thirds,
+  .form-group.nine,
+  .form-group.three,
+  .form-group.contenu,
+  .reunion-btn {
+    grid-column: span 6;
+  }
+
+  .reunion-btn {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .reunion-form {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 16px;
+  }
+
+  .form-group.full,
+  .form-group.half,
+  .form-group.third,
+  .form-group.two-thirds,
+  .form-group.nine,
+  .form-group.three,
+  .form-group.contenu,
+  .reunion-btn,
+  .reunion-form h2 {
+    grid-column: span 1;
+  }
+
+  .reunion-form h2 {
+    font-size: 1.5rem;
+  }
+
+  .reunion-list {
+    padding: 0 12px;
+  }
+}
+
+.export-dropdown {
+  position: relative;
+}
+
+.export-button {
+  background-color: #e2e8f0;
+  color: #1f2937;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.export-button:hover {
+  background-color: #cbd5e1;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+  z-index: 50;
+  min-width: 120px;
+}
+
+.dropdown-menu li {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdown-menu li:hover {
+  background-color: #f1f5f9;
+}

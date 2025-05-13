@@ -45,6 +45,7 @@ function DashboardNavbar({ darkMode, toggleMode }) {
           <li><NavLink to="/calendar" className="nav-link" onClick={handleLinkClick}>Calendrier</NavLink></li>
           <li><NavLink to="/materiel" className="nav-link" onClick={handleLinkClick}>Parc Matériel</NavLink></li>
           <li><NavLink to="/factures" className="nav-link" onClick={handleLinkClick}>Factures</NavLink></li>
+          <li><NavLink to="/reunions" className="nav-link" onClick={handleLinkClick}>Réunions</NavLink></li>
           <li><NavLink to="/MyUserProfil" className="nav-link" onClick={handleLinkClick}>Mon Profil</NavLink></li>
         </ul>
   
