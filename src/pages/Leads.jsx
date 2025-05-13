@@ -49,6 +49,7 @@ const columnFieldMap = {
 };
 
 export default function Leads() {
+  const [isLoading, setIsLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [utilisateursEntreprise, setUtilisateursEntreprise] = useState([]);
   const [availableFields, setAvailableFields] = useState([
@@ -185,6 +186,26 @@ export default function Leads() {
   }, []);
 
   useEffect(() => {
+    setFilterList((prev) =>
+      prev.map(f => {
+        if (!f.confirmed) {
+          return {
+            ...f,
+            availableFields: selectedClientType === 'entreprise'
+              ? [
+                  { label: "Nom de l'entreprise", name: "raison_sociale" },
+                  { label: "SIREN", name: "siren" },
+                  { label: "Statut entreprise", name: "statut_entreprise" }
+                ]
+              : allFieldsRef.current
+          };
+        }
+        return f;
+      })
+    );
+  }, [selectedClientType]);
+
+  useEffect(() => {
     localStorage.setItem('lastClientType', selectedClientType);
   }, [selectedClientType]);
   
@@ -277,6 +298,7 @@ export default function Leads() {
 
   useEffect(() => {
     const fetchLeads = async () => {
+      setIsLoading(true);
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) return;
       setUtilisateurId(user.id);
@@ -367,6 +389,7 @@ export default function Leads() {
         setAllLeads(data);
         setLeads(data);
       }
+    setIsLoading(false);
     };
   
     fetchLeads();
@@ -718,6 +741,27 @@ export default function Leads() {
   const end = start + itemsPerPage;
   const isReadyForDrawer = settingsOpen && columnPreferences.length > 0 && fullFieldList.length > 0 && utilisateurId;
 
+  const entrepriseFilterFields = [
+    { label: "Nom de l'entreprise", name: "raison_sociale" },
+    { label: "SIREN", name: "siren" },
+    { label: "Statut entreprise", name: "statut_entreprise" }
+  ];
+
+  const currentFilterFields = selectedClientType === 'entreprise'
+    ? entrepriseFilterFields
+    : allFields;
+
+  const renderSkeletonRows = (count = 10, colCount = 5) => {
+    return Array.from({ length: count }).map((_, rowIdx) => (
+      <tr key={`skeleton-${rowIdx}`}>
+        <td><div className="skeleton-box" style={{ width: '20px' }} /></td>
+        {Array.from({ length: colCount }).map((_, colIdx) => (
+          <td key={colIdx}><div className="skeleton-box" /></td>
+        ))}
+      </tr>
+    ));
+  };
+
   return (
     <>
   {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
@@ -730,7 +774,7 @@ export default function Leads() {
           onClose={() => setFilterDrawerOpen(false)}
           filters={filterList}
           setFilters={setFilterList}
-          availableFields={allFields} // ou autre source
+          availableFields={currentFilterFields}
           filteredCount={leads.length}
         />
       </div>
@@ -756,8 +800,8 @@ export default function Leads() {
             >
               Entreprises
             </button>
+            <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
           </div>
-          <button className="filter-btn" type="button" onClick={() => setFilterDrawerOpen(true)}>Filtrer</button>
 
           {selectedLeads.length > 0 && (
             <button className="delete-btn" onClick={handleDeleteSelected}>Supprimer sélection</button>
@@ -838,9 +882,11 @@ export default function Leads() {
             </tr>
           )}
           </thead>
-            <tbody>
-            {selectedClientType === 'entreprise'
-              ? entreprisesOnly.slice(start, end).map(ent => (
+          <tbody>
+            {isLoading
+              ? renderSkeletonRows(10, columnPreferences.filter(c => c.visible).length)
+              : selectedClientType === 'entreprise'
+                ? entreprisesOnly.slice(start, end).map(ent => (
             <tr
               key={ent.id}
               onClick={() => navigate(`/entreprises-clients/${ent.id}?type=entreprise`)}
@@ -874,7 +920,6 @@ export default function Leads() {
                 </td>
             </tr>
             ))
-
             : paginatedLeads.map(lead => (
                 <tr key={lead.id}>
                   <td>
@@ -898,7 +943,7 @@ export default function Leads() {
                     })}
                 </tr>
               ))}
-            </tbody>
+          </tbody>
             <tfoot>
               <tr className="pagination-info-row">
                 <td colSpan={selectedColumns.length + 1}>

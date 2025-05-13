@@ -55,11 +55,12 @@ export default function LeadDetail() {
 
     return [
       ...filteredBaseFields,
-      ...customFields.map(f => ({
-        label: f.nom_affichage,
-        name: f.nom_champ,
-        type: f.type
-      }))
+    ...customFields.map(f => ({
+      label: f.nom_affichage,
+      name: f.nom_champ,
+      type: f.type,
+      options: f.options || []
+    }))
     ];
   }, [customFields, availableFields]);
 
@@ -82,10 +83,6 @@ export default function LeadDetail() {
 useEffect(() => {
   const fetchAll = async () => {
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !user) {
-      console.log("Erreur utilisateur :", userErr);
-      return;
-    }
 
 
     const { data: utilisateur, error: utilisateurErr } = await supabase
@@ -93,11 +90,6 @@ useEffect(() => {
       .select('entreprise_id')
       .eq('id', user.id)
       .single();
-
-    if (utilisateurErr || !utilisateur) {
-      console.log("Erreur récupération utilisateur/entreprise :", utilisateurErr);
-      return;
-    }
 
     setEntrepriseId(utilisateur.entreprise_id);
 
@@ -108,12 +100,22 @@ useEffect(() => {
       .eq('id', id)
       .single();
 
-    if (leadErr || !leadData) {
-      console.log("Erreur récupération lead :", leadErr);
-      return;
-    }
-
     setLead(leadData);
+
+    // Récupération des valeurs personnalisées
+    const { data: valeursPerso, error: valeursErr } = await supabase
+      .from('valeurs_champs_personnalises')
+      .select('nom_champ, valeur')
+      .eq('lead_id', id)
+      .is('entreprise_client_id', null)
+
+
+    if (valeursErr) {
+      console.error("Erreur récupération champs personnalisés :", valeursErr.message);
+    } else {
+      const valeursMap = Object.fromEntries(valeursPerso.map(v => [v.nom_champ, v.valeur]));
+      setLead(prev => ({ ...prev, ...valeursMap }));
+    }
 
     // → On récupère tous les membres de l'entreprise
     const { data: membres, error: membresErr } = await supabase
@@ -128,7 +130,6 @@ useEffect(() => {
       leadData.assigne_a &&
       !membresFinal.find((m) => m.id === leadData.assigne_a)
     ) {
-      console.log("Lead assigné à un membre manquant :", leadData.assigne_a);
 
       const { data: membreManquant, error: membreErr } = await supabase
         .from('utilisateurs')
@@ -137,10 +138,7 @@ useEffect(() => {
         .single();
 
       if (!membreErr && membreManquant) {
-        console.log("Membre assigné récupéré :", membreManquant);
         membresFinal = [...membresFinal, membreManquant];
-      } else {
-        console.log("Erreur récupération membre assigné :", membreErr);
       }
     }
 
@@ -162,9 +160,6 @@ useEffect(() => {
       .eq('type_fiche', 'lead')
       .eq('visible', true);
 
-    if (visiblesErr) {
-      console.log("Erreur récupération champs visibles :", visiblesErr);
-    }
 
     if (visibles?.length > 0) {
       setVisibleFields(visibles.map(v => v.nom_champ));
@@ -210,15 +205,54 @@ useEffect(() => {
 
   const handleSave = async () => {
     const payload = {
-      ...lead,
       ...adresseRef.current
     };
-    const { error } = await supabase.from('leads').update(payload).eq('id', id);
-    if (!error) {
-      localStorage.setItem('leadUpdated', 'true');
-      navigate('/leads');
+
+    // Champs standards uniquement
+    availableFields.forEach(({ name }) => {
+      if (lead[name] !== undefined) {
+        payload[name] = lead[name];
+      }
+    });
+
+    // 🔁 Mise à jour du lead (table principale)
+    const { error: updateError } = await supabase
+      .from('leads')
+      .update(payload)
+      .eq('id', id);
+
+    if (updateError) {
+      alert("Erreur lors de la mise à jour du lead : " + updateError.message);
+      return;
     }
+
+    // 🔁 Champs personnalisés (dans la table séparée)
+    for (const field of customFields) {
+      const brut = lead[field.nom_champ];
+      const valeur = brut === undefined || brut === null ? null : String(brut);
+
+      const { error: valeurErr, data: valeurData } = await supabase
+        .from('valeurs_champs_personnalises')
+        .upsert({
+          lead_id: id,
+          entreprise_client_id: null, // doit rester null
+          nom_champ: field.nom_champ,
+          valeur: valeur
+        }, {
+          onConflict: ['lead_id', 'nom_champ']
+        })
+        .select();
+    }
+
+    const { data: allVals, error: readError } = await supabase
+      .from('valeurs_champs_personnalises')
+      .select('*')
+      .eq('lead_id', id);
+
+    localStorage.setItem('leadUpdated', 'true');
+    navigate('/leads');
   };
+
 
   const toggleFieldVisibility = async (champ) => {
     const isVisible = visibleFields.includes(champ);

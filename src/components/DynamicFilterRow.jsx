@@ -1,21 +1,31 @@
 import React from 'react';
 
-export default function DynamicFilterRow({ filter, index, onChange, onRemove }) {
+export default function DynamicFilterRow({ filter, index, onChange, onRemove, onConfirm }) {
   const { field, operator, value } = filter;
 
-  const handleFieldChange = (e) => {
+const handleFieldChange = (e) => {
+  if (!e.target.value) {
+    onChange(index, { ...filter, field: '', value: '' });
+    return;
+  }
+
+  try {
     const selectedField = JSON.parse(e.target.value);
     onChange(index, { ...filter, field: selectedField, value: '' });
-  };
+  } catch (err) {
+    console.error("Erreur JSON.parse sur le champ sélectionné :", e.target.value);
+  }
+};
 
-  const handleOperatorChange = (e) => {
-    const newOp = e.target.value;
-    onChange(index, { ...filter, operator: newOp });
-  };
+const handleOperatorChange = (e) => {
+  onChange(index, { ...filter, operator: e.target.value });
+};
 
   const handleValueChange = (e) => {
     onChange(index, { ...filter, value: e.target.value });
   };
+
+  const isReadyToApply = field && operator && (['empty', 'not_empty'].includes(operator) || value?.toString().trim());
 
   const fieldOptions = filter?.field?.options || [];
   const type = filter?.field?.type;
@@ -54,7 +64,15 @@ export default function DynamicFilterRow({ filter, index, onChange, onRemove }) 
         )
       )}
 
-      <button className="remove-filter-btn" onClick={() => onRemove(index)}>✕</button>
+      <button className="remove-filter-btn" onClick={() => onRemove(index)}>Annuler</button>
+
+      <button
+        className="apply-filter-btn"
+        onClick={() => onConfirm(index)}
+        disabled={!isReadyToApply}
+      >
+        Appliquer
+      </button>
     </div>
   );
 }
