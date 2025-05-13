@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../helper/SupabaseClient';
+import { supabase } from "../helper/supabaseClient";
 import './css/Reunion.css';
 import jsPDF from 'jspdf';
 
