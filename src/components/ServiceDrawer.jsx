@@ -1,29 +1,36 @@
 import { useEffect, useState } from "react";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import { supabase } from "../helper/supabaseClient";
-import { FiEdit, FiCheck, FiTrash } from "react-icons/fi";
+import { FiEdit, FiCheck, FiTrash, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import "./css/ServiceDrawer.css";
+import HierarchyEditor from "./HierarchyEditor";
 
-function DroppableService({ service, selectedServiceId, onSelect, onDrop, isSub = false, children }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: service.id || `all-${service.nom}`, // string ID obligatoire
-    data: { service },
-  });
+function DroppableService({ service, selectedServiceId, onSelect, onDrop, level = 0, children }) {
+    const { isOver, setNodeRef } = useDroppable({
+        id: service.id || `all-${service.nom}`, // string ID obligatoire
+        data: { service },
+    });
 
-  return (
-    <div
-      ref={setNodeRef}
-      className={`drawer-item-service ${isSub ? "sub" : ""} ${service.id === selectedServiceId ? 'active' : ''}`}
-      onClick={() => onSelect(service.id)}
-      style={{ backgroundColor: isOver ? '#e0f7fa' : undefined }}
-    >
-      <div className="avatar-service">{(service.nom?.[0] || '').toUpperCase()}</div>
-      <div style={{ flex: 1 }}>
-        <strong>{service.nom}</strong>
-      </div>
-      {children}
-    </div>
-  );
+    return (
+        <div
+        ref={setNodeRef}
+        className={`drawer-item-service ${level > 0 ? "sub" : ""} ${service.id === selectedServiceId ? 'active' : ''}`}
+        onClick={() => onSelect(service.id)}
+        style={{ backgroundColor: isOver ? '#e0f7fa' : undefined }}
+        >
+        {/* 👇 Avatar uniquement au niveau 0 */}
+        {level === 0 && (
+            <div className="avatar-service">
+            {(service.nom && service.nom[0]) ? service.nom[0].toUpperCase() : '∅'}
+            </div>
+        )}
+
+        <div style={{ flex: 1 }}>
+            <strong>{service.nom}</strong>
+        </div>
+        {children}
+        </div>
+    );
 }
 
 export default function ServiceDrawer({ onSelect, selectedServiceId }) {
@@ -33,6 +40,8 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
     const [selectedParent, setSelectedParent] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editedName, setEditedName] = useState("");
+    const [showHierarchy, setShowHierarchy] = useState(false);
+    const [expandedIds, setExpandedIds] = useState([]);
 
     useEffect(() => {
         const fetchEntrepriseId = async () => {
@@ -67,17 +76,18 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
         const rootServices = fullList.filter(s => !s.parent_id);
         const childrenMap = {};
         fullList.forEach(s => {
-            if (s.parent_id) {
+        if (s.parent_id) {
             if (!childrenMap[s.parent_id]) childrenMap[s.parent_id] = [];
             childrenMap[s.parent_id].push(s);
-            }
+        }
         });
 
-        const structured = rootServices.map(parent => ({
-            ...parent,
-            children: childrenMap[parent.id] || []
-        }));
+        const attachChildren = (service) => ({
+        ...service,
+        children: (childrenMap[service.id] || []).map(attachChildren),
+        });
 
+        const structured = rootServices.map(attachChildren);
         setServices(structured);
         }
     };
@@ -104,6 +114,12 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
     const handleEdit = (id, name) => {
         setEditingId(id);
         setEditedName(name);
+    };
+
+    const toggleExpand = (id) => {
+        setExpandedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
     };
 
     const handleSaveEdit = async (id) => {
@@ -159,50 +175,71 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
     }
     };
 
+    const buildTree = (parentId = null) =>
+        services
+            .filter(s => s.parent_id === parentId)
+            .map(s => ({
+            ...s,
+            children: buildTree(s.id),
+            }));
 
+    const buildFlatList = (nodes, level = 0) =>
+    nodes.flatMap(node => {
+        const prefix = "— ".repeat(level);
+        const entry = { id: node.id, label: prefix + node.nom };
+        const children = buildFlatList(node.children || [], level + 1);
+        return [entry, ...children];
+    });
+
+    const flatList = buildFlatList(services);
+
+    const renderServiceTree = (service, level = 0) => (
+    <div key={service.id} style={{ paddingLeft: `${level * 12}px` }}>
+        <DroppableService
+        service={service}
+        selectedServiceId={selectedServiceId}
+        onSelect={onSelect}
+        level={level} // 👈 important
+        >
+        {service.id !== null && (
+        editingId === service.id ? (
+            <>
+            <FiCheck size={18} onClick={() => handleSaveEdit(service.id)} />
+            {/* Pas de suppression en mode édition */}
+            </>
+        ) : (
+            <>
+            <FiEdit size={18} onClick={() => handleEdit(service.id, service.nom)} />
+            {service.children?.length > 0 ? (
+                <button className="toggle-button" onClick={() => toggleExpand(service.id)}>
+                {expandedIds.includes(service.id) ? <FiChevronUp /> : <FiChevronDown />}
+                </button>
+                ) : (
+                <FiTrash size={18} onClick={() => handleDeleteService(service.id)} />
+            )}
+            </>
+        )
+        )}
+        </DroppableService>
+
+        {expandedIds.includes(service.id) && service.children?.map(child =>
+            renderServiceTree(child, level + 1)
+        )}
+    </div>
+    );
 
     return (
         <div className="service-drawer">
             <div className="drawer-scroll">
-            {services.map(service => (
-                <div key={service.id ?? "all"}>
-                <DroppableService
-                    service={service}
-                    selectedServiceId={selectedServiceId}
-                    onSelect={onSelect}
-                >
-                    {service.id !== null && (
-                    editingId === service.id ? (
-                        <>
-                        <FiCheck size={18} onClick={() => handleSaveEdit(service.id)} />
-                        <FiTrash size={18} onClick={() => handleDeleteService(service.id)} />
-                        </>
-                    ) : (
-                        <>
-                        <FiEdit size={18} onClick={() => handleEdit(service.id, service.nom)} />
-                        <FiTrash size={18} onClick={() => handleDeleteService(service.id)} />
-                        </>
-                    )
-                    )}
-                </DroppableService>
-
-                {service.children?.map(child => (
-                    <DroppableService
-                    key={child.id}
-                    service={child}
-                    selectedServiceId={selectedServiceId}
-                    onSelect={onSelect}
-                    isSub
-                    >
-                    {editingId === child.id ? (
-                        <FiCheck size={18} onClick={() => handleSaveEdit(child.id)} />
-                    ) : (
-                        <FiEdit size={18} onClick={() => handleEdit(child.id, child.nom)} />
-                    )}
-                    </DroppableService>
-                ))}
-                </div>
-            ))}
+            <button onClick={() => setShowHierarchy(true)}>Modifier l'arborescence</button>
+            {showHierarchy && (
+            <HierarchyEditor
+                entrepriseId={entrepriseId}
+                onClose={() => setShowHierarchy(false)}
+                onSaved={fetchServices}
+            />
+            )}
+            {services.map(service => renderServiceTree(service))}
             </div>
 
         {/* Footer pour ajouter un nouveau service */}
@@ -218,13 +255,9 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
             onChange={(e) => setSelectedParent(e.target.value || null)}
             >
             <option value="">Aucun (service principal)</option>
-            {services
-                .filter(s => s.id !== null)
-                .map(s => (
-                <option key={s.id} value={s.id}>
-                    {s.nom}
-                </option>
-                ))}
+            {flatList.map(s => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
             </select>
             <button className="settings-button" onClick={handleAddService}>
             + Ajouter un service

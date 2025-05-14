@@ -13,6 +13,7 @@
 .drawer-scroll {
   flex: 1;
   overflow-y: auto;
+  padding: 2px;
 }
 
 .drawer-item {
