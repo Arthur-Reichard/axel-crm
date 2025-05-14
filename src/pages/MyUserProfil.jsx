@@ -18,7 +18,8 @@ function MonProfil({ darkMode, toggleMode }) {
     birthdate: "",
     phone: "",
     email: "",
-    avatar_url: ""
+    avatar_url: "",
+    banner_url: ""
   });
   const [editMode, setEditMode] = useState({ prenom: false, nom: false, birthdate: false, phone: false });
   const [newCode, setNewCode] = useState(null);
@@ -46,7 +47,8 @@ function MonProfil({ darkMode, toggleMode }) {
           birthdate: userData.birthdate || "",
           phone: userData.phone || "",
           email: user.email,
-          avatar_url: userData.avatar_url || ""
+          avatar_url: userData.avatar_url || "",
+          banner_url: userData.banner_url || ""
         });
         setEntrepriseId(userData.entreprise_id);
         setIsAdmin(userData.role === "admin");
@@ -130,6 +132,30 @@ const handleSubmit = async (e) => {
   );
 };
 
+  const handleBannerUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop();
+  const path = `${userId}/banner.${ext}`;
+
+  // Supprime le fichier existant avant upload (si besoin)
+  await supabase.storage.from("banners").remove([path]);
+
+  // Puis upload proprement
+  const { error: uploadError } = await supabase.storage.from("banners").upload(path, file, {
+    contentType: file.type,
+  });
+
+  if (uploadError) return alert("Erreur upload bannière : " + uploadError.message);
+
+  const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
+  const publicUrl = urlData.publicUrl;
+
+  await supabase.from("utilisateurs").update({ banner_url: publicUrl }).eq("id", userId);
+  setFormData(prev => ({ ...prev, banner_url: `${publicUrl}?t=${Date.now()}` }));
+};
+
+
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -203,6 +229,15 @@ const handleSubmit = async (e) => {
 
   const renderField = (label, name, type = "text") => (
     <div className="profil-field">
+        <label>Bannière de profil :</label>
+  {formData.banner_url && (
+    <img
+      src={formData.banner_url}
+      alt="Bannière"
+      style={{ width: "100%", maxHeight: "150px", objectFit: "cover", marginBottom: "10px" }}
+    />
+  )}
+  <input type="file" accept="image/*" onChange={handleBannerUpload} />
       <label>{label}</label>
       {formData[name] && !editMode[name] ? (
         <div className="readonly-line">
