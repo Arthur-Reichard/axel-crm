@@ -577,7 +577,7 @@ textarea[name="commentaires"] {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 0rem;
 }
 
 .reunion-item {
@@ -617,7 +617,7 @@ textarea[name="commentaires"] {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0rem;
   background: #f9f9f9;
   padding: 0.75rem 1.25rem;
   border-radius: 8px;
@@ -658,4 +658,59 @@ textarea[name="commentaires"] {
 
 .tri-button:hover {
   background-color: #1669bb;
+}
+
+.reunion-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.reunion-card {
+  background-color: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  flex: 1 1 300px;
+  min-width: 280px;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.reunion-section {
+  margin-bottom: 2rem;
+}
+
+.placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.reunion-retour-btn {
+  position: sticky;
+  top: 1rem;
+  right: 1rem;
+  float: right;
+  background-color: #f3f4f6;
+  color: #111;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background-color 0.2s ease;
+  margin-bottom: -2.5rem;
+  margin-top : 2.5rem
+}
+
+.reunion-retour-btn:hover {
+  background-color: #e5e7eb;
 }

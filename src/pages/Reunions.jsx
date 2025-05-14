@@ -86,67 +86,126 @@ const Reunions = () => {
   const exporter = (reunion, format) => {
   const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
 
-  if (format === 'pdf') {
+ if (format === 'pdf') {
   const doc = new jsPDF();
-const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
+  const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
 
-// Bordure fine
-doc.setDrawColor(200);
-doc.setLineWidth(0.3);
-doc.rect(10, 10, 190, 277);
+  doc.setDrawColor(200);
+  doc.setLineWidth(0.3);
+  doc.rect(10, 10, 190, 277);
 
-let y = 25;
-const left = 20;
+  let y = 25;
+  const left = 20;
 
-// Titre centré
-doc.setFont('times', 'bold');
-doc.setFontSize(16);
-doc.text(`Compte rendu – ${reunion.titre || 'Sans titre'}`, 105, y, { align: 'center' });
-y += 15;
+  doc.setFont('times', 'bold');
+  doc.setFontSize(16);
+  doc.text(`Compte rendu – ${reunion.titre || 'Sans titre'}`, 105, y, { align: 'center' });
+  y += 15;
 
-// Infos générales
-doc.setFont('times', 'normal');
-doc.setFontSize(12);
-doc.text(`Date : ${reunion.date_reunion || '—'}`, left, y); y += 7;
-doc.text(`Lieu : ${reunion.lieu || '—'}`, left, y); y += 7;
-doc.text(`Participants : ${
-  Array.isArray(reunion.participants)
-    ? reunion.participants.map(p => p.nom || p).join(', ')
-    : '—'
-}`, left, y);
-y += 12;
+  doc.setFont('times', 'normal');
+  doc.setFontSize(12);
+  doc.text(`Date : ${reunion.date_reunion || '—'}`, left, y); y += 7;
+  const formatHeure = (heure) => {
+  if (!heure) return '—';
+  const [h, m] = heure.split(':');
+  return `${h}h${m}`;
+};
 
-// Section renderer
-const section = (label, value) => {
+doc.text(`Heure : ${formatHeure(reunion.heure_debut)} - ${formatHeure(reunion.heure_fin)}`, left, y);
+
+y += 7;
+
+  doc.text(`Lieu : ${reunion.lieu || '—'}`, left, y); y += 7;
+
+  doc.text(`Participants : ${
+    Array.isArray(reunion.participants)
+      ? reunion.participants.map(p => p.nom || p).join(', ')
+      : '—'
+  }`, left, y);
+  y += 12;
+
+  const section = (label, value) => {
+    doc.setFont('times', 'bold');
+    doc.setFontSize(13);
+    doc.text(label, left, y);
+    y += 6;
+    doc.setFont('times', 'normal');
+    doc.setFontSize(11);
+    const lines = doc.splitTextToSize(value || '—', 170);
+    doc.text(lines, left, y);
+    y += lines.length * 5 + 8;
+  };
+
+  section("Objectifs", reunion.objectifs);
+  section("Contenu", reunion.contenu);
+
+  // Ordre du jour
   doc.setFont('times', 'bold');
   doc.setFontSize(13);
-  doc.text(label, left, y);
+  doc.text("Ordre du jour", left, y);
   y += 6;
   doc.setFont('times', 'normal');
   doc.setFontSize(11);
-  const lines = doc.splitTextToSize(value || '—', 170);
-  doc.text(lines, left, y);
-  y += lines.length * 5 + 8;
-};
+  if (Array.isArray(reunion.ordre_du_jour) && reunion.ordre_du_jour.length > 0) {
+    reunion.ordre_du_jour.forEach((item) => {
+      doc.text(`• ${item}`, left + 5, y);
+      y += 6;
+    });
+  } else {
+    doc.text("—", left + 5, y);
+    y += 6;
+  }
+  y += 4;
 
-// Sections
-section("Objectifs", reunion.objectifs);
-section("Contenu", reunion.contenu);
-section("Commentaires", reunion.commentaires);
-
-// Footer gauche : signature
-doc.setFontSize(10);
-doc.setFont('times', 'italic');
-doc.setTextColor(150);
-doc.text("Powered by Axel CRM", left, 285);
-
-// Footer droite : pagination
+ // Décisions (version simplifiée)
+doc.setFont('times', 'bold');
+doc.setFontSize(13);
+doc.text("Décisions", left, y);
+y += 6;
 doc.setFont('times', 'normal');
-doc.setFontSize(10);
-doc.text(`Page 1/1`, 190, 285, { align: 'right' });
+doc.setFontSize(11);
+if (Array.isArray(reunion.decisions) && reunion.decisions.length > 0) {
+  reunion.decisions.forEach((d) => {
+    doc.text(`• ${d}`, left + 5, y);
+    y += 6;
+  });
+} else {
+  doc.text("—", left + 5, y);
+  y += 6;
+}
+y += 4;
 
-// Génération
-doc.save(`${filename}.pdf`);
+  // Tâches (version simplifiée)
+doc.setFont('times', 'bold');
+doc.setFontSize(13);
+doc.text("Tâches", left, y);
+y += 6;
+doc.setFont('times', 'normal');
+doc.setFontSize(11);
+if (Array.isArray(reunion.taches) && reunion.taches.length > 0) {
+  reunion.taches.forEach((t) => {
+    doc.text(`• ${t}`, left + 5, y);
+    y += 6;
+  });
+} else {
+  doc.text("—", left + 5, y);
+  y += 6;
+}
+y += 4;
+
+  section("Commentaires", reunion.commentaires);
+
+  doc.setFontSize(10);
+  doc.setFont('times', 'italic');
+  doc.setTextColor(150);
+  doc.text("Powered by Axel CRM", left, 285);
+
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  doc.text(`Page 1/1`, 190, 285, { align: 'right' });
+
+  doc.save(`${filename}.pdf`);
 }
 
 

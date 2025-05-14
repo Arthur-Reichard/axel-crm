@@ -126,6 +126,32 @@ const NouveauCompteRendu = () => {
     }
   };
 
+const [employes, setEmployes] = useState([]);
+
+useEffect(() => {
+  const fetchEmployes = async () => {
+  if (!entrepriseId) return;
+
+  const { data, error } = await supabase
+    .from("employes")
+    .select("id, nom, prenom, poste")
+    .eq("entreprise_id", entrepriseId);
+
+  if (error) {
+    console.error("Erreur fetch employes :", error);
+  } else {
+    console.log("Employés récupérés :", data);
+    setEmployes(data);
+  }
+};
+
+  fetchEmployes();
+}, [entrepriseId]);
+
+useEffect(() => {
+  console.log("entrepriseId =", entrepriseId);
+}, [entrepriseId]);
+
   return (
     <div className="reunion-page">
       <div className="reunion-form">
@@ -157,6 +183,16 @@ const NouveauCompteRendu = () => {
         <div className="form-group third">
           <label>Date</label>
           <input type="date" name="date_reunion" value={form.date_reunion} onChange={handleChange} />
+        </div>
+
+        <div className="form-group third">
+          <label>Heure de début</label>
+          <input type="time" name="heure_debut" value={form.heure_debut || ''} onChange={handleChange} />
+        </div>
+
+        <div className="form-group third">
+          <label>Heure de fin</label>
+          <input type="time" name="heure_fin" value={form.heure_fin || ''} onChange={handleChange} />
         </div>
 
         <div className="form-group third">
@@ -220,12 +256,78 @@ const NouveauCompteRendu = () => {
         </div>
 
         <div className="form-block">
+          <label>Ordre du jour</label>
+          <input
+            type="text"
+            placeholder="Ajouter un point (Entrée pour valider)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                setForm({
+                  ...form,
+                  ordre_du_jour: [...form.ordre_du_jour, e.target.value.trim()]
+                });
+                e.target.value = '';
+              }
+            }}
+          />
+          <ul>
+            {form.ordre_du_jour.map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="form-block">
           <label>Contenu de la réunion</label>
           <textarea name="contenu" value={form.contenu} onChange={handleChange} placeholder="Résumé de ce qui a été dit, débattu, décidé..." />
         </div>
 
         <div className="form-block">
-          <label>Commentaires internes</label>
+          <label>Décisions</label>
+          <input
+            type="text"
+            placeholder="Ajouter une décision (Entrée pour valider)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                setForm({
+                  ...form,
+                  decisions: [...form.decisions, e.target.value.trim()]
+                });
+                e.target.value = '';
+              }
+            }}
+          />
+          <ul>
+            {form.decisions.map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="form-block">
+          <label>Tâches</label>
+          <input
+            type="text"
+            placeholder="Ajouter une tâche (Entrée pour valider)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                setForm({
+                  ...form,
+                  taches: [...form.taches, e.target.value.trim()]
+                });
+                e.target.value = '';
+              }
+            }}
+          />
+          <ul>
+            {form.taches.map((t, i) => (
+              <li key={i}>{t}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="form-block">
+          <label>Commentaires</label>
           <textarea name="commentaires" value={form.commentaires} onChange={handleChange} placeholder="Notes internes ou remarques confidentielles" />
         </div>
 
