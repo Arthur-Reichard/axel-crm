@@ -1,7 +1,18 @@
+.equipe-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.equipe-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 .equipe-layout {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
   background: linear-gradient(135deg, #f0f9ff, #e0f7fa);
   font-family: 'Inter', sans-serif;
   color: #1f2937;
@@ -15,6 +26,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    height: 100%;
     animation: fadeIn 0.4s ease-in;
   }
   

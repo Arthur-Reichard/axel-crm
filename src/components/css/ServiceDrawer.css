@@ -1,4 +1,4 @@
-.team-drawer {
+.service-drawer {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -6,16 +6,11 @@
   width: 280px;
   background: linear-gradient(180deg, #ffffff, #f9fafb);
   border-right: 2px solid #cbd5e1;
-  padding: 1rem 0.5rem;
+  padding: 1.5rem 1rem;
   box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.05);
 }
 
-.drawer-scroll {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.drawer-item {
+.drawer-item-service {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -25,26 +20,26 @@
   transition: background 0.2s;
 }
 
-.drawer-item.sub {
+.drawer-item-service.sub {
   padding: 6px 12px;
   font-size: 0.92em;
   opacity: 0.85;
 }
 
-.drawer-item:hover {
+.drawer-item-service:hover {
   background-color: #e0f2fe;
   transform: translateX(2px);
 }
 
-.drawer-item.active {
+.drawer-item-service.active {
   background-color: #bae6fd;
   border: 1px solid #38bdf8;
   font-weight: 600;
 }
 
-.avatar {
-  width: 42px;
-  height: 42px;
+.avatar-service {
+  width: 30px;
+  height: 30px;
   background-color: #334155;
   border-radius: 50%;
   display: flex;
@@ -58,7 +53,7 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.drawer-footer {
+.drawer-footer-service {
   border-top: 1px solid #e0e0e0;
   padding: 10px;
   background-color: #f9f9f9;
@@ -83,4 +78,53 @@
 
 .settings-button:hover {
   background-color: #0f9d8a;
+}
+
+.drawer-item-service input {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.drawer-item-service svg {
+  cursor: pointer;
+  color: #475569;
+  transition: color 0.2s;
+}
+
+.drawer-item-service svg:hover {
+  color: #0f766e;
+}
+
+.drawer-item-service.sub {
+  padding-left: 28px;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+.drawer-item-service.sub .avatar-service {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}
+
+.drawer-footer-service input,
+.drawer-footer-service select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: #fff;
+  transition: border 0.2s;
+}
+
+.drawer-footer-service input:focus,
+.drawer-footer-service select:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
