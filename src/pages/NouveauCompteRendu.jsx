@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../helper/SupabaseClient';
+import { supabase } from "../helper/SupabaseClient";
 import './css/Reunion.css';
 
 const NouveauCompteRendu = () => {
@@ -21,6 +21,9 @@ const NouveauCompteRendu = () => {
     taches: [],
     commentaires: ''
   });
+
+  const [showToast, setShowToast] = useState(false);
+  const [showConfirmToast, setShowConfirmToast] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -52,43 +55,40 @@ const NouveauCompteRendu = () => {
     fetchUser();
   }, []);
 
-useEffect(() => {
-  const fetchUtilisateurs = async () => {
-    if (!entrepriseId) return;
+  useEffect(() => {
+    const fetchUtilisateurs = async () => {
+      if (!entrepriseId) return;
 
-    let membresFinal = [];
+      let membresFinal = [];
 
-    // Récupère les membres de l'entreprise
-    const { data: membres, error: membresErr } = await supabase
-      .from('utilisateurs')
-      .select('id, nom, prenom, poste')
-      .eq('entreprise_id', entrepriseId);
+      const { data: membres, error: membresErr } = await supabase
+        .from('utilisateurs')
+        .select('id, nom, prenom, poste')
+        .eq('entreprise_id', entrepriseId);
 
-    if (!membresErr && membres) {
-      membresFinal = membres;
-    }
+      if (!membresErr && membres) {
+        membresFinal = membres;
+      }
 
-    // Fallback si certains participants du form ne sont pas dans la liste récupérée
-    for (const p of form.participants) {
-      if (p.utilisateur_id && !membresFinal.find(m => m.id === p.utilisateur_id)) {
-        const { data: membreManquant, error: membreErr } = await supabase
-          .from('utilisateurs')
-          .select('id, nom, prenom, poste')
-          .eq('id', p.utilisateur_id)
-          .single();
+      for (const p of form.participants) {
+        if (p.utilisateur_id && !membresFinal.find(m => m.id === p.utilisateur_id)) {
+          const { data: membreManquant, error: membreErr } = await supabase
+            .from('utilisateurs')
+            .select('id, nom, prenom, poste')
+            .eq('id', p.utilisateur_id)
+            .single();
 
-        if (!membreErr && membreManquant) {
-          membresFinal = [...membresFinal, membreManquant];
+          if (!membreErr && membreManquant) {
+            membresFinal = [...membresFinal, membreManquant];
+          }
         }
       }
-    }
 
-    setUtilisateurs(membresFinal);
-  };
+      setUtilisateurs(membresFinal);
+    };
 
-  fetchUtilisateurs();
-}, [entrepriseId]);
-
+    fetchUtilisateurs();
+  }, [entrepriseId]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -112,18 +112,6 @@ useEffect(() => {
     else alert("Erreur : " + error.message);
   };
 
-  const handleParticipantSelect = (e) => {
-    const selected = Array.from(e.target.selectedOptions).map(opt => {
-      const utilisateur = utilisateurs.find(u => u.id === opt.value);
-      return {
-        nom: `${utilisateur.prenom} ${utilisateur.nom}`,
-        fonction: utilisateur.poste || '',
-        utilisateur_id: utilisateur.id
-      };
-    });
-    setForm({ ...form, participants: selected });
-  };
-
   const handleParticipantLibre = (e) => {
     if (e.key === 'Enter' && e.target.value.trim() !== '') {
       setForm({
@@ -138,98 +126,122 @@ useEffect(() => {
   };
 
   return (
-  <div className="reunion-page">
-    <div className="reunion-form">
-      <h2 className="full">Nouveau Compte Rendu</h2>
-
-      <div className="form-group">
-        <label>Titre</label>
-        <input name="titre" value={form.titre} onChange={handleChange} placeholder="Titre" />
-      </div>
-
-      <div className="form-group">
-        <label>Date</label>
-        <input type="date" name="date_reunion" value={form.date_reunion} onChange={handleChange} />
-      </div>
-
-      <div className="form-group">
-        <label>Lieu</label>
-        <input name="lieu" value={form.lieu} onChange={handleChange} placeholder="Lieu" />
-      </div>
-
-      <div className="form-group">
-        <label>Ajouter un participant (manuel)</label>
-        <input
-          type="text"
-          placeholder="Tapez un nom et appuyez sur Entrée"
-          onKeyDown={handleParticipantLibre}
-        />
-      </div>
-
-      <div className="form-group full">
-        <label>Ajouter un participant depuis l’entreprise</label>
-        <select
-          value=""
-          onChange={(e) => {
-            const id = e.target.value;
-            const utilisateur = utilisateurs.find(u => u.id === id);
-            if (!utilisateur) return;
-
-            const nomComplet = `${utilisateur.prenom} ${utilisateur.nom}`;
-            const dejaAjoute = form.participants.some(p => p.utilisateur_id === id);
-
-            if (!dejaAjoute) {
-              setForm((prev) => ({
-                ...prev,
-                participants: [
-                  ...prev.participants,
-                  {
-                    nom: nomComplet,
-                    fonction: utilisateur.poste || '',
-                    utilisateur_id: id
-                  }
-                ]
-              }));
-            }
-          }}
-        >
-          <option value="" disabled hidden>Choisir un membre</option>
-          {utilisateurs.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.prenom} {u.nom} ({u.poste || '—'})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-group full">
-        <label>Participants ajoutés</label>
-        <div>
-          {form.participants.map((p, idx) => (
-            <span key={idx} className="participant-chip">{p.nom}</span>
-          ))}
+    <div className="reunion-page">
+      <div className="reunion-form">
+        <div style={{ gridColumn: "span 12", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button
+            onClick={() => setShowConfirmToast(true)}
+            style={{
+              background: "none",
+              border: "1px solid #ccc",
+              color: "#111",
+              padding: "0.5rem 1rem",
+              borderRadius: "6px",
+              fontSize: "14px",
+              cursor: "pointer",
+              marginBottom: "1rem"
+            }}
+          >
+            ← Retour
+          </button>
         </div>
+
+        <h2>Nouveau Compte Rendu</h2>
+
+        <div className="form-group third">
+          <label>Titre</label>
+          <input name="titre" value={form.titre} onChange={handleChange} placeholder="Titre de la réunion" />
+        </div>
+
+        <div className="form-group third">
+          <label>Date</label>
+          <input type="date" name="date_reunion" value={form.date_reunion} onChange={handleChange} />
+        </div>
+
+        <div className="form-group third">
+          <label>Lieu</label>
+          <input name="lieu" value={form.lieu} onChange={handleChange} placeholder="Lieu de la réunion" />
+        </div>
+
+        <div className="form-group third">
+          <label>Ajouter un participant (manuel)</label>
+          <input type="text" placeholder="Prénom Nom" onKeyDown={handleParticipantLibre} />
+        </div>
+
+        <div className="form-group third">
+          <label>Ajouter un participant depuis l’entreprise</label>
+          <select
+            value=""
+            onChange={(e) => {
+              const id = e.target.value;
+              const utilisateur = utilisateurs.find(u => u.id === id);
+              if (!utilisateur) return;
+
+              const nomComplet = `${utilisateur.prenom} ${utilisateur.nom}`;
+              const dejaAjoute = form.participants.some(p => p.utilisateur_id === id);
+
+              if (!dejaAjoute) {
+                setForm((prev) => ({
+                  ...prev,
+                  participants: [
+                    ...prev.participants,
+                    {
+                      nom: nomComplet,
+                      fonction: utilisateur.poste || '',
+                      utilisateur_id: id
+                    }
+                  ]
+                }));
+              }
+            }}
+          >
+            <option value="" disabled hidden>Choisir un membre</option>
+            {utilisateurs.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.prenom} {u.nom} ({u.poste || '—'})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-block">
+          <label>Participants ajoutés</label>
+          <div>
+            {form.participants.map((p, idx) => (
+              <span key={idx} className="participant-chip">{p.nom}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-block">
+          <label>Objectifs</label>
+          <textarea name="objectifs" value={form.objectifs} onChange={handleChange} placeholder="Décrivez les objectifs de la réunion" />
+        </div>
+
+        <div className="form-block">
+          <label>Contenu de la réunion</label>
+          <textarea name="contenu" value={form.contenu} onChange={handleChange} placeholder="Résumé de ce qui a été dit, débattu, décidé..." />
+        </div>
+
+        <div className="form-block">
+          <label>Commentaires internes</label>
+          <textarea name="commentaires" value={form.commentaires} onChange={handleChange} placeholder="Notes internes ou remarques confidentielles" />
+        </div>
+
+        <button className="reunion-btn" onClick={enregistrer}>Enregistrer</button>
       </div>
 
-      <div className="form-group">
-        <label>Objectifs</label>
-        <textarea name="objectifs" value={form.objectifs} onChange={handleChange} placeholder="Objectifs" />
-      </div>
-
-      <div className="form-group">
-        <label>Contenu de la réunion</label>
-        <textarea name="contenu" value={form.contenu} onChange={handleChange} placeholder="Contenu de la réunion" />
-      </div>
-
-      <div className="form-group full">
-        <label>Commentaires internes</label>
-        <textarea name="commentaires" value={form.commentaires} onChange={handleChange} placeholder="Commentaires internes" />
-      </div>
-
-      <button className="reunion-btn" onClick={enregistrer}>Enregistrer</button>
+      {showConfirmToast && (
+        <div className="toast-confirm">
+          <h4>Voulez-vous vraiment abandonner le brouillon ?</h4>
+          <div className="toast-confirm-buttons">
+            <button className="cancel-btn" onClick={() => setShowConfirmToast(false)}>Annuler</button>
+            <button className="confirm-btn" onClick={() => navigate("/reunions")}>Oui, quitter</button>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
 };
 
 export default NouveauCompteRendu;
