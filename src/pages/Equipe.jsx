@@ -3,6 +3,7 @@ import TeamDrawer from "../components/TeamDrawer";
 import EmployeeDetail from "../components/EmployeeDetail";
 import { supabase } from "../helper/supabaseClient";
 import "./css/Equipe.css"
+import DashboardNavbar from "./DashboardNavbar";
 
 export default function Equipe() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -51,9 +52,12 @@ export default function Equipe() {
 
   return (
     <>
-      <div className="equipe-layout">
-        <TeamDrawer onSelect={setSelectedEmployee} selectedId={selectedEmployee?.id} refreshTrigger={refreshTrigger} />
-        <EmployeeDetail employee={selectedEmployee} onSaved={handleSave} onDeleted={handleDelete} />
+      <div className="equipe-page">
+        <DashboardNavbar />
+        <div className="equipe-layout">
+          <TeamDrawer onSelect={setSelectedEmployee} selectedId={selectedEmployee?.id} refreshTrigger={refreshTrigger} />
+          <EmployeeDetail employee={selectedEmployee} onSaved={handleSave} onDeleted={handleDelete} />
+        </div>
       </div>
       <button className="add-employee-btn" onClick={handleAddEmployee}>+</button>
     </>

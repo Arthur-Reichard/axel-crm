@@ -6,6 +6,7 @@ import {
 import './css/ParcMateriel.css';
 import { supabase } from '../helper/supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import DashboardNavbar from "./DashboardNavbar";
 
 const ParcMateriel = () => {
   const navigate = useNavigate();
@@ -109,7 +110,9 @@ const ParcMateriel = () => {
   };
 
   return (
-    <div className="materiel-container">
+    <div className="parcmateriel-page">
+      <DashboardNavbar />
+      <div className="materiel-container">
       <div className="materiel-header">
         <h2>Parc Matériel</h2>
         <button onClick={() => setDrawerOpen(true)} className="add-button">+ Ajouter un matériel</button>
@@ -199,6 +202,7 @@ const ParcMateriel = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

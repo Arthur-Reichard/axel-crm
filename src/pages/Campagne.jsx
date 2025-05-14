@@ -5,6 +5,7 @@ import "./css/Campagne.css";
 import EmailSenderPopup from "../components/EmailSenderPopup";
 import EmailConnectionPopup from "../components/EmailConnectionPopup";
 import { FiSettings } from "react-icons/fi";
+import DashboardNavbar from "./DashboardNavbar";
 
 
 export default function Campagne({ darkMode }) {
@@ -73,71 +74,74 @@ export default function Campagne({ darkMode }) {
   }, []);
 
   return (
-    <div className={`campagne-page ${darkMode ? "dark" : ""}`}>
-      <div className="campagne-header">
+      <div className={`campagne-page ${darkMode ? "dark" : ""}`}>
+        <DashboardNavbar />
+        <div className="campagne-body">
+          <div className="campagne-header">
         <h1 className="campagne-title">Campagne</h1>
         <button className="btn-settings" onClick={() => setShowEmailSettings(true)}>
           <FiSettings size={22} />
         </button>
-      </div>
+          </div>
 
-      <div className="campagne-grid">
-      {campagnes.map((campagne) => (
-        <div key={campagne.id} className="campagne-card" onClick={() => setCampagneEnCours(campagne)}>
-          <h3>{campagne.nom}</h3>
-          <p>{campagne.description}</p>
-          <button
-            className="btn-email"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (comptesConnectes.length === 0) {
-                setShowEmailSettings(true);
-                return;
-              }
-              setCampagneEmailing(campagne);
+          <div className="campagne-grid">
+        {campagnes.map((campagne) => (
+          <div key={campagne.id} className="campagne-card" onClick={() => setCampagneEnCours(campagne)}>
+            <h3>{campagne.nom}</h3>
+            <p>{campagne.description}</p>
+            <button
+              className="btn-email"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (comptesConnectes.length === 0) {
+                  setShowEmailSettings(true);
+                  return;
+                }
+                setCampagneEmailing(campagne);
+              }}
+            >
+            Emailing
+            </button>
+          </div>
+        ))}
+
+          <div className="campagne-card-add" onClick={() => setShowPopup(true)}>
+            <span className="campagne-plus">+</span>
+          </div>
+          </div>
+          {(showPopup || campagneEnCours) && (
+            <CreateCampagnePopup
+            userId={userId}
+            entrepriseId={entrepriseId}
+            campagneInitiale={campagneEnCours} // NEW
+            onClose={() => {
+              setShowPopup(false);
+              setCampagneEnCours(null);
             }}
-          >
-          Emailing
-          </button>
+            onCreated={(nouvelleOuModifiee) => {
+              if (nouvelleOuModifiee.deleted) {
+                setCampagnes(prev => prev.filter(c => c.id !== nouvelleOuModifiee.id));
+              } else {
+                setCampagnes(prev => {
+                  const autres = prev.filter(c => c.id !== nouvelleOuModifiee.id);
+                  return [nouvelleOuModifiee, ...autres];
+                });
+              }
+            }}          
+            />
+          )}
+          {campagneEmailing && (
+          <EmailSenderPopup
+            campagne={campagneEmailing}
+            onClose={() => setCampagneEmailing(null)}
+            userId={userId}
+            entrepriseId={entrepriseId}
+          />
+          )}
+          {showEmailSettings && (
+          <EmailConnectionPopup utilisateurId={userId} onClose={() => setShowEmailSettings(false)} />
+          )}
         </div>
-      ))}
-
-        <div className="campagne-card-add" onClick={() => setShowPopup(true)}>
-          <span className="campagne-plus">+</span>
-        </div>
-        </div>
-      {(showPopup || campagneEnCours) && (
-        <CreateCampagnePopup
-          userId={userId}
-          entrepriseId={entrepriseId}
-          campagneInitiale={campagneEnCours} // NEW
-          onClose={() => {
-            setShowPopup(false);
-            setCampagneEnCours(null);
-          }}
-          onCreated={(nouvelleOuModifiee) => {
-            if (nouvelleOuModifiee.deleted) {
-              setCampagnes(prev => prev.filter(c => c.id !== nouvelleOuModifiee.id));
-            } else {
-              setCampagnes(prev => {
-                const autres = prev.filter(c => c.id !== nouvelleOuModifiee.id);
-                return [nouvelleOuModifiee, ...autres];
-              });
-            }
-          }}          
-        />
-      )}
-      {campagneEmailing && (
-        <EmailSenderPopup
-          campagne={campagneEmailing}
-          onClose={() => setCampagneEmailing(null)}
-          userId={userId}
-          entrepriseId={entrepriseId}
-        />
-      )}
-      {showEmailSettings && (
-        <EmailConnectionPopup utilisateurId={userId} onClose={() => setShowEmailSettings(false)} />
-      )}
-    </div>   
+      </div>  
   );
 }

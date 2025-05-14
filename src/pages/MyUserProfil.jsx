@@ -216,123 +216,124 @@ const handleSubmit = async (e) => {
   );
 
   return (
-    <div className={`mon-profil-app ${darkMode ? "dark" : ""}`}>
-      <DashboardNavbar darkMode={darkMode} toggleMode={toggleMode} />
+    <div className="myuserprofil-page">
+      <DashboardNavbar />
+      <div className={`mon-profil-app ${darkMode ? "dark" : ""}`}>
+        <div className="mon-profil-container">
+          <h1>Mon Profil</h1>
+          <form onSubmit={handleSubmit}>
+            <div className="profil-avatar">
+              {formData.avatar_url ? (
+                <img src={formData.avatar_url} alt="Avatar" className="avatar-img" />
+              ) : (
+                <div className="avatar-img" style={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "50%",
+                  backgroundColor: "#ccc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.8rem",
+                  color: "#fff"
+                }}>?</div>
+              )}
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} />
+            </div>
 
-      <div className="mon-profil-container">
-        <h1>Mon Profil</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="profil-avatar">
-            {formData.avatar_url ? (
-              <img src={formData.avatar_url} alt="Avatar" className="avatar-img" />
-            ) : (
-              <div className="avatar-img" style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                backgroundColor: "#ccc",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "0.8rem",
-                color: "#fff"
-              }}>?</div>
-            )}
-            <input type="file" accept="image/*" onChange={handleAvatarUpload} />
-          </div>
+            {renderField("Prénom", "prenom")}
+            {renderField("Nom", "nom")}
+            {renderField("Date de naissance", "birthdate", "date")}
+            {renderField("Téléphone", "phone")}
 
-          {renderField("Prénom", "prenom")}
-          {renderField("Nom", "nom")}
-          {renderField("Date de naissance", "birthdate", "date")}
-          {renderField("Téléphone", "phone")}
+            <div className="profil-field">
+              <label>Email :</label>
+              <input name="email" value={formData.email} readOnly />
+            </div>
 
-          <div className="profil-field">
-            <label>Email :</label>
-            <input name="email" value={formData.email} readOnly />
-          </div>
+            {/* 🎨 Choix de couleur de navbar */}
+            <div className="profil-field">
+              <label>Couleur de la Navbar :</label>
+              <input type="color" value={navbarColor} onChange={(e) => setNavbarColor(e.target.value)} />
+            </div>
 
-          {/* 🎨 Choix de couleur de navbar */}
-          <div className="profil-field">
-            <label>Couleur de la Navbar :</label>
-            <input type="color" value={navbarColor} onChange={(e) => setNavbarColor(e.target.value)} />
-          </div>
+            {/* 🖼️ Upload logo */}
+            <div className="profil-field">
+              <label>Logo personnalisé :</label>
+              {logoUrl && <img src={logoUrl} alt="Logo" style={{ height: "40px", marginBottom: "10px" }} />}
+              <input type="file" accept="image/*" onChange={handleLogoUpload} />
+            </div>
+            <div className="profil-field">
+              <label>Couleur du texte de la Navbar :</label>
+              <input type="color" value={navbarTextColor} onChange={(e) => setNavbarTextColor(e.target.value)} />
+            </div>
+            <button type="submit">Enregistrer</button>
+          </form>
 
-          {/* 🖼️ Upload logo */}
-          <div className="profil-field">
-            <label>Logo personnalisé :</label>
-            {logoUrl && <img src={logoUrl} alt="Logo" style={{ height: "40px", marginBottom: "10px" }} />}
-            <input type="file" accept="image/*" onChange={handleLogoUpload} />
-          </div>
-          <div className="profil-field">
-            <label>Couleur du texte de la Navbar :</label>
-            <input type="color" value={navbarTextColor} onChange={(e) => setNavbarTextColor(e.target.value)} />
-          </div>
-          <button type="submit">Enregistrer</button>
-        </form>
+          {entreprise && (
+            <div className="entreprise-section">
+              <h2>{entreprise.nom}</h2>
+              <p><strong>Type :</strong> {entreprise.type}</p>
 
-        {entreprise && (
-          <div className="entreprise-section">
-            <h2>{entreprise.nom}</h2>
-            <p><strong>Type :</strong> {entreprise.type}</p>
+              {isAdmin && (
+                <div>
+                  <button onClick={generateInviteCode}>Générer un code d'invitation</button>
+                  {newCode && <p>Code généré : <strong>{newCode}</strong></p>}
+                </div>
+              )}
 
-            {isAdmin && (
-              <div>
-                <button onClick={generateInviteCode}>Générer un code d'invitation</button>
-                {newCode && <p>Code généré : <strong>{newCode}</strong></p>}
-              </div>
-            )}
+              <h3>Équipe</h3>
+              <table className="equipe-table">
+                <thead>
+                  <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id}>
+                      <td>{u.prenom}</td>
+                      <td>{u.nom}</td>
+                      <td>{u.email}</td>
+                      <td>
+                        {isAdmin && u.id !== userId ? (
+                          <select value={u.role} onChange={(e) => handleRoleChange(u.id, e.target.value)}>
+                            <option value="membre">Membre</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        ) : (
+                          u.role
+                        )}
+                      </td>
+                      <td>
+                        {isAdmin && u.id !== userId && (
+                          <button onClick={() => handleDelete(u.id)}>Supprimer</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-            <h3>Équipe</h3>
-            <table className="equipe-table">
-              <thead>
-                <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Actions</th></tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.prenom}</td>
-                    <td>{u.nom}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      {isAdmin && u.id !== userId ? (
-                        <select value={u.role} onChange={(e) => handleRoleChange(u.id, e.target.value)}>
-                          <option value="membre">Membre</option>
-                          <option value="manager">Manager</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      ) : (
-                        u.role
-                      )}
-                    </td>
-                    <td>
-                      {isAdmin && u.id !== userId && (
-                        <button onClick={() => handleDelete(u.id)}>Supprimer</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <h3>Membres ayant utilisé un code d’invitation</h3>
-            <table className="equipe-table">
-              <thead>
-                <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Code</th><th>Rôle</th></tr>
-              </thead>
-              <tbody>
-                {users.filter(u => u.code_utilise).map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.prenom}</td>
-                    <td>{u.nom}</td>
-                    <td>{u.email}</td>
-                    <td>{u.code_utilise}</td>
-                    <td>{u.role}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              <h3>Membres ayant utilisé un code d’invitation</h3>
+              <table className="equipe-table">
+                <thead>
+                  <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Code</th><th>Rôle</th></tr>
+                </thead>
+                <tbody>
+                  {users.filter(u => u.code_utilise).map((u) => (
+                    <tr key={u.id}>
+                      <td>{u.prenom}</td>
+                      <td>{u.nom}</td>
+                      <td>{u.email}</td>
+                      <td>{u.code_utilise}</td>
+                      <td>{u.role}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 /* === Campagne.css === */
 .campagne-page {
-  padding: 2rem;
   font-family: 'Segoe UI', sans-serif;
+}
+
+.campagne-body {
+  padding: 2rem;
 }
 
 .campagne-header {

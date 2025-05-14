@@ -9,17 +9,20 @@ body {
 
 .leads-container {
   width: 100vw;
+  min-height: 100vh;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.lead-detail-page {
+.lead-detail-body {
   max-width: 100%;
   padding: var(--space-xl);
   box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
-  .lead-detail-page {
+  .lead-detail-body {
     max-width: 100vw;
     padding: var(--space-xl) 3vw;
   }
@@ -263,7 +266,7 @@ body {
 
 .dark body,
 .dark .leads-container,
-.dark .lead-detail-page,
+.dark .lead-detail-body,
 .dark .drawer,
 .dark .drawer input,
 .dark .drawer textarea,
@@ -773,7 +776,7 @@ body {
   min-width: 100%;
   border-collapse: collapse;
   border-radius: var(--radius-xl);
-  overflow: hidden;
+  overflow: auto;
   box-shadow: var(--shadow-sm);
 }
 
@@ -851,7 +854,7 @@ th.drop-target {
 .lead-table td.max-width {
   max-width: 250px;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: auto;
   text-overflow: ellipsis;
 }
 

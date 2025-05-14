@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import ColumnSettingsDrawer from '../components/ColumnSettingsDrawer';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { useSearchParams } from 'react-router-dom';
+import DashboardNavbar from "./DashboardNavbar";
 import {
   arrayMove,
   SortableContext,
@@ -764,9 +765,11 @@ export default function Leads() {
 
   return (
     <>
-  {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
+    <div className="leads-page">
+      <DashboardNavbar />
+      {showToast && <div className="toast-success">✅ Lead mis à jour avec succès</div>}
 
-    <div className="leads-container">
+      <div className="leads-container">
     <div className="leads-header">
       <div>
         <FilterDrawer
@@ -984,9 +987,9 @@ export default function Leads() {
         </div>
       </DndContext>
     <button className="add-prospect-fab" type="button" onClick={() => setDrawerOpen(true)}>+</button>
-  </div>
+      </div>
 
-        {drawerOpen && (
+      {drawerOpen && (
           <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
             <div className="drawer" onClick={(e) => e.stopPropagation()}>
               <h2>Créer un nouveau contact</h2>
@@ -1038,7 +1041,8 @@ export default function Leads() {
               </div>
             </div>
           </div>
-        )}
+      )}
+    </div>
     </>
   );
 }

@@ -83,33 +83,36 @@ function Dashboard({ darkMode, toggleMode }) {
   };
 
   return (
-    <div className={`dashboard ${darkMode ? "dark" : ""}`}>
-      {showModal && (
-          <EntitySelector
-          userId={userId}
-          onEntityLinked={() => setShowModal(false)}
-        />
-      )}
+    <div className="dashboard-page">
+      <DashboardNavbar />
+      <div className={`dashboard ${darkMode ? "dark" : ""}`}>
+        {showModal && (
+            <EntitySelector
+            userId={userId}
+            onEntityLinked={() => setShowModal(false)}
+          />
+        )}
 
-      <main className={`dashboard-main ${showModal ? "blur" : ""}`}>
-        <h1>Bienvenue sur votre CRM</h1>
-        <p>Voici ton tableau de bord personnel. Suis tes leads, tes stats, et reste focus.</p>
+        <main className={`dashboard-main ${showModal ? "blur" : ""}`}>
+          <h1>Bienvenue sur votre CRM</h1>
+          <p>Voici ton tableau de bord personnel. Suis tes leads, tes stats, et reste focus.</p>
 
-        <div className="card-grid">
-          <div className="card">
-            <h2>Leads générés</h2>
-            <p>124</p>
+          <div className="card-grid">
+            <div className="card">
+              <h2>Leads générés</h2>
+              <p>124</p>
+            </div>
+            <div className="card">
+              <h2>Conversions</h2>
+              <p>27</p>
+            </div>
+            <div className="card">
+              <h2>Taux de réponse</h2>
+              <p>22%</p>
+            </div>
           </div>
-          <div className="card">
-            <h2>Conversions</h2>
-            <p>27</p>
-          </div>
-          <div className="card">
-            <h2>Taux de réponse</h2>
-            <p>22%</p>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
