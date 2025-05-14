@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../helper/supabaseClient";
 import UserMenu from "./UserMenu";
 import "../pages/css/DashboardNavbar.css";
-import defaultLogo from "../pages/Images/logoaxel.png";
+const fallbackLogo = "/axel-crm/logoaxel.ico";
 
 function DashboardNavbar({ darkMode, toggleMode }) {
   const navigate = useNavigate();
@@ -58,7 +58,15 @@ function DashboardNavbar({ darkMode, toggleMode }) {
         {/* Haut : logo + burger + avatar */}
         <div className="nav-header">
           <NavLink to="/dashboard">
-            <img src={logoUrl || defaultLogo} alt="Logo" className="nav-logo" />
+            <img
+              src={logoUrl || fallbackLogo}
+              alt="Logo"
+              className="nav-logo"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = fallbackLogo;
+              }}
+            />
           </NavLink>
   
           <button className="burger-toggle" onClick={() => setMenuOpen(!menuOpen)}>

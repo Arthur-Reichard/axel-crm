@@ -24,6 +24,7 @@ import EntrepriseClientDetails from "./pages/EntrepriseClientDetails";
 import Reunions from './pages/Reunions';
 import NouveauCompteRendu from './pages/NouveauCompteRendu';
 import ReunionDetail from './pages/ReunionDetail';
+import RedirectRoot from "./pages/RedirectRoot";
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -57,7 +58,7 @@ function App() {
         <Route path="/oauth/callback/outlook" element={<OAuthCallbackOutlook />} />
 
         {/* Pages privées sans layout global */}
-        <Route path="/" element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />} />
+        <Route path="/" element={<RedirectRoot />} />
         <Route path="/dashboard" element={<Dashboard darkMode={darkMode} toggleMode={toggleMode} />} />
         <Route path="/equipe" element={<Equipe darkMode={darkMode} toggleMode={toggleMode} />} />
         <Route path="/calendar" element={<Calendar darkMode={darkMode} toggleMode={toggleMode} />} />
