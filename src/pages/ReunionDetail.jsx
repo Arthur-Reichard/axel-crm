@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "../helper/SupabaseClient";
 import './css/Reunion.css';
+import DashboardNavbar from "./DashboardNavbar";
 
 const ReunionDetail = () => {
   const { id } = useParams();
