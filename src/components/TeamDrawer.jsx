@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
+import { FiSettings } from "react-icons/fi";
+import "./css/TeamDrawer.css";
 
 export default function TeamDrawer({ onSelect, selectedId, refreshTrigger }) {
   const [employees, setEmployees] = useState([]);
@@ -40,6 +42,14 @@ export default function TeamDrawer({ onSelect, selectedId, refreshTrigger }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Bouton réglages */}
+      <div className="drawer-footer">
+        <button className="settings-button" onClick={() => console.log("Ouverture des réglages à venir")}>
+          <FiSettings />
+          Réglages
+        </button>
       </div>
     </div>
   );

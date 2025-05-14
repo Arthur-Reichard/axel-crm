@@ -4,6 +4,7 @@ import { supabase } from "../helper/supabaseClient";
 import './css/Reunion.css';
 import jsPDF from 'jspdf';
 import { FiChevronDown } from 'react-icons/fi';
+import DashboardNavbar from "./DashboardNavbar";
 
 const Reunions = () => {
   const [reunions, setReunions] = useState([]);
@@ -82,47 +83,49 @@ const Reunions = () => {
   };
 
   return (
-    <div className="reunion-page">
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="reunion-header">Comptes Rendus</h1>
-        <button className="reunion-btn" onClick={() => navigate('/reunions/nouveau')}>
-          + Nouveau compte rendu
-        </button>
-      </div>
+    <div className="reunions-page">
+      <DashboardNavbar />
+      <div className="reunion-page">
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="reunion-header">Comptes Rendus</h1>
+          <button className="reunion-btn" onClick={() => navigate('/reunions/nouveau')}>
+            + Nouveau compte rendu
+          </button>
+        </div>
 
-      <div className="reunion-list">
-        {reunions.map((r) => (
-          <div key={r.id} className="reunion-item" style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="reunion-left" onClick={() => navigate(`/reunions/${r.id}`)}>
-              <h3>{r.titre}</h3>
-              <p>{r.date_reunion} — {r.lieu}</p>
-            </div>
+        <div className="reunion-list">
+          {reunions.map((r) => (
+            <div key={r.id} className="reunion-item" onClick={() => navigate(`/reunions/${r.id}`)}>
+              <div className="reunion-left">
+                <h3>{r.titre}</h3>
+                <p>{r.date_reunion} — {r.lieu}</p>
+              </div>
 
-            <div
-              className="export-dropdown"
-              ref={dropdownRef}
-              style={{ position: 'relative' }}
-            >
-              <button
-                className="export-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleDropdown(r.id);
-                }}
+              <div
+                className="export-dropdown"
+                onClick={(e) => e.stopPropagation()} // ⛔ bloque le clic global
               >
-                Exporter <FiChevronDown />
-              </button>
+                <button
+                  className="export-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDropdown(r.id);
+                  }}
+                >
+                  Exporter
+                </button>
 
-              {openDropdown === r.id && (
-                <ul className="dropdown-menu" style={{ listStyle: 'none' }}>
-                  <li onClick={(e) => { e.stopPropagation(); exporter(r, 'pdf'); setOpenDropdown(null); }}>PDF</li>
-                  <li onClick={(e) => { e.stopPropagation(); exporter(r, 'docx'); setOpenDropdown(null); }}>DOCX</li>
-                  <li onClick={(e) => { e.stopPropagation(); exporter(r, 'txt'); setOpenDropdown(null); }}>TXT</li>
-                </ul>
-              )}
+                {openDropdown === r.id && (
+                  <ul className="dropdown-menu">
+                    <li onClick={(e) => { e.stopPropagation(); exporter(r, 'pdf'); }}>PDF</li>
+                    <li onClick={(e) => { e.stopPropagation(); exporter(r, 'docx'); }}>DOCX</li>
+                    <li onClick={(e) => { e.stopPropagation(); exporter(r, 'txt'); }}>TXT</li>
+                  </ul>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

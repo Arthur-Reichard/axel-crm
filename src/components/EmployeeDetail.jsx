@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../helper/supabaseClient";
-import MiniCalendar from '../components/MiniCalendar';
+import MiniCalendar from './MiniCalendar';
 import QuickEventPopup from './QuickEventPopup';
 
 export default function EmployeeDetail({ employee, onSaved, onDeleted }) {

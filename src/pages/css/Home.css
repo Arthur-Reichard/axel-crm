@@ -14,8 +14,6 @@ html, body {
   font-family: 'General Sans', sans-serif;
   background: #fefefe;
   color: #111;
-  overflow-x: hidden !important;
-  scroll-behavior: smooth;
 }
 
 body, h1, h2, h3, h4, h5, h6, p, span, div, section, a, li {
@@ -433,10 +431,6 @@ section {
 
 body::-webkit-scrollbar {
   height: 0px;
-}
-
-body {
-  overflow-x: hidden !important;
 }
 
 .logo-button {

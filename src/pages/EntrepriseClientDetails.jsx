@@ -7,7 +7,7 @@ import AdresseAutocomplete from '../components/AdresseAutocomplete';
 import { FiSettings, FiEye, FiEyeOff, FiSave, FiTrash2 } from 'react-icons/fi';
 import { createClient } from '@supabase/supabase-js';
 import { useSearchParams } from 'react-router-dom';
-
+import DashboardNavbar from "./DashboardNavbar";
 
 export default function EntrepriseClientDetail() {
   const [searchParams] = useSearchParams();
@@ -330,12 +330,14 @@ useEffect(() => {
 
 return (
   <>
+  <div className="lead-detail-page">
+    <DashboardNavbar />
     {(isLoading || isFetchingInsee) && (
       <div className="overlay-loading">
         <div className="spinner" />
       </div>
     )}
-    <div className="lead-detail-page">
+    <div className="lead-detail-body">
       <div className="lead-detail-header">
         <h1>Fiche Entreprise</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -697,6 +699,7 @@ return (
         </div>
       )}
     </div>
-   </>
+  </div>
+  </>
   );
 }

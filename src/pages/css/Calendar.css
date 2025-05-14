@@ -661,14 +661,6 @@
   }
 }
 
-
-html, body {
-  overflow: hidden;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
 .my-calendar-app {
   height: 100vh;
   overflow: hidden;
@@ -680,7 +672,6 @@ html, body {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .fc {
@@ -719,7 +710,6 @@ html, body {
 }
 .fc .fc-daygrid-event {
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
   font-size: 0.85rem;
@@ -769,7 +759,6 @@ html, body {
   font-size: 0.85rem;
   padding: 0 2px;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -861,10 +850,6 @@ html, body {
     background: none !important;
     box-shadow: none !important;
   }
-}
-
-body {
-  overflow: hidden; /* par défaut, pas de scroll */
 }
 
 body.my-calendar-scroll-enabled {

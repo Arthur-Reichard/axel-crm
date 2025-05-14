@@ -1,8 +1,3 @@
-/* Empêche le scroll horizontal */
-body.popup-open {
-  overflow-x: hidden;
-}
-
 .popup {
   position: fixed;
   inset: 0;

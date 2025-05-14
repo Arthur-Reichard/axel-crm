@@ -2,7 +2,7 @@
    🧾 STYLES DE LA PAGE DETAIL LEAD / ENTREPRISE
 ============================================================ */
 
-.lead-detail-page {
+.lead-detail-body {
   padding: var(--space-xl);
   max-width: 1200px;
   margin: 0 auto;

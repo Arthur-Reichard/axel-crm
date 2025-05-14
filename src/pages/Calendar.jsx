@@ -10,6 +10,7 @@ import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import QuickEventPopup from '../components/QuickEventPopup';
 import EventDetailsPopup from '../components/EventDetailsPopup';
+import DashboardNavbar from "./DashboardNavbar";
 
 
 
@@ -315,263 +316,290 @@ export default function Calendar({ darkMode }) {
   if (loading) return <p className="my-calendar-app-loading">Chargement du calendrier...</p>;
 
   return (
-    <div className={`my-calendar-app ${darkMode ? 'dark' : ''}`}>
-      <Toaster position="top-right" />
+    <div className="calendar-page">
+      <DashboardNavbar />
+      <div className={`my-calendar-app ${darkMode ? 'dark' : ''}`}>
+        <Toaster position="top-right" />
 
-      {showMobileSidebar && (
-        <div
-          className="my-calendar-sidebar-overlay"
-          onClick={() => setShowMobileSidebar(false)}
-        />
-      )}
-
-      <div className={`my-calendar-sidebar ${showMobileSidebar ? 'open' : ''}`}>
-
-        <button className="my-calendar-close-menu" onClick={() => setShowMobileSidebar(false)}>×</button>
-
-        <div className="my-calendar-create-wrapper">
-          <button className="my-calendar-create-btn" onClick={() => setDrawerOpen(true)}>
-            <span>＋</span> Créer un événement
-          </button>
-        </div>
-
-        <div className="my-calendar-mini">
-        <FullCalendar
-          plugins={[dayGridPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
-          height="100%"
-          contentHeight="auto"
-          fixedWeekCount={false}
-          dayMaxEventRows={1}
-          selectable
-          datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
-          select={(arg) => {
-            const isMobile = window.innerWidth <= 900;
-          
-            if (isMobile) {
-              calendarRef.current?.getApi().changeView('timeGridDay', arg.start);
-              setCurrentView('timeGridDay');
-              return;
-            }
-          
-            const start = new Date(arg.start);
-            const end = new Date(arg.end);
-            const duration = Math.round((end - start) / (1000 * 60)); // durée en minutes
-          
-            const startStr = start.toISOString().slice(0, 16); // ex: '2025-04-17T09:00'
-          
-            setNewEvent({
-              title: '',
-              start_time: startStr,
-              calendar_id: calendars[0]?.id || '',
-              description: '',
-              lieu: '',
-              duration: duration || 60
-            });
-          
-            setDrawerOpen(true);
-          }}
-                          
+        {showMobileSidebar && (
+          <div
+            className="my-calendar-sidebar-overlay"
+            onClick={() => setShowMobileSidebar(false)}
           />
-      </div>
-
-
-      <div className="mobile-view-buttons">
-        <button
-          className={currentView === 'dayGridMonth' ? 'active' : ''}
-          onClick={() => {
-            setCurrentView('dayGridMonth');
-            calendarRef.current?.getApi().changeView('dayGridMonth');
-          }}
-        >
-          Mois
-        </button>
-        <button
-          className={currentView === 'timeGridWeek' ? 'active' : ''}
-          onClick={() => {
-            setCurrentView('timeGridWeek');
-            calendarRef.current?.getApi().changeView('timeGridWeek');
-          }}
-        >
-          Semaine
-        </button>
-        <button
-          className={currentView === 'timeGridDay' ? 'active' : ''}
-          onClick={() => {
-            setCurrentView('timeGridDay');
-            calendarRef.current?.getApi().changeView('timeGridDay');
-          }}
-        >
-          Jour
-        </button>
-        <button
-          className={currentView === 'listWeek' ? 'active' : ''}
-          onClick={() => {
-            setCurrentView('listWeek');
-            const api = calendarRef.current?.getApi();
-            if (api) {
-              api.changeView('listWeek', new Date()); // 👈 focus sur aujourd’hui
-            }
-          }}
-        >
-          Liste
-        </button>
-
-      </div>
-
-
-
-        <h3>Mes agendas</h3>
-        {calendars.map(cal => (
-          <label key={cal.id}>
-            <input
-              type="checkbox"
-              checked={selectedCalendars.includes(cal.id)}
-              onChange={() => {
-                const newList = selectedCalendars.includes(cal.id)
-                  ? selectedCalendars.filter(id => id !== cal.id)
-                  : [...selectedCalendars, cal.id];
-                setSelectedCalendars(newList);
-              }}
-            />
-            <span style={{ color: cal.color }}>{cal.name}</span>
-          </label>
-        ))}
-
-        {invitationsRecues.length > 0 && (
-          <div className="invitations-sidebar-section">
-            <h4>Invitations reçues</h4>
-            <ul className="invitation-list">
-              {invitationsRecues.map(invite => (
-                <li key={invite.id} className="invitation-item">
-                  <span>{invite.events?.title || 'Événement'}</span>
-                  <div className="invitation-actions">
-                    <button onClick={() => handleInvitationResponse(invite.id, 'accepte')}>✅</button>
-                    <button onClick={() => handleInvitationResponse(invite.id, 'refuse')}>❌</button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
         )}
-      </div>
 
-      <div className="my-calendar-main">
-        <div className={`my-calendar-header-mobile ${currentView === 'listWeek' ? 'no-arrows' : ''}`}>
-        <button
-          className={`my-calendar-hamburger ${showMobileSidebar ? 'invisible' : ''}`}
-          onClick={() => setShowMobileSidebar(true)}
-        >
-          ☰
-        </button>
-          <button className="prev" onClick={() => calendarRef.current?.getApi().prev()}>←</button>
-          <div className="my-calendar-current-month">
-            {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+        <div className={`my-calendar-sidebar ${showMobileSidebar ? 'open' : ''}`}>
+
+          <button className="my-calendar-close-menu" onClick={() => setShowMobileSidebar(false)}>×</button>
+
+          <div className="my-calendar-create-wrapper">
+            <button className="my-calendar-create-btn" onClick={() => setDrawerOpen(true)}>
+              <span>＋</span> Créer un événement
+            </button>
           </div>
-          <button className="next" onClick={() => calendarRef.current?.getApi().next()}>→</button>
+
+          <div className="my-calendar-mini">
+          <FullCalendar
+            plugins={[dayGridPlugin]}
+            initialView="dayGridMonth"
+            headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
+            height="100%"
+            contentHeight="auto"
+            fixedWeekCount={false}
+            dayMaxEventRows={1}
+            selectable
+            datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
+            select={(arg) => {
+              const isMobile = window.innerWidth <= 900;
+            
+              if (isMobile) {
+                calendarRef.current?.getApi().changeView('timeGridDay', arg.start);
+                setCurrentView('timeGridDay');
+                return;
+              }
+            
+              const start = new Date(arg.start);
+              const end = new Date(arg.end);
+              const duration = Math.round((end - start) / (1000 * 60)); // durée en minutes
+            
+              const startStr = start.toISOString().slice(0, 16); // ex: '2025-04-17T09:00'
+            
+              setNewEvent({
+                title: '',
+                start_time: startStr,
+                calendar_id: calendars[0]?.id || '',
+                description: '',
+                lieu: '',
+                duration: duration || 60
+              });
+            
+              setDrawerOpen(true);
+            }}
+                            
+            />
+        </div>
+
+
+        <div className="mobile-view-buttons">
+          <button
+            className={currentView === 'dayGridMonth' ? 'active' : ''}
+            onClick={() => {
+              setCurrentView('dayGridMonth');
+              calendarRef.current?.getApi().changeView('dayGridMonth');
+            }}
+          >
+            Mois
+          </button>
+          <button
+            className={currentView === 'timeGridWeek' ? 'active' : ''}
+            onClick={() => {
+              setCurrentView('timeGridWeek');
+              calendarRef.current?.getApi().changeView('timeGridWeek');
+            }}
+          >
+            Semaine
+          </button>
+          <button
+            className={currentView === 'timeGridDay' ? 'active' : ''}
+            onClick={() => {
+              setCurrentView('timeGridDay');
+              calendarRef.current?.getApi().changeView('timeGridDay');
+            }}
+          >
+            Jour
+          </button>
+          <button
+            className={currentView === 'listWeek' ? 'active' : ''}
+            onClick={() => {
+              setCurrentView('listWeek');
+              const api = calendarRef.current?.getApi();
+              if (api) {
+                api.changeView('listWeek', new Date()); // 👈 focus sur aujourd’hui
+              }
+            }}
+          >
+            Liste
+          </button>
+
         </div>
 
 
 
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-          ref={calendarRef}
-          editable
-          selectable
-          eventResizableFromStart
-          events={displayedEvents}
-          eventClick={async (info) => {
-            const isMobile = window.innerWidth <= 900;
-            const clickedEvent = events.find(e => e.id === info.event.id);
-            if (!clickedEvent) return;
-          
-            // Debug avec log
-            const { data: invites, error } = await supabase
-              .from('invitations_events')
-              .select('id, statut, utilisateur:utilisateur_id (prenom, nom, email)')
-              .eq('event_id', clickedEvent.id);
-          
-            if (error) {
-              console.error("❌ Supabase error on invite fetch:", error);
-              toast.error("Erreur chargement des invités");
-              return;
-            }
-          
-            console.log("✅ Invités récupérés :", invites);
-          
-            const enrichedEvent = { ...clickedEvent, invites };
-          
-            if (isMobile && (currentView === 'timeGridWeek' || currentView === 'timeGridDay')) {
-              setMobileEventOverlay(enrichedEvent);
-            } else {
-              setQuickPopup(null);
-              setTimeout(() => {
-                setQuickEventPopup({
-                  x: info.jsEvent.pageX,
-                  y: info.jsEvent.pageY,
-                  event: enrichedEvent
-                });
-              }, 20);
-            }
-          }}          
-          eventDrop={handleEventDrop}
-          eventResize={handleEventDrop}
-          dateClick={(arg) => {
-            if (isMobile) {
-              calendarRef.current?.getApi().changeView('timeGridDay', arg.date);
-              setCurrentView('timeGridDay');
-            } else {
-              const x = arg.jsEvent.pageX;
-              const y = arg.jsEvent.pageY;
-              setQuickPopup({ x, y, date: arg.dateStr });
-            }
-          }}                   
-          eventDidMount={handleTooltip}
-          datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
-          height="calc(var(--vh, 1vh) * 100)"
-          headerToolbar={window.innerWidth > 900 ? {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-          } : {
-            left: '',
-            center: '',
-            right: ''
-          }}
-          buttonText={{
-            today: 'Aujourd\'hui',
-            month: 'Mois',
-            week: 'Semaine',
-            day: 'Jour',
-            list: 'Liste'
-          }}
-          viewDidMount={(arg) => {
-            setCurrentView(arg.view.type);
-          }}
-          eventStartEditable={true}
-          eventDurationEditable={true}
-          longPressDelay={isMobile ? 400 : 0}
-          eventLongPressDelay={isMobile ? 400 : 0}
-          dragScroll={isMobile}
-          eventContent={(arg) => {
-            const view = arg.view.type;
-            const isTimeGrid = view === 'timeGridDay' || view === 'timeGridWeek';
-            const isMonth = view === 'dayGridMonth';
-            const isMobile = window.innerWidth <= 900;
-            
-            const title = arg.event.title;
-            const start = arg.event.start;
-            const hours = start.getHours().toString().padStart(2, '0');
-            const minutes = start.getMinutes().toString().padStart(2, '0');
-            const timeStr = `${hours}:${minutes}`;
-            const color = arg.event.backgroundColor || arg.event.color || '#1e88e5';
+          <h3>Mes agendas</h3>
+          {calendars.map(cal => (
+            <label key={cal.id}>
+              <input
+                type="checkbox"
+                checked={selectedCalendars.includes(cal.id)}
+                onChange={() => {
+                  const newList = selectedCalendars.includes(cal.id)
+                    ? selectedCalendars.filter(id => id !== cal.id)
+                    : [...selectedCalendars, cal.id];
+                  setSelectedCalendars(newList);
+                }}
+              />
+              <span style={{ color: cal.color }}>{cal.name}</span>
+            </label>
+          ))}
 
-            if (isTimeGrid) {
-              const lieu = arg.event.extendedProps.lieu;
-              const description = arg.event.extendedProps.description;
-              const duration = arg.event.extendedProps.duration;
-          
+          {invitationsRecues.length > 0 && (
+            <div className="invitations-sidebar-section">
+              <h4>Invitations reçues</h4>
+              <ul className="invitation-list">
+                {invitationsRecues.map(invite => (
+                  <li key={invite.id} className="invitation-item">
+                    <span>{invite.events?.title || 'Événement'}</span>
+                    <div className="invitation-actions">
+                      <button onClick={() => handleInvitationResponse(invite.id, 'accepte')}>✅</button>
+                      <button onClick={() => handleInvitationResponse(invite.id, 'refuse')}>❌</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="my-calendar-main">
+          <div className={`my-calendar-header-mobile ${currentView === 'listWeek' ? 'no-arrows' : ''}`}>
+          <button
+            className={`my-calendar-hamburger ${showMobileSidebar ? 'invisible' : ''}`}
+            onClick={() => setShowMobileSidebar(true)}
+          >
+            ☰
+          </button>
+            <button className="prev" onClick={() => calendarRef.current?.getApi().prev()}>←</button>
+            <div className="my-calendar-current-month">
+              {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+            </div>
+            <button className="next" onClick={() => calendarRef.current?.getApi().next()}>→</button>
+          </div>
+
+
+
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+            ref={calendarRef}
+            editable
+            selectable
+            eventResizableFromStart
+            events={displayedEvents}
+            eventClick={async (info) => {
+              const isMobile = window.innerWidth <= 900;
+              const clickedEvent = events.find(e => e.id === info.event.id);
+              if (!clickedEvent) return;
+            
+              // Debug avec log
+              const { data: invites, error } = await supabase
+                .from('invitations_events')
+                .select('id, statut, utilisateur:utilisateur_id (prenom, nom, email)')
+                .eq('event_id', clickedEvent.id);
+            
+              if (error) {
+                console.error("❌ Supabase error on invite fetch:", error);
+                toast.error("Erreur chargement des invités");
+                return;
+              }
+            
+              console.log("✅ Invités récupérés :", invites);
+            
+              const enrichedEvent = { ...clickedEvent, invites };
+            
+              if (isMobile && (currentView === 'timeGridWeek' || currentView === 'timeGridDay')) {
+                setMobileEventOverlay(enrichedEvent);
+              } else {
+                setQuickPopup(null);
+                setTimeout(() => {
+                  setQuickEventPopup({
+                    x: info.jsEvent.pageX,
+                    y: info.jsEvent.pageY,
+                    event: enrichedEvent
+                  });
+                }, 20);
+              }
+            }}          
+            eventDrop={handleEventDrop}
+            eventResize={handleEventDrop}
+            dateClick={(arg) => {
+              if (isMobile) {
+                calendarRef.current?.getApi().changeView('timeGridDay', arg.date);
+                setCurrentView('timeGridDay');
+              } else {
+                const x = arg.jsEvent.pageX;
+                const y = arg.jsEvent.pageY;
+                setQuickPopup({ x, y, date: arg.dateStr });
+              }
+            }}                   
+            eventDidMount={handleTooltip}
+            datesSet={(arg) => setCurrentDate(arg.view.currentStart)}
+            height="calc(var(--vh, 1vh) * 100)"
+            headerToolbar={window.innerWidth > 900 ? {
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            } : {
+              left: '',
+              center: '',
+              right: ''
+            }}
+            buttonText={{
+              today: 'Aujourd\'hui',
+              month: 'Mois',
+              week: 'Semaine',
+              day: 'Jour',
+              list: 'Liste'
+            }}
+            viewDidMount={(arg) => {
+              setCurrentView(arg.view.type);
+            }}
+            eventStartEditable={true}
+            eventDurationEditable={true}
+            longPressDelay={isMobile ? 400 : 0}
+            eventLongPressDelay={isMobile ? 400 : 0}
+            dragScroll={isMobile}
+            eventContent={(arg) => {
+              const view = arg.view.type;
+              const isTimeGrid = view === 'timeGridDay' || view === 'timeGridWeek';
+              const isMonth = view === 'dayGridMonth';
+              const isMobile = window.innerWidth <= 900;
+              
+              const title = arg.event.title;
+              const start = arg.event.start;
+              const hours = start.getHours().toString().padStart(2, '0');
+              const minutes = start.getMinutes().toString().padStart(2, '0');
+              const timeStr = `${hours}:${minutes}`;
+              const color = arg.event.backgroundColor || arg.event.color || '#1e88e5';
+
+              if (isTimeGrid) {
+                const lieu = arg.event.extendedProps.lieu;
+                const description = arg.event.extendedProps.description;
+                const duration = arg.event.extendedProps.duration;
+            
+                return {
+                  domNodes: [createElement(`
+                    <div style="
+                      background-color: ${color};
+                      border: 1px solid ${color};
+                      color: white;
+                      border-radius: 6px;
+                      padding: 6px 8px;
+                      font-size: 0.8rem;
+                      display: flex;
+                      flex-direction: column;
+                      height: 100%;
+                      box-sizing: border-box;
+                      overflow: hidden;
+                      gap: 2px;
+                    ">
+                      <div style="font-weight: bold;">${title}</div>
+                      ${lieu ? `<div style="font-size: 0.75rem;">📍 ${lieu}</div>` : ''}
+                      ${description ? `<div style="font-size: 0.75rem; opacity: 0.85;">${description}</div>` : ''}
+                      ${duration ? `<div style="font-size: 0.75rem;">⏱ ${duration} min</div>` : ''}
+                    </div>
+                  `)]
+                };
+              }
+            
               return {
                 domNodes: [createElement(`
                   <div style="
@@ -579,172 +607,148 @@ export default function Calendar({ darkMode }) {
                     border: 1px solid ${color};
                     color: white;
                     border-radius: 6px;
-                    padding: 6px 8px;
+                    padding: 2px 6px;
                     font-size: 0.8rem;
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
+                    display: block;
+                    width: 100%;
                     box-sizing: border-box;
+                    white-space: nowrap;
                     overflow: hidden;
-                    gap: 2px;
+                    text-overflow: ellipsis;
                   ">
-                    <div style="font-weight: bold;">${title}</div>
-                    ${lieu ? `<div style="font-size: 0.75rem;">📍 ${lieu}</div>` : ''}
-                    ${description ? `<div style="font-size: 0.75rem; opacity: 0.85;">${description}</div>` : ''}
-                    ${duration ? `<div style="font-size: 0.75rem;">⏱ ${duration} min</div>` : ''}
+                    <strong>${title}</strong>
                   </div>
                 `)]
               };
-            }
-          
-            return {
-              domNodes: [createElement(`
-                <div style="
-                  background-color: ${color};
-                  border: 1px solid ${color};
-                  color: white;
-                  border-radius: 6px;
-                  padding: 2px 6px;
-                  font-size: 0.8rem;
-                  display: block;
-                  width: 100%;
-                  box-sizing: border-box;
-                  white-space: nowrap;
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                ">
-                  <strong>${title}</strong>
-                </div>
-              `)]
-            };
 
-          }}                   
-        />
-      </div>
-
-      {mobileEventOverlay && (
-        <div className="my-calendar-event-overlay">
-          <div className="my-calendar-event-overlay-header">
-            <button onClick={() => setMobileEventOverlay(null)}>×</button>
-            <span>Détails</span>
-            <button onClick={() => {
-              setEventToEdit(event);
-              setQuickEventPopup(null);
-              setDrawerOpen(true);
-            }}>✎ Modifier</button>
-          </div>
-
-          <div className="my-calendar-event-overlay-content">
-            <h2>{mobileEventOverlay.title}</h2>
-            {mobileEventOverlay.lieu && <p>📍 {mobileEventOverlay.lieu}</p>}
-            {mobileEventOverlay.description && <p>{mobileEventOverlay.description}</p>}
-            {mobileEventOverlay.start_time && <p>🕒 {new Date(mobileEventOverlay.start_time).toLocaleString()}</p>}
-            {mobileEventOverlay.duration && <p>⏱ {mobileEventOverlay.duration} minutes</p>}
-          </div>
+            }}                   
+          />
         </div>
-      )}
 
-      {(quickPopup || quickEventPopup) && (
-        <div className="popup-overlay" />
-      )}
+        {mobileEventOverlay && (
+          <div className="my-calendar-event-overlay">
+            <div className="my-calendar-event-overlay-header">
+              <button onClick={() => setMobileEventOverlay(null)}>×</button>
+              <span>Détails</span>
+              <button onClick={() => {
+                setEventToEdit(event);
+                setQuickEventPopup(null);
+                setDrawerOpen(true);
+              }}>✎ Modifier</button>
+            </div>
+
+            <div className="my-calendar-event-overlay-content">
+              <h2>{mobileEventOverlay.title}</h2>
+              {mobileEventOverlay.lieu && <p>📍 {mobileEventOverlay.lieu}</p>}
+              {mobileEventOverlay.description && <p>{mobileEventOverlay.description}</p>}
+              {mobileEventOverlay.start_time && <p>🕒 {new Date(mobileEventOverlay.start_time).toLocaleString()}</p>}
+              {mobileEventOverlay.duration && <p>⏱ {mobileEventOverlay.duration} minutes</p>}
+            </div>
+          </div>
+        )}
+
+        {(quickPopup || quickEventPopup) && (
+          <div className="popup-overlay" />
+        )}
 
 
-      {quickPopup && !quickPopup.event && (
-        <QuickEventPopup
-          utilisateursEntreprise={usersFromSameEntreprise}
-          x={quickPopup.x}
-          y={quickPopup.y}
-          date={quickPopup.date}
-          calendars={calendars}
-          onClose={() => setQuickPopup(null)}
-          onSave={async (data) => {
-            try {
-              // 1. Créer l'événement principal
-              const newEvt = await createEvent(data);
-              setEvents(prev => [...prev, newEvt]);
-          
-              // 2. Insérer les invitations
-              if (data.invites && data.invites.length > 0) {
-                const invitesToInsert = data.invites.map(uid => ({
-                  event_id: newEvt.id,
-                  utilisateur_id: uid,
-                  invite_par: userId,
-                  statut: 'en_attente'
-                }));
-          
-                const { error: inviteError } = await supabase
-                  .from('invitations_events')
-                  .insert(invitesToInsert);
-          
-                if (inviteError) {
-                  console.error('Erreur insert invitations:', inviteError);
-                  toast.error("Invitations non envoyées");
+        {quickPopup && !quickPopup.event && (
+          <QuickEventPopup
+            utilisateursEntreprise={usersFromSameEntreprise}
+            x={quickPopup.x}
+            y={quickPopup.y}
+            date={quickPopup.date}
+            calendars={calendars}
+            onClose={() => setQuickPopup(null)}
+            onSave={async (data) => {
+              try {
+                // 1. Créer l'événement principal
+                const newEvt = await createEvent(data);
+                setEvents(prev => [...prev, newEvt]);
+            
+                // 2. Insérer les invitations
+                if (data.invites && data.invites.length > 0) {
+                  const invitesToInsert = data.invites.map(uid => ({
+                    event_id: newEvt.id,
+                    utilisateur_id: uid,
+                    invite_par: userId,
+                    statut: 'en_attente'
+                  }));
+            
+                  const { error: inviteError } = await supabase
+                    .from('invitations_events')
+                    .insert(invitesToInsert);
+            
+                  if (inviteError) {
+                    console.error('Erreur insert invitations:', inviteError);
+                    toast.error("Invitations non envoyées");
+                  }
                 }
+            
+                toast.success("Événement + invitations envoyés !");
+                setQuickPopup(null);
+              } catch (err) {
+                toast.error("Erreur : " + err.message);
               }
-          
-              toast.success("Événement + invitations envoyés !");
+            }}          
+            onMoreOptions={(evtData) => {
+              setNewEvent({
+                ...evtData,
+                duration: evtData.duration ?? 60
+              });
+              setDrawerOpen(true);
               setQuickPopup(null);
-            } catch (err) {
-              toast.error("Erreur : " + err.message);
-            }
-          }}          
-          onMoreOptions={(evtData) => {
-            setNewEvent({
-              ...evtData,
-              duration: evtData.duration ?? 60
-            });
-            setDrawerOpen(true);
-            setQuickPopup(null);
-          }}
-        />
-      )}
+            }}
+          />
+        )}
 
 
-      {quickEventPopup && (
-        <EventDetailsPopup
-          x={quickEventPopup.x}
-          y={quickEventPopup.y}
-          event={quickEventPopup.event}
-          calendars={calendars}
-          onClose={() => setQuickEventPopup(null)}
-          onUpdate={async (updatedData) => {
-            try {
-              const result = await updateEvent(updatedData);
-              setEvents(prev => prev.map(ev => ev.id === result.id ? result : ev));
-              toast.success("Événement modifié !");
-              setQuickEventPopup(null);
-            } catch (err) {
-              toast.error("Erreur modification : " + err.message);
-            }
-          }}
-          onDelete={async () => {
-            const event = quickEventPopup?.event;
-            const eventId = event?.id;
-          
-            console.log("🧪 Suppression demandée pour :", event);
-            console.log("🧪 ID transmis :", eventId);
-          
-            if (!eventId) {
-              toast.error("Événement introuvable pour suppression.");
-              return;
-            }
-          
-            try {
-              await deleteEvent(eventId);
-              toast.success("Événement supprimé !");
-          
-              const calendarIds = calendars.map(c => c.id);
-              const refreshed = await getEventsForCalendars(calendarIds);
-              setEvents(refreshed);
-          
-            } catch (err) {
-              toast.error("Erreur suppression : " + err.message);
-            } finally {
-              setQuickEventPopup(null);
-            }
-          }}                 
-        />
-      )}
+        {quickEventPopup && (
+          <EventDetailsPopup
+            x={quickEventPopup.x}
+            y={quickEventPopup.y}
+            event={quickEventPopup.event}
+            calendars={calendars}
+            onClose={() => setQuickEventPopup(null)}
+            onUpdate={async (updatedData) => {
+              try {
+                const result = await updateEvent(updatedData);
+                setEvents(prev => prev.map(ev => ev.id === result.id ? result : ev));
+                toast.success("Événement modifié !");
+                setQuickEventPopup(null);
+              } catch (err) {
+                toast.error("Erreur modification : " + err.message);
+              }
+            }}
+            onDelete={async () => {
+              const event = quickEventPopup?.event;
+              const eventId = event?.id;
+            
+              console.log("🧪 Suppression demandée pour :", event);
+              console.log("🧪 ID transmis :", eventId);
+            
+              if (!eventId) {
+                toast.error("Événement introuvable pour suppression.");
+                return;
+              }
+            
+              try {
+                await deleteEvent(eventId);
+                toast.success("Événement supprimé !");
+            
+                const calendarIds = calendars.map(c => c.id);
+                const refreshed = await getEventsForCalendars(calendarIds);
+                setEvents(refreshed);
+            
+              } catch (err) {
+                toast.error("Erreur suppression : " + err.message);
+              } finally {
+                setQuickEventPopup(null);
+              }
+            }}                 
+          />
+        )}
+      </div>
     </div>
   );
 }
