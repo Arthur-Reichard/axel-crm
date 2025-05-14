@@ -15,6 +15,9 @@ const Reunions = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  
+  const [sortField, setSortField] = useState('date'); // ou 'titre'
+  const [sortOrder, setSortOrder] = useState('desc'); // ou 'asc'
 
   useEffect(() => {
     const fetchReunions = async () => {
@@ -81,70 +84,167 @@ const Reunions = () => {
   };
 
   const exporter = (reunion, format) => {
-    const content = `
-      Titre : ${reunion.titre}
-      Date : ${reunion.date_reunion}
-      Lieu : ${reunion.lieu}
-      Participants : ${
-        Array.isArray(reunion.participants)
-          ? reunion.participants.map(p => p.nom || p).join(', ')
-          : '—'
-      }
+  const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
 
-      Objectifs :
-      ${reunion.objectifs || '—'}
+  if (format === 'pdf') {
+  const doc = new jsPDF();
+const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
 
-      Contenu :
-      ${reunion.contenu || '—'}
+// Bordure fine
+doc.setDrawColor(200);
+doc.setLineWidth(0.3);
+doc.rect(10, 10, 190, 277);
 
-      Commentaires :
-      ${reunion.commentaires || '—'}
-    `;
+let y = 25;
+const left = 20;
 
-    const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
+// Titre centré
+doc.setFont('times', 'bold');
+doc.setFontSize(16);
+doc.text(`Compte rendu – ${reunion.titre || 'Sans titre'}`, 105, y, { align: 'center' });
+y += 15;
 
+// Infos générales
+doc.setFont('times', 'normal');
+doc.setFontSize(12);
+doc.text(`Date : ${reunion.date_reunion || '—'}`, left, y); y += 7;
+doc.text(`Lieu : ${reunion.lieu || '—'}`, left, y); y += 7;
+doc.text(`Participants : ${
+  Array.isArray(reunion.participants)
+    ? reunion.participants.map(p => p.nom || p).join(', ')
+    : '—'
+}`, left, y);
+y += 12;
 
-    if (format === 'pdf') {
-      const doc = new jsPDF();
-      doc.setFontSize(12);
-      const lines = doc.splitTextToSize(content, 180); // largeur max = 180
-      doc.text(lines, 10, 20);
-      doc.save(`${filename}.pdf`);
-    } else if (format === 'txt') {
-      const blob = new Blob([content], { type: 'text/plain' });
-      triggerDownload(blob, `${filename}.txt`);
-    } else if (format === 'docx') {
-      const blob = new Blob(
-        [`<html><body><pre>${content}</pre></body></html>`],
-        { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
-      );
-      triggerDownload(blob, `${filename}.docx`);
-    }
-  };
+// Section renderer
+const section = (label, value) => {
+  doc.setFont('times', 'bold');
+  doc.setFontSize(13);
+  doc.text(label, left, y);
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.setFontSize(11);
+  const lines = doc.splitTextToSize(value || '—', 170);
+  doc.text(lines, left, y);
+  y += lines.length * 5 + 8;
+};
 
-  const triggerDownload = (blob, filename) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+// Sections
+section("Objectifs", reunion.objectifs);
+section("Contenu", reunion.contenu);
+section("Commentaires", reunion.commentaires);
 
-section("Objectifs :", reunion.objectifs);
-section("Contenu :", reunion.contenu);
-section("Commentaires :", reunion.commentaires);
+// Footer gauche : signature
+doc.setFontSize(10);
+doc.setFont('times', 'italic');
+doc.setTextColor(150);
+doc.text("Powered by Axel CRM", left, 285);
 
+// Footer droite : pagination
+doc.setFont('times', 'normal');
+doc.setFontSize(10);
+doc.text(`Page 1/1`, 190, 285, { align: 'right' });
+
+// Génération
 doc.save(`${filename}.pdf`);
+}
+
+
+  else if (format === 'txt') {
+    const content = `
+Titre : ${reunion.titre}
+Date : ${reunion.date_reunion}
+Lieu : ${reunion.lieu}
+Participants : ${
+  Array.isArray(reunion.participants)
+    ? reunion.participants.map(p => p.nom || p).join(', ')
+    : '—'
+}
+
+Objectifs :
+${reunion.objectifs || '—'}
+
+Contenu :
+${reunion.contenu || '—'}
+
+Commentaires :
+${reunion.commentaires || '—'}
+    `;
+    const blob = new Blob([content], { type: 'text/plain' });
+    triggerDownload(blob, `${filename}.txt`);
+  }
+
+  else if (format === 'docx') {
+    const content = `
+      <html>
+        <body>
+          <h1>${reunion.titre || "Compte rendu"}</h1>
+          <p><strong>Date :</strong> ${reunion.date_reunion || '—'}</p>
+          <p><strong>Lieu :</strong> ${reunion.lieu || '—'}</p>
+          <p><strong>Participants :</strong> ${
+            Array.isArray(reunion.participants)
+              ? reunion.participants.map(p => p.nom || p).join(', ')
+              : '—'
+          }</p>
+          <h2>Objectifs</h2>
+          <p>${reunion.objectifs || '—'}</p>
+          <h2>Contenu</h2>
+          <p>${reunion.contenu || '—'}</p>
+          <h2>Commentaires</h2>
+          <p>${reunion.commentaires || '—'}</p>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([content], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    triggerDownload(blob, `${filename}.docx`);
+  }
+};
+
+const triggerDownload = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+const sortedReunions = [...reunions].sort((a, b) => {
+  const valA = a[sortField]?.toLowerCase?.() || a[sortField];
+  const valB = b[sortField]?.toLowerCase?.() || b[sortField];
+
+  if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+  if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+  return 0;
+});
 
   return (
     <div className="reunions-page">
       <DashboardNavbar />
       <div className="reunion-page">
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 className="reunion-header">Comptes Rendus</h1>
           <button className="reunion-btn" onClick={() => navigate('/reunions/nouveau')}>
             + Nouveau compte rendu
+          </button>
+        </div>
+        <div className="tri-container">
+          <label className="tri-label">Trier par</label>
+          <select
+            className="tri-select"
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value)}
+          >
+            <option value="date_reunion">Date</option>
+            <option value="titre">Titre</option>
+            <option value="lieu">Lieu</option>
+          </select>
+          <button className="tri-button" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+            {sortOrder === 'asc' ? '⬆️ Ascendant' : '⬇️ Descendant'}
           </button>
         </div>
 
@@ -187,7 +287,7 @@ doc.save(`${filename}.pdf`);
           {reunions.length === 0 && (
             <p className="empty-message">Oups ! Il n'y a rien à afficher pour le moment !</p>
           )}
-          {reunions.map((r) => (
+          {sortedReunions.map((r) => (
             <div key={r.id} className="reunion-item" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <input
@@ -214,12 +314,29 @@ doc.save(`${filename}.pdf`);
                 >
                   Exporter <FiChevronDown />
                 </button>
-
                 {openDropdown === r.id && (
                   <ul className="dropdown-menu" style={{ listStyle: 'none' }}>
-                    <li onClick={(e) => { e.stopPropagation(); exporter(r, 'pdf'); setOpenDropdown(null); }}>PDF</li>
-                    <li onClick={(e) => { e.stopPropagation(); exporter(r, 'docx'); setOpenDropdown(null); }}>DOCX</li>
-                    <li onClick={(e) => { e.stopPropagation(); exporter(r, 'txt'); setOpenDropdown(null); }}>TXT</li>
+                    <li onClick={(e) => {
+                      e.stopPropagation();
+                      (() => exporter(r, 'pdf'))();  // ici on capture bien r
+                      setOpenDropdown(null);
+                    }}>
+                      PDF
+                    </li>
+                    <li onClick={(e) => {
+                      e.stopPropagation();
+                      (() => exporter(r, 'docx'))();
+                      setOpenDropdown(null);
+                    }}>
+                      DOCX
+                    </li>
+                    <li onClick={(e) => {
+                      e.stopPropagation();
+                      (() => exporter(r, 'txt'))();
+                      setOpenDropdown(null);
+                    }}>
+                      TXT
+                    </li>
                   </ul>
                 )}
               </div>
@@ -227,14 +344,6 @@ doc.save(`${filename}.pdf`);
           ))}
         </div>
       </div>
-      <button onClick={() => {
-  const doc = new jsPDF();
-  doc.text("Hello world", 10, 10);
-  doc.save("test.pdf");
-}}>
-  Test Export PDF
-</button>
-
     </div>
   );
 };
