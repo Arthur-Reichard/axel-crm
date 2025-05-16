@@ -15,6 +15,24 @@ export default function EmployeeDetail({ employee, onSaved, onDeleted }) {
   const [popupPosition, setPopupPosition] = useState({ x: 200, y: 300 });
   const [services, setServices] = useState([]);
   const [bannerUrl, setBannerUrl] = useState("https://source.unsplash.com/1200x300/?nature,landscape");
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+
+  useEffect(() => {
+    const fetchCurrentUserRole = async () => {
+      const { data: userSession } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from('utilisateurs')
+        .select('role')
+        .eq('id', userSession.user.id)
+        .single();
+
+      if (!error) {
+        setCurrentUserRole(data.role);
+      }
+    };
+
+    fetchCurrentUserRole();
+  }, []);
 
   useEffect(() => {
     setForm(employee);
@@ -257,29 +275,31 @@ export default function EmployeeDetail({ employee, onSaved, onDeleted }) {
           )}
         </div>
 
-        <div className="field">
-          <label>Rôle</label>
-          {editMode ? (
-            <select
-              value={utilisateur?.role || 'membre'}
-              onChange={async (e) => {
-                const newRole = e.target.value;
-                await supabase
-                  .from("utilisateurs")
-                  .update({ role: newRole })
-                  .eq("id", form.id);
+        {currentUserRole === 'admin' && (
+          <div className="field">
+            <label>Rôle</label>
+            {editMode ? (
+              <select
+                value={utilisateur?.role || 'membre'}
+                onChange={async (e) => {
+                  const newRole = e.target.value;
+                  await supabase
+                    .from("utilisateurs")
+                    .update({ role: newRole })
+                    .eq("id", form.id);
 
-                setUtilisateur(prev => ({ ...prev, role: newRole }));
-              }}
-            >
-              <option value="membre">Membre</option>
-              <option value="admin">Admin</option>
-              <option value="invité">Invité</option>
-            </select>
-          ) : (
-            <input value={utilisateur?.role || 'membre'} readOnly />
-          )}
-        </div>
+                  setUtilisateur(prev => ({ ...prev, role: newRole }));
+                }}
+              >
+                <option value="membre">Membre</option>
+                <option value="admin">Admin</option>
+                <option value="invité">Invité</option>
+              </select>
+            ) : (
+              <input value={utilisateur?.role || 'membre'} readOnly />
+            )}
+          </div>
+        )}
 
       </div>
       <div className="form-grid-full">

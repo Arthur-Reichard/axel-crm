@@ -78,10 +78,105 @@ export default function Leads() {
   const [visibleFields, setVisibleFields] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [activeDragId, setActiveDragId] = useState(null);
+  const [showImportMenu, setShowImportMenu] = useState(false);
+  const importButtonRef = useRef(null);
+
+  const handleFileUploadIndividus = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const parseData = (rawData) => {
+    const headers = Object.keys(rawData[0] || {});
+    navigate('/column-mapping', {
+      state: {
+        headers,
+        parsedRows: rawData
+      }
+    });
+  };
+
+  if (file.name.endsWith('.csv')) {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => parseData(results.data)
+    });
+  } else if (file.name.endsWith('.xlsx')) {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(worksheet, {
+        defval: '',
+        blankrows: false
+      }).filter(row =>
+        Object.values(row).some(cell => cell && cell.toString().trim() !== '')
+      );
+      parseData(json);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    alert('Format non supporté');
+  }
+};
+
+const handleFileUploadEntreprises = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const parseData = (rawData) => {
+    const headers = Object.keys(rawData[0] || {});
+    navigate('/entreprise-column-mapping', {
+      state: {
+        headers,
+        parsedRows: rawData
+      }
+    });
+  };
+
+  if (file.name.endsWith('.csv')) {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => parseData(results.data)
+    });
+  } else if (file.name.endsWith('.xlsx')) {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(worksheet, {
+        defval: '',
+        blankrows: false
+      }).filter(row =>
+        Object.values(row).some(cell => cell && cell.toString().trim() !== '')
+      );
+      parseData(json);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    alert('Format non supporté');
+  }
+};
 
   const handleDragStart = (event) => {
     setActiveDragId(event.active.id);
   };
+
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (importButtonRef.current && !importButtonRef.current.contains(event.target)) {
+      setShowImportMenu(false);
+    }
+  };
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, []);
+
   
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -213,40 +308,84 @@ export default function Leads() {
 
   const [itemsPerPage, setItemsPerPage] = useState(25); // valeurs : 10, 25, 50, 100
   const [currentPage, setCurrentPage] = useState(1);
-  const exportData = (format) => {
-    if (!allLeads.length) {
-      alert("Aucun lead à exporter !");
+
+const exportData = async (format) => {
+  if (!entrepriseId) {
+    alert("Identifiant entreprise non défini. Veuillez réessayer.");
+    return;
+  }
+
+  console.log("Entreprise ID pour export :", entrepriseId);
+
+  let rowsToExport = [];
+
+  if (selectedClientType === 'individuel') {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('entreprise_id', entrepriseId);
+
+    if (error) {
+      alert("Erreur export leads : " + error.message);
       return;
     }
 
-    const exportFields = availableFields.map(field => field.name);
-  
-    const exportRows = allLeads.map(lead => {
-      const row = {};
-      exportFields.forEach(field => {
-        row[field] = lead[field] ?? '';
-      });
-      return row;
-    });
-  
-    if (format === 'csv') {
-      const csv = Papa.unparse(exportRows);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'prospects.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else if (format === 'excel') {
-      const worksheet = XLSX.utils.json_to_sheet(exportRows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Prospects");
-      XLSX.writeFile(workbook, "prospects.xlsx");
+    rowsToExport = data;
+  } else if (selectedClientType === 'entreprise') {
+    const { data, error } = await supabase
+      .from('entreprises_clients')
+      .select('*')
+      .eq('entreprise_id', entrepriseId);
+
+    if (error) {
+      alert("Erreur export entreprises : " + error.message);
+      return;
     }
-  };
-  
+
+    rowsToExport = data;
+  }
+
+  if (rowsToExport.length === 0) {
+    alert("Aucune donnée à exporter.");
+    return;
+  }
+
+  // ✅ Enlève tous les champs finissant par "_id"
+  const cleanedRows = rowsToExport.map(row => {
+    const newRow = {};
+    Object.entries(row).forEach(([key, value]) => {
+      if (!key.endsWith('_id')) {
+        newRow[key] = value;
+      }
+    });
+    return newRow;
+  });
+
+  if (format === 'csv') {
+    const csv = Papa.unparse(cleanedRows);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `export-${selectedClientType}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else if (format === 'excel') {
+    const ws = XLSX.utils.json_to_sheet(cleanedRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Données");
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `export-${selectedClientType}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
 
   const [selectedColumns, setSelectedColumns] = useState(() => {
     const stored = JSON.parse(localStorage.getItem('selectedLeadColumns'));
@@ -829,10 +968,47 @@ export default function Leads() {
           )}
 
 
-          <label className="import-btn">
-            Importer
-            <input type="file" accept=".csv, .xlsx" onChange={handleFileUpload} hidden />
-          </label>
+          <div className="import-btn-wrapper" ref={importButtonRef}>
+            <button className="import-btn" onClick={() => setShowImportMenu(prev => !prev)}>
+              Importer ▼
+            </button>
+
+            {showImportMenu && (
+              <div className="import-menu">
+                <button onClick={() => {
+                  setShowImportMenu(false);
+                  document.getElementById('file-upload-individus').click();
+                }}>
+                  Importer (Individus)
+                </button>
+                <button onClick={() => {
+                  setShowImportMenu(false);
+                  document.getElementById('file-upload-entreprises').click();
+                }}>
+                  Importer (Entreprises)
+                </button>
+              </div>
+            )}
+
+            {/* Input pour individus */}
+            <input
+              id="file-upload-individus"
+              type="file"
+              accept=".csv, .xlsx"
+              onChange={handleFileUploadIndividus}
+              hidden
+            />
+
+            {/* Input pour entreprises */}
+            <input
+              id="file-upload-entreprises"
+              type="file"
+              accept=".csv, .xlsx"
+              onChange={handleFileUploadEntreprises}
+              hidden
+            />
+          </div>
+
           <div className="export-btn-wrapper" ref={exportButtonRef}>
             <button className="export-btn" onClick={() => setShowExportMenu(prev => !prev)}>
               Exporter ▼

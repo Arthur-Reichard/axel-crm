@@ -154,3 +154,31 @@
   width: 18px;
   height: 18px;
 }
+
+.tree-button-wrapper {
+  padding: 0 10px 16px 20px;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+}
+
+.organigramme-button {
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  background-color: #334155;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: 90%;
+  text-align: center;
+}
+
+.organigramme-button:hover {
+  background-color: #1b2b42;
+  color: white;;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}

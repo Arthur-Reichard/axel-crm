@@ -26,6 +26,8 @@ import Reunions from './pages/Reunions';
 import NouveauCompteRendu from './pages/NouveauCompteRendu';
 import ReunionDetail from './pages/ReunionDetail';
 import RedirectRoot from "./pages/RedirectRoot";
+import EntrepriseColumnMapping from './pages/EntrepriseColumnMapping';
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -73,6 +75,7 @@ function App() {
         <Route path="/factures/nouvelle" element={<FactureDetail />} />
         <Route path="/factures/:id" element={<FactureView />} />
         <Route path="/column-mapping" element={<ColumnMapping />} />
+        <Route path="/entreprise-column-mapping" element={<EntrepriseColumnMapping />} />
         <Route path="/reunions" element={<Reunions />} />
         <Route path="/reunions/nouveau" element={<NouveauCompteRendu />} />
         <Route path="/reunions/:id" element={<ReunionDetail />} />
