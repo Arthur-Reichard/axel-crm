@@ -1,52 +1,50 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../helper/supabaseClient.js';
-import '../pages/css/ColumnMapping.css';
+import { supabase } from '../helper/supabaseClient';
+import '../pages/css/ColumnMapping.css'; // On réutilise le même CSS
 
-// Champs proposés pour le mapping (sans les champs techniques)
-const crmFields = [
+// Champs disponibles pour le mapping vers entreprises_clients
+const entrepriseFields = [
   { label: 'Ne pas importer', value: null },
-  { label: 'Prénom', value: 'prenom' },
-  { label: 'Nom', value: 'nom' },
+  { label: 'SIREN', value: 'siren' },
+  { label: 'SIRET', value: 'siret' },
+  { label: 'Raison sociale', value: 'raison_sociale' },
+  { label: 'Forme juridique', value: 'forme_juridique' },
+  { label: 'Capital social', value: 'capital_social' },
+  { label: 'Date immatriculation', value: 'date_immatriculation' },
+  { label: 'Statut entreprise', value: 'statut_entreprise' },
+  { label: 'N° RCS', value: 'numero_rcs' },
+  { label: 'Site web', value: 'site_web' },
+  { label: 'Notes', value: 'notes' },
   { label: 'Email professionnel', value: 'email_professionnel' },
   { label: 'Téléphone professionnel', value: 'telephone_professionnel' },
-  { label: 'Nom entreprise', value: 'nom_entreprise' },
-  { label: 'Statut client', value: 'statut_client' },
-  { label: 'Notes', value: 'notes' },
-  { label: 'Source', value: 'source' },
-  { label: 'Date de naissance', value: 'date_naissance' },
-  { label: 'Poste contact', value: 'poste_contact' },
-  { label: 'Site web', value: 'site_web' },
   { label: 'Adresse rue', value: 'adresse_entreprise_rue' },
-  { label: 'Ville', value: 'adresse_entreprise_ville' },
-  { label: 'Code postal', value: 'adresse_entreprise_cp' },
-  { label: 'Pays', value: 'adresse_entreprise_pays' },
-  { label: 'SIRET', value: 'numero_siret' },
-  { label: 'TVA intracom', value: 'numero_tva_intracom' },
-  { label: 'Canal préféré', value: 'canal_prefere' },
-  { label: 'Langue', value: 'langue' },
-  { label: 'Origine contact', value: 'origine_contact' },
-  { label: 'Date 1er contact', value: 'date_premier_contact' },
-  { label: 'Date dernier contact', value: 'date_dernier_contact' },
-  { label: 'Historique commandes', value: 'historique_commandes' },
-  { label: 'Montant total', value: 'montant_total' },
-  { label: 'Devis envoyés', value: 'devis_envoyes' },
-  { label: 'Statut paiement', value: 'statut_paiement' },
-  { label: 'Niveau priorité', value: 'niveau_priorite' },
+  { label: 'Adresse CP', value: 'adresse_entreprise_cp' },
+  { label: 'Adresse ville', value: 'adresse_entreprise_ville' },
+  { label: 'Adresse pays', value: 'adresse_entreprise_pays' },
+  { label: 'Siège rue', value: 'siege_social_rue' },
+  { label: 'Siège CP', value: 'siege_social_cp' },
+  { label: 'Siège ville', value: 'siege_social_ville' },
+  { label: 'Siège pays', value: 'siege_social_pays' },
+  { label: 'Code NAF', value: 'naf_code' },
+  { label: 'Libellé NAF', value: 'naf_label' },
+  { label: 'Catégorie juridique', value: 'categorie_juridique_code' },
+  { label: 'Catégorie entreprise', value: 'categorie_entreprise' },
+  { label: 'Année catégorie', value: 'annee_categorie_entreprise' }
 ];
 
-// Champs techniques à exclure du mapping ET de l'affichage
+// Champs à exclure
 const excludedHeaders = [
   'id',
-  'user_id',
   'created_at',
   'updated_at',
   'entreprise_id',
-  'assigne_a',
-  'documents'
+  'created_by',
+  'dernier_traitement',
+  'date_derniere_mise_a_jour'
 ];
 
-export default function ColumnMapping({ headers: propsHeaders, previewData: propsPreviewData, onMappingComplete }) {
+export default function EntrepriseColumnMapping({ headers: propsHeaders, previewData: propsPreviewData }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,14 +53,13 @@ export default function ColumnMapping({ headers: propsHeaders, previewData: prop
   );
   const parsedRows = location.state?.parsedRows;
 
-  // Données à prévisualiser par colonne
   const previewData = headers.reduce((acc, h) => {
     acc[h] = parsedRows.map(row => row[h]);
     return acc;
   }, {});
 
   if (!headers || !parsedRows) {
-    navigate('/leads');
+    navigate('/entreprises'); // ou /clients selon ta route
     return null;
   }
 
@@ -71,7 +68,7 @@ export default function ColumnMapping({ headers: propsHeaders, previewData: prop
       str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
     const autoMap = (header) => {
       const normalizedHeader = normalize(header);
-      const match = crmFields.find(f => normalize(f.label) === normalizedHeader);
+      const match = entrepriseFields.find(f => normalize(f.label) === normalizedHeader);
       return match?.value || '';
     };
     return headers.reduce((acc, h) => {
@@ -97,38 +94,37 @@ export default function ColumnMapping({ headers: propsHeaders, previewData: prop
     if (userError || !userData) return;
     const entrepriseId = userData.entreprise_id;
 
-    const leadsToInsert = parsedRows.map(row => {
-      const lead = {
-        user_id: user.id,
-        entreprise_id: entrepriseId,
-        source: 'import_csv'
+    const entreprisesToInsert = parsedRows.map(row => {
+      const entreprise = {
+        created_by: user.id,
+        entreprise_id: entrepriseId
       };
-      for (const [fileCol, crmField] of Object.entries(mapping)) {
-        if (crmField && row[fileCol] !== undefined) {
-          lead[crmField] = row[fileCol];
+      for (const [fileCol, dbField] of Object.entries(mapping)) {
+        if (dbField && row[fileCol] !== undefined) {
+          entreprise[dbField] = row[fileCol];
         }
       }
-      return lead;
+      return entreprise;
     });
 
-    const { error: insertError } = await supabase.from('leads').insert(leadsToInsert);
+    const { error: insertError } = await supabase.from('entreprises_clients').insert(entreprisesToInsert);
     if (insertError) {
       alert("Erreur lors de l'import : " + insertError.message);
     } else {
-      alert("Import réussi ✅");
-      navigate('/leads');
+      alert("Import entreprises réussi ✅");
+      navigate('/entreprises'); // à adapter à ta route réelle
     }
   };
 
-  const numProspects = previewData[headers[0]]?.length || 0;
+  const numRows = previewData[headers[0]]?.length || 0;
 
   return (
     <div className="mapping-container">
       <button className="back-button" onClick={() => navigate(-1)}>← Retour</button>
 
-      <h2 className="mapping-title">Données de mapping</h2>
+      <h2 className="mapping-title">Données de mapping – entreprises</h2>
       <p className="mapping-subtitle">
-        {numProspects} prospect{numProspects > 1 ? 's' : ''} détecté{numProspects > 1 ? 's' : ''}
+        {numRows} ligne{numRows > 1 ? 's' : ''} détectée{numRows > 1 ? 's' : ''}
       </p>
 
       <div className="mapping-fields">
@@ -141,7 +137,7 @@ export default function ColumnMapping({ headers: propsHeaders, previewData: prop
               onChange={(e) => handleChange(header, e.target.value)}
               className="mapping-select"
             >
-              {crmFields.map(field => (
+              {entrepriseFields.map(field => (
                 <option key={field.value || 'none'} value={field.value || ''}>
                   {field.label}
                 </option>
