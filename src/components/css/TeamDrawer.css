@@ -44,10 +44,11 @@
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
-  background-color: #334155;
+  width: 40px;
+  min-width: 40px;
   border-radius: 50%;
+  height: 40px;
+  background-color: #334155;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,4 +85,13 @@
 
 .settings-button:hover {
   background-color: #0f9d8a;
+}
+
+.avatar-img-team {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--profil-border);
 }

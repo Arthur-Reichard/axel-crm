@@ -58,7 +58,6 @@ export default function Equipe() {
 
       // ✅ NE RIEN FAIRE si le drop est hors d'une zone valide
       if (!event.over || !targetService || !droppedUser) {
-        console.warn("⛔ Drop ignoré (aucune cible)");
         return;
       }
 
@@ -70,7 +69,6 @@ export default function Equipe() {
       if (error) {
         console.error("❌ Erreur mise à jour service_id :", error);
       } else {
-        console.log(`✅ Utilisateur déplacé dans ${targetService.nom} (id: ${targetService.id})`);
         setRefreshTrigger(prev => !prev);
       }
     };

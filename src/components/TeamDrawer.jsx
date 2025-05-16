@@ -49,7 +49,7 @@ function DraggableEmployee({ employee, selectedId, onSelect, serviceMap }) {
     >
       <div className="avatar">
         {employee.avatar_url ? (
-          <img src={employee.avatar_url} alt="avatar" className="avatar-img" />
+          <img src={employee.avatar_url} alt="avatar" className="avatar-img-team" />
         ) : (
           <span>
             {(employee.prenom?.[0] || '').toUpperCase()}
