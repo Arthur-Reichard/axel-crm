@@ -153,9 +153,6 @@ const ReunionDetail = () => {
             <button onClick={() => setEditMode(!editMode)} className="edit-btn">
               {editMode ? 'Annuler' : 'Modifier'}
             </button>
-            <button className="reunion-btn" onClick={() => setDrawerOpen(true)}>
-              <FiSettings style={{ marginRight: '0.5rem' }} /> Champs
-            </button>
           </div>
         </div>
 

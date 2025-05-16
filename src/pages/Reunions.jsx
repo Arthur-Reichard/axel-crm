@@ -387,14 +387,6 @@ const sortedReunions = [...reunions].sort((a, b) => {
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <h1 className="reunion-header">Comptes Rendus</h1>
-            <button
-              className="reunion-btn"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}
-              onClick={() => setDrawerOpen(true)}
-            >
-              <FiSettings />
-              Champs
-            </button>
           </div>
           <button className="reunion-btn" onClick={() => navigate('/reunions/nouveau')}>
             + Nouveau compte rendu
