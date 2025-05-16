@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from "../helper/supabaseClient";
 import './css/Reunion.css';
 import DashboardNavbar from "./DashboardNavbar";
+import { FiTrash } from 'react-icons/fi';
+import { FiChevronDown, FiSettings } from 'react-icons/fi';
+import ChampsSettingsDrawer from '../components/ChampsSettingsDrawer';
 
 const NouveauCompteRendu = () => {
   const navigate = useNavigate();
@@ -22,6 +25,48 @@ const NouveauCompteRendu = () => {
     taches: [],
     commentaires: ''
   });
+
+  const champsParDefaut = [
+  'titre', 'date_reunion', 'heure_debut', 'heure_fin', 'lieu',
+  'participants', 'objectifs', 'ordre_du_jour',
+  'contenu', 'decisions', 'taches', 'commentaires'
+];
+
+useEffect(() => {
+  const fetchChamps = async () => {
+    const { data: existants, error } = await supabase
+      .from('champs_reunion')
+      .select('*')
+      .eq('utilisateur_id', userId);
+
+    if (error) return;
+
+    if ((existants || []).length < champsParDefaut.length) {
+      const existantsSet = new Set(existants.map(c => c.nom_champ));
+      const manquants = champsParDefaut.filter(c => !existantsSet.has(c));
+      const inserts = manquants.map(c => ({
+        utilisateur_id: userId,
+        nom_champ: c,
+        visible: true
+      }));
+
+      if (inserts.length > 0) {
+        await supabase.from('champs_reunion').insert(inserts);
+      }
+
+      const { data: nouveaux } = await supabase
+        .from('champs_reunion')
+        .select('*')
+        .eq('utilisateur_id', userId);
+
+      setChampVisibles(nouveaux || []);
+    } else {
+      setChampVisibles(existants);
+    }
+  };
+
+  if (userId) fetchChamps();
+}, [userId]);
 
   const [showToast, setShowToast] = useState(false);
   const [showConfirmToast, setShowConfirmToast] = useState(false);
@@ -112,6 +157,21 @@ const NouveauCompteRendu = () => {
     if (!error) navigate('/reunions');
     else alert("Erreur : " + error.message);
   };
+
+  const [champVisibles, setChampVisibles] = useState([]);
+
+useEffect(() => {
+  const fetchChamps = async () => {
+    const { data } = await supabase
+      .from('champs_reunion')
+      .select('*')
+      .eq('utilisateur_id', userId); // ou celui du context
+
+    setChampVisibles(data || []);
+  };
+
+  if (userId) fetchChamps();
+}, [userId]);
 
   const handleParticipantLibre = (e) => {
     if (e.key === 'Enter' && e.target.value.trim() !== '') {
@@ -272,7 +332,17 @@ useEffect(() => {
           />
           <ul>
             {form.ordre_du_jour.map((item, i) => (
-              <li key={i}>{item}</li>
+              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {item}
+                <FiTrash
+                  style={{ cursor: 'pointer', color: 'red' }}
+                  onClick={() => {
+                    const updated = [...form.ordre_du_jour];
+                    updated.splice(i, 1);
+                    setForm({ ...form, ordre_du_jour: updated });
+                  }}
+                />
+              </li>
             ))}
           </ul>
         </div>
@@ -299,7 +369,17 @@ useEffect(() => {
           />
           <ul>
             {form.decisions.map((d, i) => (
-              <li key={i}>{d}</li>
+              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>{d}</span>
+                <FiTrash
+                  style={{ cursor: 'pointer', color: 'red' }}
+                  onClick={() => {
+                    const updated = [...form.decisions];
+                    updated.splice(i, 1);
+                    setForm({ ...form, decisions: updated });
+                  }}
+                />
+              </li>
             ))}
           </ul>
         </div>
@@ -321,7 +401,17 @@ useEffect(() => {
           />
           <ul>
             {form.taches.map((t, i) => (
-              <li key={i}>{t}</li>
+              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {t}
+                <FiTrash
+                  style={{ cursor: 'pointer', color: 'red' }}
+                  onClick={() => {
+                    const updated = [...form.taches];
+                    updated.splice(i, 1);
+                    setForm({ ...form, taches: updated });
+                  }}
+                />
+              </li>
             ))}
           </ul>
         </div>

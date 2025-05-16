@@ -76,6 +76,17 @@ body {
   border: 1px solid var(--color-border);
 }
 
+textarea.content-box {
+  min-height: 120px;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+}
+
 /* === CHIPS PARTICIPANTS === */
 .chip-list {
   display: flex;
@@ -248,6 +259,21 @@ textarea[name="commentaires"] {
 
 .reunion-btn:hover {
   background-color: #0056b3;
+}
+
+.edit-btn {
+  grid-column: span 2;
+  justify-self: end;
+  background-color: #007bff;
+  color: white;
+  padding: 0.9rem 1.6rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-right : 125px
 }
 
 /* === DROPDOWN EXPORT === */
@@ -713,4 +739,23 @@ textarea[name="commentaires"] {
 
 .reunion-retour-btn:hover {
   background-color: #e5e7eb;
+}
+
+.toast-success {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background-color: #d1f7d6;
+  color: #155724;
+  padding: 12px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  font-size: 0.95rem;
+  z-index: 9999;
+  animation: fadein 0.4s ease;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

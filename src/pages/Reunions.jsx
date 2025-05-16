@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from "../helper/supabaseClient";
 import './css/Reunion.css';
 import jsPDF from 'jspdf';
-import { FiChevronDown } from 'react-icons/fi';
 import DashboardNavbar from "./DashboardNavbar";
+import ChampsSettingsDrawer from '../components/ChampsSettingsDrawer';
+import { FiChevronDown, FiSettings } from 'react-icons/fi';
 
 const Reunions = () => {
   const [reunions, setReunions] = useState([]);
@@ -18,6 +19,61 @@ const Reunions = () => {
   
   const [sortField, setSortField] = useState('date'); // ou 'titre'
   const [sortOrder, setSortOrder] = useState('desc'); // ou 'asc'
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [champVisibles, setChampVisibles] = useState([]);
+  const [userId, setUserId] = useState(null); // si pas encore défini
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
+    getUser();
+  }, []);
+
+
+  const champsParDefaut = [
+  'titre', 'date_reunion', 'heure_debut', 'heure_fin', 'lieu',
+  'participants', 'objectifs', 'ordre_du_jour',
+  'contenu', 'decisions', 'taches', 'commentaires'
+];
+
+useEffect(() => {
+  const fetchChamps = async () => {
+    const { data: existants, error } = await supabase
+      .from('champs_reunion')
+      .select('*')
+      .eq('utilisateur_id', userId);
+
+    if (error) return;
+
+    if ((existants || []).length < champsParDefaut.length) {
+      const existantsSet = new Set(existants.map(c => c.nom_champ));
+      const manquants = champsParDefaut.filter(c => !existantsSet.has(c));
+      const inserts = manquants.map(c => ({
+        utilisateur_id: userId,
+        nom_champ: c,
+        visible: true
+      }));
+
+      if (inserts.length > 0) {
+        await supabase.from('champs_reunion').insert(inserts);
+      }
+
+      const { data: nouveaux } = await supabase
+        .from('champs_reunion')
+        .select('*')
+        .eq('utilisateur_id', userId);
+
+      setChampVisibles(nouveaux || []);
+    } else {
+      setChampVisibles(existants);
+    }
+  };
+
+  if (userId) fetchChamps();
+}, [userId]);
 
   useEffect(() => {
     const fetchReunions = async () => {
@@ -83,131 +139,174 @@ const Reunions = () => {
     }   
   };
 
-  const exporter = (reunion, format) => {
+ const exporter = (reunion, format) => {
   const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
 
- if (format === 'pdf') {
-  const doc = new jsPDF();
-  const filename = (reunion.titre || 'compte_rendu').replace(/\s+/g, '_').toLowerCase();
+  if (format === 'pdf') {
+    const doc = new jsPDF();
+    const checkPageOverflow = (doc, y) => {
+      if (y > 270) {
+        doc.addPage();
+        doc.setFont('times', 'normal');
+        return 25;
+      }
+      return y;
+    };
 
+    const left = 20;
+    let y = 25;
+
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.3);
+    doc.rect(10, 10, 190, 277);
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(16);
+    doc.text(`Compte rendu – ${reunion.titre || 'Sans titre'}`, 105, y, { align: 'center' });
+    y += 15;
+    y = checkPageOverflow(doc, y);
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(12);
+
+    const formatHeure = (heure) => {
+      if (!heure) return '—';
+      const [h, m] = heure.split(':');
+      return `${h}h${m}`;
+    };
+
+    const lines = [
+      `Date : ${reunion.date_reunion || '—'}`,
+      `Heure : ${formatHeure(reunion.heure_debut)} - ${formatHeure(reunion.heure_fin)}`,
+      `Lieu : ${reunion.lieu || '—'}`,
+      `Participants : ${
+        Array.isArray(reunion.participants)
+          ? reunion.participants.map(p => p.nom || p).join(', ')
+          : '—'
+      }`
+    ];
+
+    lines.forEach(line => {
+      doc.text(line, left, y);
+      y += 7;
+      y = checkPageOverflow(doc, y);
+    });
+    y += 5;
+
+    const section = (label, value) => {
+      doc.setFont('times', 'bold');
+      doc.setFontSize(13);
+      doc.text(label, left, y);
+      y += 6;
+      y = checkPageOverflow(doc, y);
+
+      doc.setFont('times', 'normal');
+      doc.setFontSize(11);
+      const wrapped = doc.splitTextToSize(value || '—', 170);
+      wrapped.forEach(line => {
+        doc.text(line, left, y);
+        y += 5;
+        y = checkPageOverflow(doc, y);
+      });
+      y += 6;
+    };
+
+    section("Objectifs", reunion.objectifs);
+    section("Contenu", reunion.contenu);
+
+    // Ordre du jour
+    doc.setFont('times', 'bold');
+    doc.setFontSize(13);
+    doc.text("Ordre du jour", left, y);
+    y += 6;
+    y = checkPageOverflow(doc, y);
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(11);
+    if (Array.isArray(reunion.ordre_du_jour) && reunion.ordre_du_jour.length > 0) {
+      reunion.ordre_du_jour.forEach(item => {
+        doc.text(`• ${item}`, left + 5, y);
+        y += 6;
+        y = checkPageOverflow(doc, y);
+      });
+    } else {
+      doc.text("—", left + 5, y);
+      y += 6;
+      y = checkPageOverflow(doc, y);
+    }
+    y += 4;
+
+    // Décisions
+    doc.setFont('times', 'bold');
+    doc.setFontSize(13);
+    doc.text("Décisions", left, y);
+    y += 6;
+    y = checkPageOverflow(doc, y);
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(11);
+    if (Array.isArray(reunion.decisions) && reunion.decisions.length > 0) {
+      reunion.decisions.forEach(d => {
+        doc.text(`• ${d}`, left + 5, y);
+        y += 6;
+        y = checkPageOverflow(doc, y);
+      });
+    } else {
+      doc.text("—", left + 5, y);
+      y += 6;
+      y = checkPageOverflow(doc, y);
+    }
+    y += 4;
+
+    // Tâches
+    doc.setFont('times', 'bold');
+    doc.setFontSize(13);
+    doc.text("Tâches", left, y);
+    y += 6;
+    y = checkPageOverflow(doc, y);
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(11);
+    if (Array.isArray(reunion.taches) && reunion.taches.length > 0) {
+      reunion.taches.forEach(t => {
+        doc.text(`• ${t}`, left + 5, y);
+        y += 6;
+        y = checkPageOverflow(doc, y);
+      });
+    } else {
+      doc.text("—", left + 5, y);
+      y += 6;
+      y = checkPageOverflow(doc, y);
+    }
+    y += 4;
+
+    section("Commentaires", reunion.commentaires);
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont('times', 'italic');
+    doc.setTextColor(150);
+    const pageCount = doc.internal.getNumberOfPages();
+for (let i = 1; i <= pageCount; i++) {
+  doc.setPage(i);
+
+  // Remet le cadre sur chaque page
   doc.setDrawColor(200);
   doc.setLineWidth(0.3);
   doc.rect(10, 10, 190, 277);
 
-  let y = 25;
-  const left = 20;
-
-  doc.setFont('times', 'bold');
-  doc.setFontSize(16);
-  doc.text(`Compte rendu – ${reunion.titre || 'Sans titre'}`, 105, y, { align: 'center' });
-  y += 15;
-
-  doc.setFont('times', 'normal');
-  doc.setFontSize(12);
-  doc.text(`Date : ${reunion.date_reunion || '—'}`, left, y); y += 7;
-  const formatHeure = (heure) => {
-  if (!heure) return '—';
-  const [h, m] = heure.split(':');
-  return `${h}h${m}`;
-};
-
-doc.text(`Heure : ${formatHeure(reunion.heure_debut)} - ${formatHeure(reunion.heure_fin)}`, left, y);
-
-y += 7;
-
-  doc.text(`Lieu : ${reunion.lieu || '—'}`, left, y); y += 7;
-
-  doc.text(`Participants : ${
-    Array.isArray(reunion.participants)
-      ? reunion.participants.map(p => p.nom || p).join(', ')
-      : '—'
-  }`, left, y);
-  y += 12;
-
-  const section = (label, value) => {
-    doc.setFont('times', 'bold');
-    doc.setFontSize(13);
-    doc.text(label, left, y);
-    y += 6;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(11);
-    const lines = doc.splitTextToSize(value || '—', 170);
-    doc.text(lines, left, y);
-    y += lines.length * 5 + 8;
-  };
-
-  section("Objectifs", reunion.objectifs);
-  section("Contenu", reunion.contenu);
-
-  // Ordre du jour
-  doc.setFont('times', 'bold');
-  doc.setFontSize(13);
-  doc.text("Ordre du jour", left, y);
-  y += 6;
-  doc.setFont('times', 'normal');
-  doc.setFontSize(11);
-  if (Array.isArray(reunion.ordre_du_jour) && reunion.ordre_du_jour.length > 0) {
-    reunion.ordre_du_jour.forEach((item) => {
-      doc.text(`• ${item}`, left + 5, y);
-      y += 6;
-    });
-  } else {
-    doc.text("—", left + 5, y);
-    y += 6;
-  }
-  y += 4;
-
- // Décisions (version simplifiée)
-doc.setFont('times', 'bold');
-doc.setFontSize(13);
-doc.text("Décisions", left, y);
-y += 6;
-doc.setFont('times', 'normal');
-doc.setFontSize(11);
-if (Array.isArray(reunion.decisions) && reunion.decisions.length > 0) {
-  reunion.decisions.forEach((d) => {
-    doc.text(`• ${d}`, left + 5, y);
-    y += 6;
-  });
-} else {
-  doc.text("—", left + 5, y);
-  y += 6;
-}
-y += 4;
-
-  // Tâches (version simplifiée)
-doc.setFont('times', 'bold');
-doc.setFontSize(13);
-doc.text("Tâches", left, y);
-y += 6;
-doc.setFont('times', 'normal');
-doc.setFontSize(11);
-if (Array.isArray(reunion.taches) && reunion.taches.length > 0) {
-  reunion.taches.forEach((t) => {
-    doc.text(`• ${t}`, left + 5, y);
-    y += 6;
-  });
-} else {
-  doc.text("—", left + 5, y);
-  y += 6;
-}
-y += 4;
-
-  section("Commentaires", reunion.commentaires);
-
+  // Pied de page
   doc.setFontSize(10);
   doc.setFont('times', 'italic');
   doc.setTextColor(150);
   doc.text("Powered by Axel CRM", left, 285);
 
-  doc.setFont('times', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(0);
-  doc.text(`Page 1/1`, 190, 285, { align: 'right' });
-
-  doc.save(`${filename}.pdf`);
+  // Légèrement décalé à gauche
+  doc.text(`Page ${i}/${pageCount}`, 195, 285, { align: 'right' });
 }
 
+    doc.save(`${filename}.pdf`);
+  }
 
   else if (format === 'txt') {
     const content = `
@@ -286,7 +385,17 @@ const sortedReunions = [...reunions].sort((a, b) => {
       <DashboardNavbar />
       <div className="reunion-page">
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 className="reunion-header">Comptes Rendus</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h1 className="reunion-header">Comptes Rendus</h1>
+            <button
+              className="reunion-btn"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}
+              onClick={() => setDrawerOpen(true)}
+            >
+              <FiSettings />
+              Champs
+            </button>
+          </div>
           <button className="reunion-btn" onClick={() => navigate('/reunions/nouveau')}>
             + Nouveau compte rendu
           </button>
@@ -347,7 +456,12 @@ const sortedReunions = [...reunions].sort((a, b) => {
             <p className="empty-message">Oups ! Il n'y a rien à afficher pour le moment !</p>
           )}
           {sortedReunions.map((r) => (
-            <div key={r.id} className="reunion-item" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div
+              key={r.id}
+              className="reunion-item"
+              style={{ cursor: 'pointer', padding: '1rem', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '1rem' }}
+              onClick={() => navigate(`/reunions/${r.id}`)}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <input
                   type="checkbox"
@@ -359,7 +473,10 @@ const sortedReunions = [...reunions].sort((a, b) => {
                 />
                 <div className="reunion-left" onClick={() => navigate(`/reunions/${r.id}`)}>
                   <h3>{r.titre}</h3>
-                  <p>{r.date_reunion} — {r.lieu}</p>
+                  <p>{r.date_reunion} - {r.lieu}</p>
+                  <p style={{ fontSize: '0.85rem', color: '#888' }}>
+                    Créé le {new Date(r.created_at).toLocaleString()}  Modifié le {new Date(r.updated_at).toLocaleString()}
+                  </p>
                 </div>
               </div>
 
@@ -403,6 +520,14 @@ const sortedReunions = [...reunions].sort((a, b) => {
           ))}
         </div>
       </div>
+      <ChampsSettingsDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        preferences={champVisibles}
+        setPreferences={setChampVisibles}
+        utilisateurId={userId}
+        supabase={supabase}
+      />
     </div>
   );
 };
