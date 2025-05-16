@@ -111,11 +111,6 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
         }
     };
 
-    const handleEdit = (id, name) => {
-        setEditingId(id);
-        setEditedName(name);
-    };
-
     const toggleExpand = (id) => {
         setExpandedIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -209,7 +204,6 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
             </>
         ) : (
             <>
-            <FiEdit size={18} onClick={() => handleEdit(service.id, service.nom)} />
             {service.children?.length > 0 ? (
                 <button className="toggle-button" onClick={() => toggleExpand(service.id)}>
                 {expandedIds.includes(service.id) ? <FiChevronUp /> : <FiChevronDown />}

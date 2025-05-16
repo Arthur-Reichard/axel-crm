@@ -3,12 +3,15 @@ import Tree from "react-d3-tree";
 import { supabase } from "../helper/supabaseClient";
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import "./css/ServiceTreePopup.css";
+import { FiEdit, FiCheck, FiX } from "react-icons/fi";
 
 export default function ServiceTreePopup({ onClose }) {
   const [treeData, setTreeData] = useState([]);
   const [servicesRaw, setServicesRaw] = useState([]);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [draggedNode, setDraggedNode] = useState(null);
+  const [editingNodeId, setEditingNodeId] = useState(null);
+  const [editedName, setEditedName] = useState("");
   const treeContainerRef = useRef(null);
 
   useEffect(() => {
@@ -63,10 +66,6 @@ export default function ServiceTreePopup({ onClose }) {
     const source = event?.active?.data?.current?.service;
     const target = event?.over?.data?.current?.service;
 
-    console.log("🎯 DROP détecté !");
-    console.log("🔹 Source :", source?.name, `(id: ${source?.id})`);
-    console.log("🔸 Cible :", target?.name, `(id: ${target?.id})`);
-
     if (!source || !target || source.id === target.id) return;
 
     const { error } = await supabase
@@ -84,8 +83,27 @@ export default function ServiceTreePopup({ onClose }) {
     }
   };
 
+  const handleSaveEditName = async (nodeId) => {
+    const newName = editedName.trim();
+    if (!newName) return;
+
+    const { error } = await supabase
+      .from("services")
+      .update({ nom: newName })
+      .eq("id", nodeId);
+
+    if (!error) {
+      const updated = servicesRaw.map(s =>
+        s.id === nodeId ? { ...s, nom: newName } : s
+      );
+      setServicesRaw(updated);
+      updateTreeFromList(updated);
+      setEditingNodeId(null);
+      setEditedName("");
+    }
+  };
+
   const CustomNode = ({ nodeDatum }) => {
-    console.log("🧩 Rendu d’un noeud :", nodeDatum.name, "ID :", nodeDatum.id);
     const isActive = draggedNode?.id === nodeDatum.id;
 
     const { attributes, listeners, setNodeRef: dragRef } = useDraggable({
@@ -106,14 +124,12 @@ export default function ServiceTreePopup({ onClose }) {
 
     const handleMouseDown = (e) => {
       if (e.altKey) {
-        console.log("🔥 ALT + MOUSEDOWN sur :", nodeDatum.name);
         setDraggedNode({ id: nodeDatum.id });
       }
     };
 
     const handleMouseUp = () => {
       if (isActive) {
-        console.log("🔚 MouseUp sur :", nodeDatum.name);
         setDraggedNode(null);
       }
     };
@@ -131,20 +147,56 @@ export default function ServiceTreePopup({ onClose }) {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
       >
-        <circle r={18} fill={fillColor} stroke="black" strokeWidth={1} />
-        <text
-          fill="black"
-          x={0}
-          y={30}
-          textAnchor="middle"
-          fontSize={12}
-        >
-          {nodeDatum.name}
-        </text>
-        {isActive && (
-          <text x={0} y={45} textAnchor="middle" fontSize={10} fill="gray">
-            (drag actif)
-          </text>
+        <circle r={18} fill={fillColor} stroke="none" strokeWidth={1} />
+
+        {editingNodeId === nodeDatum.id ? (
+          <foreignObject x={-70} y={-60} width={150} height={40}>
+            <div style={{ display: "flex", gap: "3px", alignItems: "center", flexDirection: "column" }}>
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveEditName(nodeDatum.id);
+                }}
+                style={{ fontSize: "12px", flex: 1 }}
+              />
+              <FiCheck
+                size={20}
+                color="#111"
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSaveEditName(nodeDatum.id)}
+              />
+              <FiX
+                size={14}
+                color="gray"
+                style={{ cursor: "pointer" }}
+                onClick={() => {
+                  setEditingNodeId(null);
+                  setEditedName("");
+                }}
+              />
+            </div>
+          </foreignObject>
+        ) : (
+          <>
+            <text fill="black" x={0} y={-30} textAnchor="middle" fontSize={12}>
+              {nodeDatum.name}
+            </text>
+            <foreignObject x={-10} y={-9} width={20} height={20}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <FiEdit
+                  size={17}
+                  color="white"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setEditingNodeId(nodeDatum.id);
+                    setEditedName(nodeDatum.name);
+                  }}
+                />
+              </div>
+            </foreignObject>
+          </>
         )}
       </g>
     );
@@ -156,14 +208,14 @@ export default function ServiceTreePopup({ onClose }) {
         <button className="close-button" onClick={onClose}>✖</button>
         <h2>Organigramme des Services</h2>
 
-        <div ref={treeContainerRef} style={{ width: "100%", height: "600px" }}>
+        <div ref={treeContainerRef} style={{ width: "100%", height: "75%" }}>
           <DndContext onDragEnd={handleDrop}>
             {treeData.length > 0 && (
               <Tree
                 data={treeData}
                 orientation="vertical"
                 translate={translate}
-                zoom={0.6}
+                zoom={1}
                 renderCustomNodeElement={(rd3tProps) => <CustomNode {...rd3tProps} />}
               />
             )}
