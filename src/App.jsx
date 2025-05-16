@@ -17,6 +17,7 @@ import ParcMateriel from "./pages/ParcMateriel";
 import MaterielDetail from "./pages/MaterielDetail";
 import Factures from "./pages/Factures";
 import FactureDetail from "./pages/FactureDetail";
+import FactureView from "./pages/FactureView";
 import ColumnMapping from './pages/ColumnMapping';
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import OAuthCallbackOutlook from "./pages/OAuthCallbackOutlook";
@@ -69,7 +70,8 @@ function App() {
         <Route path="/materiel" element={<ParcMateriel darkMode={darkMode} toggleMode={toggleMode} />} />
         <Route path="/materiel/:id" element={<MaterielDetail darkMode={darkMode} toggleMode={toggleMode} />} />
         <Route path="/factures" element={<Factures darkMode={darkMode} toggleMode={toggleMode} />} />
-        <Route path="/factures/:id" element={<FactureDetail darkMode={darkMode} toggleMode={toggleMode} />} />
+        <Route path="/factures/nouvelle" element={<FactureDetail />} />
+        <Route path="/factures/:id" element={<FactureView />} />
         <Route path="/column-mapping" element={<ColumnMapping />} />
         <Route path="/reunions" element={<Reunions />} />
         <Route path="/reunions/nouveau" element={<NouveauCompteRendu />} />

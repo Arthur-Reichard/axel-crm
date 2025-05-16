@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../helper/supabaseClient";
 import DashboardNavbar from "./DashboardNavbar";
+import "../pages/css/Factures.css";
+import { PDFViewer } from '@react-pdf/renderer';
+import FacturePDF from '../components/FacturePDF';
 
 const FactureDetail = () => {
   const { id } = useParams();
@@ -9,26 +12,60 @@ const FactureDetail = () => {
 
   const [leads, setLeads] = useState([]);
   const [selectedLeadId, setSelectedLeadId] = useState("");
+  const [numeroExistant, setNumeroExistant] = useState(false);
+  const [utilisateur, setUtilisateur] = useState(null);
+  const [showConfirmToast, setShowConfirmToast] = useState(false);
+  const [modifie, setModifie] = useState(false);
   const [formData, setFormData] = useState({
+    numero: "",
+    reference_client: "",
     client: "",
-    adresse: "",
     adresse_facturation: "",
-    date_prestation: "",
-    date_echeance: "",
-    type_operation: "service",
+    date_facture: new Date().toISOString().split("T")[0],
     objet: "",
     lignes: [],
     remise: 0,
     tva: 20,
-    penalite_retard: "10% du montant TTC",
-    indemnite_recouvrement: 40,
-    garantie_legale: false,
-    paiement_tva_debits: false,
-    siret: "",
-    statut_juridique: "",
-    siege_social: "",
-    total_ht: "",
+    notes: "",
+    emetteur_nom: "",
+    emetteur_email: "",
+    emetteur_telephone: "",
+    emetteur_adresse: ""
   });
+
+  useEffect(() => {
+    const fetchUtilisateurEtDerniereFacture = async () => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user?.id) return;
+
+      const { data: utilisateurData } = await supabase
+        .from("utilisateurs")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      setUtilisateur(utilisateurData);
+
+      const { data: factures } = await supabase
+        .from("factures")
+        .select("emetteur_nom, emetteur_email, emetteur_telephone, emetteur_adresse")
+        .eq("cree_par", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const derniere = factures?.[0] || null;
+
+      setFormData((prev) => ({
+        ...prev,
+        emetteur_nom: derniere?.emetteur_nom || `${utilisateurData?.prenom || ''} ${utilisateurData?.nom || ''}`.trim(),
+        emetteur_email: derniere?.emetteur_email || utilisateurData?.email || '',
+        emetteur_telephone: derniere?.emetteur_telephone || utilisateurData?.phone || '',
+        emetteur_adresse: derniere?.emetteur_adresse || utilisateurData?.adresse || '',
+      }));
+    };
+
+    fetchUtilisateurEtDerniereFacture();
+  }, []);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -45,44 +82,104 @@ const FactureDetail = () => {
         setFormData((prev) => ({
           ...prev,
           client: `${lead.prenom} ${lead.nom}`,
-          adresse: lead.adresse || "",
           adresse_facturation: lead.adresse || "",
+          reference_client: lead.email || ""
         }));
       }
     }
   }, [selectedLeadId]);
 
-  const total_ttc = formData.total_ht
-    ? (parseFloat(formData.total_ht) * (1 + formData.tva / 100)).toFixed(2)
-    : "";
+  useEffect(() => {
+    const checkNumero = async () => {
+      if (!formData.numero) return;
+      const { data } = await supabase
+        .from("factures")
+        .select("id")
+        .eq("numero", formData.numero);
+      setNumeroExistant(data && data.length > 0);
+    };
+    checkNumero();
+  }, [formData.numero]);
+
+  const total_ht = formData.lignes.reduce((sum, ligne) => {
+    return sum + (parseFloat(ligne.prix_unitaire || 0) * parseFloat(ligne.quantite || 0));
+  }, 0).toFixed(2);
+
+  const total_ttc = (parseFloat(total_ht || 0) * (1 + formData.tva / 100)).toFixed(2);
 
   const handleChange = (field, value) => {
+    setModifie(true);
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
-    const { data: last } = await supabase
-      .from("factures")
-      .select("numero")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+  const handleAddLigne = () => {
+    setModifie(true);
+    setFormData((prev) => ({
+      ...prev,
+      lignes: [...prev.lignes, { designation: "", quantite: 1, prix_unitaire: 0 }]
+    }));
+  };
 
-    let newNumero = "AXL-2025-001";
-    if (last?.numero) {
-      const lastNum = parseInt(last.numero.split("-").pop());
-      const next = String(lastNum + 1).padStart(3, "0");
-      newNumero = `AXL-2025-${next}`;
+  const handleRemoveLigne = (index) => {
+    setModifie(true);
+    const updated = formData.lignes.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, lignes: updated }));
+  };
+
+  const handleLigneChange = (index, field, value) => {
+    setModifie(true);
+    const newLignes = [...formData.lignes];
+    newLignes[index][field] = field === 'designation' ? value : parseFloat(value);
+    setFormData((prev) => ({ ...prev, lignes: newLignes }));
+  };
+
+  const handleSave = async () => {
+    if (!formData.numero || numeroExistant) {
+      alert("Numéro de facture invalide ou déjà utilisé.");
+      return;
     }
 
-    const { error } = await supabase.from("factures").insert({
-      numero: newNumero,
-      ...formData,
-      client_id: selectedLeadId || null,
+    const {
+      numero,
+      reference_client,
+      adresse_facturation,
+      date_facture,
+      objet,
+      lignes,
+      remise,
+      tva,
+      notes,
+      emetteur_nom,
+      emetteur_email,
+      emetteur_telephone,
+      emetteur_adresse
+    } = formData;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const dataToInsert = {
+      numero,
+      reference_client,
+      adresse_facturation,
+      date_facture,
+      objet,
+      lignes,
+      remise,
+      tva,
+      notes,
+      emetteur_nom,
+      emetteur_email,
+      emetteur_telephone,
+      emetteur_adresse,
+      total_ht,
       total_ttc,
-      statut: "brouillon",
-      date_emission: new Date().toISOString().split("T")[0],
-    });
+      client_id: selectedLeadId || null,
+      entreprise_id: utilisateur?.entreprise_id || null,
+      cree_par: user.id,
+      statut: "brouillon"
+    };
+
+    const { error } = await supabase.from("factures").insert(dataToInsert);
 
     if (error) {
       console.error("Erreur création :", error);
@@ -93,34 +190,57 @@ const FactureDetail = () => {
     }
   };
 
+  const handleRetour = () => {
+    if (modifie) {
+      setShowConfirmToast(true);
+    } else {
+      navigate("/factures");
+    }
+  };
+
+  const confirmerQuitter = () => {
+    navigate("/factures");
+  };
+
+  const annulerQuitter = () => {
+    setShowConfirmToast(false);
+  };
+
   return (
-    <div className="facture-detail-page">
+    <div className="facture-page">
       <DashboardNavbar />
-      <div className="facture-detail-body">
-        <div className="facture-formulaire">
+      <button className="retour-btn" onClick={handleRetour}>← Retour</button>
+
+      {showConfirmToast && (
+        <div className="toast-confirm">
+          <h4>Voulez-vous vraiment quitter la création ?</h4>
+          <div className="toast-confirm-buttons">
+            <button className="cancel-btn" onClick={annulerQuitter}>Annuler</button>
+            <button className="confirm-btn" onClick={confirmerQuitter}>Oui, quitter</button>
+          </div>
+        </div>
+      )}
+
+      <div className="facture-popup">
+        <div className="popup-left">
           <h2>Nouvelle facture</h2>
 
-          {[
-            { label: "Prospect lié (optionnel)", type: "select", options: leads.map(lead => ({ value: lead.id, label: `${lead.prenom} ${lead.nom}` })), field: "selectedLeadId" },
+          {[{
+            label: "Prospect lié (optionnel)", type: "select", field: "selectedLeadId",
+            options: leads.map(lead => ({ value: lead.id, label: `${lead.prenom} ${lead.nom}` }))
+          },
+            { label: "Numéro de facture", field: "numero" },
             { label: "Client", field: "client" },
-            { label: "Adresse", field: "adresse" },
             { label: "Adresse de facturation", field: "adresse_facturation" },
-            { label: "Date de la prestation", field: "date_prestation", type: "date" },
-            { label: "Date d’échéance", field: "date_echeance", type: "date" },
+            { label: "Date de la facture", field: "date_facture", type: "date" },
             { label: "Objet", field: "objet" },
-            { label: "Montant HT", field: "total_ht", type: "number" },
+            { label: "Réf. client", field: "reference_client" },
             { label: "TVA (%)", field: "tva", type: "number" },
-            { label: "Type d’opération", type: "select", options: [
-              { value: "service", label: "Prestation de service" },
-              { value: "livraison", label: "Livraison de biens" },
-              { value: "mixte", label: "Mixte" },
-            ], field: "type_operation" },
-            { label: "Pénalités de retard", field: "penalite_retard" },
-            { label: "Garantie légale applicable ?", field: "garantie_legale", type: "checkbox" },
-            { label: "TVA sur les débits ?", field: "paiement_tva_debits", type: "checkbox" },
-            { label: "SIRET", field: "siret" },
-            { label: "Statut juridique", field: "statut_juridique" },
-            { label: "Adresse du siège", field: "siege_social" },
+            { label: "Notes complémentaires", field: "notes" },
+            { label: "Nom émetteur", field: "emetteur_nom" },
+            { label: "Email émetteur", field: "emetteur_email" },
+            { label: "Téléphone émetteur", field: "emetteur_telephone" },
+            { label: "Adresse émetteur", field: "emetteur_adresse" },
           ].map((input, i) => (
             <div key={i} className="form-field">
               <label>{input.label}</label>
@@ -137,12 +257,6 @@ const FactureDetail = () => {
                     <option key={j} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-              ) : input.type === "checkbox" ? (
-                <input
-                  type="checkbox"
-                  checked={formData[input.field]}
-                  onChange={(e) => handleChange(input.field, e.target.checked)}
-                />
               ) : (
                 <input
                   type={input.type || "text"}
@@ -150,48 +264,48 @@ const FactureDetail = () => {
                   onChange={(e) => handleChange(input.field, e.target.value)}
                 />
               )}
+              {input.field === "numero" && numeroExistant && (
+                <p style={{ color: 'red', fontSize: '0.8rem' }}>
+                  Ce numéro est déjà utilisé par une autre facture.
+                </p>
+              )}
             </div>
           ))}
+
+          <div className="form-field">
+            <label>Lignes de facture</label>
+            {formData.lignes.map((ligne, index) => (
+              <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input
+                  placeholder="Désignation"
+                  value={ligne.designation}
+                  onChange={(e) => handleLigneChange(index, 'designation', e.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Quantité"
+                  value={ligne.quantite}
+                  onChange={(e) => handleLigneChange(index, 'quantite', e.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Prix unitaire"
+                  value={ligne.prix_unitaire}
+                  onChange={(e) => handleLigneChange(index, 'prix_unitaire', e.target.value)}
+                />
+                <button type="button" onClick={() => handleRemoveLigne(index)}>✕</button>
+              </div>
+            ))}
+            <button type="button" onClick={handleAddLigne} style={{ marginTop: '0.5rem' }}>+ Ajouter une ligne</button>
+          </div>
 
           <button onClick={handleSave}>Enregistrer la facture</button>
         </div>
 
-        <div className="facture-preview-pdf" style={{ backgroundColor: "white", color: "black" }}>
-          <div className="pdf-container">
-            <h1>FACTURE</h1>
-            <div className="pdf-section">
-              <div>
-                <p><strong>Émetteur :</strong></p>
-                <p>{formData.siret}</p>
-                <p>{formData.statut_juridique}</p>
-                <p>{formData.siege_social}</p>
-              </div>
-              <div>
-                <p><strong>Client :</strong></p>
-                <p>{formData.client}</p>
-                <p>{formData.adresse_facturation}</p>
-              </div>
-            </div>
-
-            <div className="pdf-section">
-              <p><strong>Objet :</strong> {formData.objet}</p>
-              <p><strong>Date prestation :</strong> {formData.date_prestation}</p>
-              <p><strong>Date échéance :</strong> {formData.date_echeance}</p>
-            </div>
-
-            <div className="pdf-section montant">
-              <p><strong>Total HT :</strong> {formData.total_ht} €</p>
-              <p><strong>TVA {formData.tva}% :</strong> {(parseFloat(formData.total_ht || 0) * (formData.tva / 100)).toFixed(2)} €</p>
-              <p><strong>Total TTC :</strong> {total_ttc} €</p>
-            </div>
-
-            <div className="pdf-section mentions">
-              <p>Pénalités de retard : {formData.penalite_retard}</p>
-              <p>Indemnité de recouvrement : {formData.indemnite_recouvrement} €</p>
-              {formData.garantie_legale && <p>Garantie légale de conformité : 2 ans</p>}
-              {formData.paiement_tva_debits && <p>TVA sur les débits : OUI</p>}
-            </div>
-          </div>
+        <div className="popup-right">
+          <PDFViewer style={{ width: '100%', height: '100%' }}>
+            <FacturePDF formData={{ ...formData, total_ht }} total_ttc={total_ttc} utilisateur={utilisateur} />
+          </PDFViewer>
         </div>
       </div>
     </div>
