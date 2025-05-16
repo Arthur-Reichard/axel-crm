@@ -3,6 +3,7 @@ import { DndContext, useDroppable } from "@dnd-kit/core";
 import { supabase } from "../helper/supabaseClient";
 import { FiEdit, FiCheck, FiTrash, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import "./css/ServiceDrawer.css";
+import ServiceTreePopup from "./ServiceTreePopup";
 
 function DroppableService({ service, selectedServiceId, onSelect, onDrop, level = 0, children }) {
     const { isOver, setNodeRef } = useDroppable({
@@ -40,6 +41,7 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
     const [editingId, setEditingId] = useState(null);
     const [editedName, setEditedName] = useState("");
     const [expandedIds, setExpandedIds] = useState([]);
+    const [showTreePopup, setShowTreePopup] = useState(false);
 
     useEffect(() => {
         const fetchEntrepriseId = async () => {
@@ -225,34 +227,45 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
         )}
     </div>
     );
+    {showTreePopup && <ServiceTreePopup onClose={() => setShowTreePopup(false)} />}
 
     return (
-        <div className="service-drawer">
-            <div className="drawer-scroll">
-            {services.map(service => renderServiceTree(service))}
-            </div>
+    <div className="service-drawer">
+        {/* ✅ Bouton organigramme */}
+        <div className="tree-button-wrapper">
+        <button onClick={() => setShowTreePopup(true)} className="organigramme-button">
+            Voir l’organigramme
+        </button>
+        </div>
 
-        {/* Footer pour ajouter un nouveau service */}
+        <div className="drawer-scroll">
+        {services.map(service => renderServiceTree(service))}
+        </div>
+
+        {/* ✅ Footer ajout de service */}
         <div className="drawer-footer-service">
-            <input
+        <input
             type="text"
             placeholder="Nom du service"
             value={newServiceName}
             onChange={(e) => setNewServiceName(e.target.value)}
-            />
-            <select
+        />
+        <select
             value={selectedParent || ""}
             onChange={(e) => setSelectedParent(e.target.value || null)}
-            >
+        >
             <option value="">Aucun (service principal)</option>
             {flatList.map(s => (
-                <option key={s.id} value={s.id}>{s.label}</option>
+            <option key={s.id} value={s.id}>{s.label}</option>
             ))}
-            </select>
-            <button className="settings-button-service" onClick={handleAddService}>
+        </select>
+        <button className="settings-button-service" onClick={handleAddService}>
             + Ajouter un service
-            </button>
+        </button>
         </div>
-        </div>
+
+        {/* ✅ Affichage du popup si activé */}
+        {showTreePopup && <ServiceTreePopup onClose={() => setShowTreePopup(false)} />}
+    </div>
     );
 }

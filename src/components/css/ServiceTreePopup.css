@@ -1,0 +1,41 @@
+.tree-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tree-popup-content {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  height: 80%;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.custom-node-group {
+  pointer-events: all !important;
+  cursor: pointer;
+}
+
+.rd3t-g {
+  pointer-events: none;
+}
