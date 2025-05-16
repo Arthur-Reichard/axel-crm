@@ -3,7 +3,6 @@ import { DndContext, useDroppable } from "@dnd-kit/core";
 import { supabase } from "../helper/supabaseClient";
 import { FiEdit, FiCheck, FiTrash, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import "./css/ServiceDrawer.css";
-import HierarchyEditor from "./HierarchyEditor";
 
 function DroppableService({ service, selectedServiceId, onSelect, onDrop, level = 0, children }) {
     const { isOver, setNodeRef } = useDroppable({
@@ -40,7 +39,6 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
     const [selectedParent, setSelectedParent] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editedName, setEditedName] = useState("");
-    const [showHierarchy, setShowHierarchy] = useState(false);
     const [expandedIds, setExpandedIds] = useState([]);
 
     useEffect(() => {
@@ -231,14 +229,6 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
     return (
         <div className="service-drawer">
             <div className="drawer-scroll">
-            <button onClick={() => setShowHierarchy(true)}>Modifier l'arborescence</button>
-            {showHierarchy && (
-            <HierarchyEditor
-                entrepriseId={entrepriseId}
-                onClose={() => setShowHierarchy(false)}
-                onSaved={fetchServices}
-            />
-            )}
             {services.map(service => renderServiceTree(service))}
             </div>
 
@@ -259,7 +249,7 @@ export default function ServiceDrawer({ onSelect, selectedServiceId }) {
                 <option key={s.id} value={s.id}>{s.label}</option>
             ))}
             </select>
-            <button className="settings-button" onClick={handleAddService}>
+            <button className="settings-button-service" onClick={handleAddService}>
             + Ajouter un service
             </button>
         </div>

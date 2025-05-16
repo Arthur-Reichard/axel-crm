@@ -65,12 +65,12 @@
   background-color: #f9f9f9;
 }
 
-.settings-button {
+.settings-button-service {
   width: 100%;
   padding: 12px;
   font-size: 16px;
   font-weight: 500;
-  background-color: #14b8a6;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 6px;
@@ -82,8 +82,8 @@
   transition: background-color 0.2s ease-in-out;
 }
 
-.settings-button:hover {
-  background-color: #0f9d8a;
+.settings-button-service:hover {
+  background-color: #0056b3;
 }
 
 .drawer-item-service input {
